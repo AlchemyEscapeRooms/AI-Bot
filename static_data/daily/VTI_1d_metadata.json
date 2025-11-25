@@ -1,0 +1,20 @@
+{
+  "symbol": "VTI",
+  "interval": "1d",
+  "start_date": "2022-11-24",
+  "end_date": "2025-11-21",
+  "total_bars": 782,
+  "columns": [
+    "date",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "dividends",
+    "stock splits",
+    "symbol"
+  ],
+  "generated_at": "2025-11-23T05:16:22.744827",
+  "data_type": "synthetic"
+}
