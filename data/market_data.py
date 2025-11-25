@@ -4,7 +4,12 @@ import pandas as pd
 import numpy as np
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
-import yfinance as yf
+import os
+
+# Alpaca API
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.requests import StockBarsRequest, StockLatestQuoteRequest
+from alpaca.data.timeframe import TimeFrame
 
 from ..utils.logger import get_logger
 from ..config import config
@@ -16,8 +21,19 @@ class MarketDataCollector:
     """Collects market data from multiple sources."""
 
     def __init__(self):
-        self.data_source = config.get('data.sources.market_data.primary', 'yfinance')
+        self.data_source = config.get('data.sources.market_data.primary', 'alpaca')
         self.cache = {}
+
+        # Initialize Alpaca client
+        api_key = os.getenv('ALPACA_API_KEY') or config.get('api_keys.alpaca.api_key', '')
+        secret_key = os.getenv('ALPACA_SECRET_KEY') or config.get('api_keys.alpaca.secret_key', '')
+
+        if api_key and secret_key and '${' not in api_key:
+            self.alpaca_client = StockHistoricalDataClient(api_key, secret_key)
+            logger.info("Alpaca client initialized successfully")
+        else:
+            self.alpaca_client = None
+            logger.warning("Alpaca API keys not found - some features may not work")
 
     def get_historical_data(
         self,
@@ -26,58 +42,102 @@ class MarketDataCollector:
         end_date: str = None,
         interval: str = '1d'
     ) -> pd.DataFrame:
-        """Get historical OHLCV data for a symbol."""
+        """Get historical OHLCV data for a symbol using Alpaca API."""
 
         try:
-            logger.info(f"Fetching data for {symbol}")
+            logger.info(f"Fetching data for {symbol} from Alpaca")
+
+            if self.alpaca_client is None:
+                logger.error("Alpaca client not initialized - check API keys")
+                return pd.DataFrame()
 
             if start_date is None:
                 start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
             if end_date is None:
                 end_date = datetime.now().strftime('%Y-%m-%d')
 
-            # Use yfinance
-            ticker = yf.Ticker(symbol)
-            df = ticker.history(start=start_date, end=end_date, interval=interval)
+            # Map interval to Alpaca TimeFrame
+            timeframe_map = {
+                '1d': TimeFrame.Day,
+                '1h': TimeFrame.Hour,
+                '15min': TimeFrame.Minute * 15,
+                '5min': TimeFrame.Minute * 5,
+                '1min': TimeFrame.Minute
+            }
+            timeframe = timeframe_map.get(interval, TimeFrame.Day)
 
-            if df.empty:
+            # Create request
+            request_params = StockBarsRequest(
+                symbol_or_symbols=[symbol],
+                timeframe=timeframe,
+                start=datetime.strptime(start_date, '%Y-%m-%d'),
+                end=datetime.strptime(end_date, '%Y-%m-%d')
+            )
+
+            # Get data from Alpaca
+            bars = self.alpaca_client.get_stock_bars(request_params)
+
+            if symbol not in bars or len(bars[symbol]) == 0:
                 logger.warning(f"No data available for {symbol}")
                 return pd.DataFrame()
+
+            # Convert to DataFrame
+            df = bars.df
+
+            # Reset index to get timestamp as column
+            df = df.reset_index()
 
             # Standardize column names
             df.columns = [col.lower() for col in df.columns]
 
-            # Add symbol column
-            df['symbol'] = symbol
+            # Ensure we have the symbol column
+            if 'symbol' not in df.columns:
+                df['symbol'] = symbol
 
-            logger.info(f"Retrieved {len(df)} bars for {symbol}")
+            # Set timestamp as index
+            if 'timestamp' in df.columns:
+                df.set_index('timestamp', inplace=True)
+
+            logger.info(f"Retrieved {len(df)} bars for {symbol} from Alpaca")
 
             return df
 
         except Exception as e:
-            logger.error(f"Error fetching data for {symbol}: {e}")
+            logger.error(f"Error fetching data for {symbol} from Alpaca: {e}")
             return pd.DataFrame()
 
     def get_real_time_quote(self, symbol: str) -> Dict[str, Any]:
-        """Get real-time quote for a symbol."""
+        """Get real-time quote for a symbol using Alpaca API."""
 
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+            if self.alpaca_client is None:
+                logger.error("Alpaca client not initialized")
+                return {}
+
+            # Get latest quote from Alpaca
+            request_params = StockLatestQuoteRequest(symbol_or_symbols=[symbol])
+            latest_quote = self.alpaca_client.get_stock_latest_quote(request_params)
+
+            if symbol not in latest_quote:
+                logger.warning(f"No quote available for {symbol}")
+                return {}
+
+            quote_data = latest_quote[symbol]
 
             quote = {
                 'symbol': symbol,
-                'price': info.get('currentPrice', info.get('regularMarketPrice', 0)),
-                'bid': info.get('bid', 0),
-                'ask': info.get('ask', 0),
-                'volume': info.get('volume', 0),
-                'timestamp': datetime.now()
+                'price': (quote_data.bid_price + quote_data.ask_price) / 2 if quote_data.bid_price and quote_data.ask_price else 0,
+                'bid': quote_data.bid_price or 0,
+                'ask': quote_data.ask_price or 0,
+                'bid_size': quote_data.bid_size or 0,
+                'ask_size': quote_data.ask_size or 0,
+                'timestamp': quote_data.timestamp
             }
 
             return quote
 
         except Exception as e:
-            logger.error(f"Error fetching quote for {symbol}: {e}")
+            logger.error(f"Error fetching quote for {symbol} from Alpaca: {e}")
             return {}
 
     def get_multiple_symbols(
@@ -99,37 +159,26 @@ class MarketDataCollector:
         return data
 
     def get_fundamentals(self, symbol: str) -> Dict[str, Any]:
-        """Get fundamental data for a symbol."""
+        """Get fundamental data for a symbol.
 
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+        Note: Alpaca doesn't provide fundamental data.
+        This would require a separate data provider like Alpha Vantage or Financial Modeling Prep.
+        """
 
-            fundamentals = {
-                'symbol': symbol,
-                'pe_ratio': info.get('trailingPE', None),
-                'forward_pe': info.get('forwardPE', None),
-                'pb_ratio': info.get('priceToBook', None),
-                'ps_ratio': info.get('priceToSalesTrailing12Months', None),
-                'peg_ratio': info.get('pegRatio', None),
-                'debt_to_equity': info.get('debtToEquity', None),
-                'roe': info.get('returnOnEquity', None),
-                'roa': info.get('returnOnAssets', None),
-                'profit_margin': info.get('profitMargins', None),
-                'market_cap': info.get('marketCap', None),
-                'enterprise_value': info.get('enterpriseValue', None),
-                'revenue_growth': info.get('revenueGrowth', None),
-                'earnings_growth': info.get('earningsGrowth', None),
-                'dividend_yield': info.get('dividendYield', None),
-                'sector': info.get('sector', None),
-                'industry': info.get('industry', None)
-            }
+        logger.warning(f"Fundamental data not available through Alpaca for {symbol}")
+        logger.info("Configure Alpha Vantage or Financial Modeling Prep for fundamentals")
 
-            return fundamentals
-
-        except Exception as e:
-            logger.error(f"Error fetching fundamentals for {symbol}: {e}")
-            return {}
+        # Return empty dict - fundamental data requires different API
+        return {
+            'symbol': symbol,
+            'pe_ratio': None,
+            'forward_pe': None,
+            'pb_ratio': None,
+            'market_cap': None,
+            'sector': None,
+            'industry': None,
+            'note': 'Fundamental data requires Alpha Vantage or FMP API'
+        }
 
     def screen_stocks(
         self,
