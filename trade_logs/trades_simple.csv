@@ -1,0 +1,930 @@
+Date,Time,Stock,What Happened,Price Per Share,Total Amount,Strategy Used,Why,Result
+01/31/2023,12:00 AM,NVDA,Bought 4611 shares,$19.52,"$90,000.00",Momentum,Stock rose 36.5% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/31/2023,12:00 AM,TSLA,Bought 520 shares,$173.22,"$90,000.00",Momentum,Stock rose 60.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/31/2023,12:00 AM,META,Bought 608 shares,$148.06,"$90,000.00",Momentum,Stock rose 19.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/31/2023,12:00 AM,META,Bought 608 shares,$148.06,"$90,000.00",Momentum,Stock rose 19.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/31/2023,12:00 AM,META,Bought 608 shares,$148.06,"$90,000.00",Momentum,Stock rose 19.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/31/2023,12:00 AM,AAPL,Bought 633 shares,$142.15,"$90,000.00",Momentum,Stock rose 15.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+02/01/2023,12:00 AM,NVDA,Bought 4301 shares,$20.92,"$90,000.00",Breakout,Price $20.92 broke above resistance at $20.61 - bullish breakout,
+02/01/2023,12:00 AM,TSLA,Bought 496 shares,$181.41,"$90,000.00",Breakout,Price $181.41 broke above resistance at $180.68 - bullish breakout,
+02/02/2023,12:00 AM,META,Bought 480 shares,$187.61,"$90,000.00",Breakout,Price $187.61 broke above resistance at $152.64 - bullish breakout,
+02/02/2023,12:00 AM,META,Bought 480 shares,$187.61,"$90,000.00",Breakout,Price $187.61 broke above resistance at $152.64 - bullish breakout,
+02/02/2023,12:00 AM,META,Bought 480 shares,$187.61,"$90,000.00",Breakout,Price $187.61 broke above resistance at $152.64 - bullish breakout,
+02/02/2023,12:00 AM,AAPL,Bought 606 shares,$148.58,"$90,000.00",Breakout,Price $148.58 broke above resistance at $145.04 - bullish breakout,
+03/02/2023,12:00 AM,META,Sold 608 shares,$173.46,"$105,442.05",Momentum,Stock fell 7.5% in 20 days (below -2.0% trigger) - momentum died,"Made $15,397.05"
+03/02/2023,12:00 AM,META,Sold 608 shares,$173.46,"$105,442.05",Momentum,Stock fell 7.5% in 20 days (below -2.0% trigger) - momentum died,"Made $15,397.05"
+03/02/2023,12:00 AM,META,Sold 608 shares,$173.46,"$105,442.05",Momentum,Stock fell 7.5% in 20 days (below -2.0% trigger) - momentum died,"Made $15,397.05"
+03/02/2023,12:00 AM,AAPL,Sold 633 shares,$143.96,"$91,149.41",Momentum,Stock fell 3.1% in 20 days (below -2.0% trigger) - momentum died,"Made $1,104.41"
+03/07/2023,12:00 AM,TSLA,Sold 520 shares,$187.71,"$97,528.58",Momentum,Stock fell 4.6% in 20 days (below -2.0% trigger) - momentum died,"Made $7,483.58"
+03/07/2023,12:00 AM,TSLA,Sold 520 shares,$187.71,"$97,528.58",Momentum,Stock fell 4.6% in 20 days (below -2.0% trigger) - momentum died,"Made $7,483.58"
+03/08/2023,12:00 AM,TSLA,Sold 496 shares,$182.00,"$90,292.71",Breakout,Price $182.00 broke below support at $186.01 - exiting to prevent larger losses,Made $247.71
+03/08/2023,12:00 AM,TSLA,Bought 495 shares,$182.00,"$90,000.00",Mean Reversion,"Price dropped to $182.00, below the safety band at $184.24 - stock is oversold",
+03/08/2023,12:00 AM,TSLA,Sold 496 shares,$182.00,"$90,292.71",Breakout,Price $182.00 broke below support at $186.01 - exiting to prevent larger losses,Made $247.71
+03/08/2023,12:00 AM,TSLA,Bought 495 shares,$182.00,"$90,000.00",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+03/09/2023,12:00 AM,META,Bought 574 shares,$180.58,"$103,634.04",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+03/09/2023,12:00 AM,META,Bought 574 shares,$180.58,"$103,634.04",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+03/09/2023,12:00 AM,META,Bought 574 shares,$180.58,"$103,634.04",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+03/15/2023,12:00 AM,META,Bought 458 shares,$196.54,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/15/2023,12:00 AM,META,Bought 458 shares,$196.54,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/15/2023,12:00 AM,META,Bought 458 shares,$196.54,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/17/2023,12:00 AM,NVDA,Bought 3501 shares,$25.71,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/17/2023,12:00 AM,NVDA,Bought 3501 shares,$25.71,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+03/17/2023,12:00 AM,AAPL,Bought 589 shares,$152.93,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/17/2023,12:00 AM,AAPL,Bought 589 shares,$152.93,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+03/20/2023,12:00 AM,AAPL,Bought 585 shares,$155.30,"$90,789.96",Momentum,Stock rose 6.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+03/21/2023,12:00 AM,TSLA,Sold 495 shares,$197.58,"$97,704.40",Mean Reversion,"Price bounced back to $197.58, reaching the average at $189.89 - target hit","Made $7,659.40"
+03/21/2023,12:00 AM,TSLA,Sold 495 shares,$197.58,"$97,704.40",Mean Reversion,"Price bounced back to $197.58, reaching the average at $189.89 - target hit","Made $7,659.40"
+03/22/2023,12:00 AM,TSLA,Sold 495 shares,$191.15,"$94,524.72",Pairs Trading,Price returned to near its average - taking profits,"Made $4,479.72"
+03/22/2023,12:00 AM,TSLA,Sold 495 shares,$191.15,"$94,524.72",Pairs Trading,Price returned to near its average - taking profits,"Made $4,479.72"
+03/28/2023,12:00 AM,META,Sold 458 shares,$199.45,"$91,333.50",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,288.50"
+03/28/2023,12:00 AM,META,Sold 458 shares,$199.45,"$91,333.49",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,288.49"
+03/28/2023,12:00 AM,META,Sold 458 shares,$199.45,"$91,333.49",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,288.49"
+03/30/2023,12:00 AM,TSLA,Bought 461 shares,$195.28,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/31/2023,12:00 AM,TSLA,Bought 465 shares,$207.46,"$96,522.60",Momentum,Stock rose 7.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+03/31/2023,12:00 AM,TSLA,Bought 434 shares,$207.46,"$90,020.08",Breakout,Price $207.46 broke above resistance at $200.66 - bullish breakout,
+03/31/2023,12:00 AM,META,Bought 432 shares,$210.64,"$90,955.39",MACD,MACD crossed above signal line - momentum turning positive,
+03/31/2023,12:00 AM,META,Bought 432 shares,$210.64,"$90,955.39",MACD,MACD crossed above signal line - momentum turning positive,
+03/31/2023,12:00 AM,META,Bought 432 shares,$210.64,"$90,955.39",MACD,MACD crossed above signal line - momentum turning positive,
+04/05/2023,12:00 AM,TSLA,Sold 461 shares,$185.52,"$85,501.85",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,543.15"
+04/05/2023,12:00 AM,NVDA,Sold 3501 shares,$26.86,"$94,044.31",MACD,MACD crossed below signal line - momentum turning negative,"Made $3,999.31"
+04/05/2023,12:00 AM,TSLA,Sold 461 shares,$185.52,"$85,501.85",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,543.15"
+04/10/2023,12:00 AM,META,Sold 432 shares,$213.43,"$92,161.32",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,160.45"
+04/10/2023,12:00 AM,META,Sold 432 shares,$213.43,"$92,161.32",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,160.46"
+04/10/2023,12:00 AM,META,Sold 432 shares,$213.43,"$92,161.32",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,160.46"
+04/11/2023,12:00 AM,AAPL,Sold 589 shares,$158.65,"$93,367.73",MACD,MACD crossed below signal line - momentum turning negative,"Made $3,322.73"
+04/18/2023,12:00 AM,TSLA,Sold 465 shares,$184.31,"$85,751.86",Momentum,Stock fell 6.7% in 20 days (below -2.0% trigger) - momentum died,"Lost $10,819.01"
+04/18/2023,12:00 AM,TSLA,Sold 465 shares,$184.31,"$85,751.86",Momentum,Stock fell 6.7% in 20 days (below -2.0% trigger) - momentum died,"Lost $10,819.01"
+04/20/2023,12:00 AM,TSLA,Sold 434 shares,$162.99,"$70,723.86",Breakout,Price $162.99 broke below support at $176.11 - exiting to prevent larger losses,"Lost $19,341.23"
+04/20/2023,12:00 AM,TSLA,Bought 593 shares,$162.99,"$96,680.60",Mean Reversion,"Price dropped to $162.99, below the safety band at $170.85 - stock is oversold",
+04/20/2023,12:00 AM,TSLA,Sold 434 shares,$162.99,"$70,723.86",Breakout,Price $162.99 broke below support at $176.11 - exiting to prevent larger losses,"Lost $19,341.23"
+04/20/2023,12:00 AM,TSLA,Bought 576 shares,$162.99,"$93,823.18",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/26/2023,12:00 AM,TSLA,Bought 585 shares,$153.75,"$90,000.00",RSI,"RSI at 29.7 (below 30) - stock is oversold, expecting bounce",
+04/28/2023,12:00 AM,META,Bought 384 shares,$238.85,"$91,793.56",MACD,MACD crossed above signal line - momentum turning positive,
+04/28/2023,12:00 AM,META,Bought 384 shares,$238.85,"$91,793.56",MACD,MACD crossed above signal line - momentum turning positive,
+04/28/2023,12:00 AM,META,Bought 384 shares,$238.85,"$91,793.56",MACD,MACD crossed above signal line - momentum turning positive,
+05/02/2023,12:00 AM,NVDA,Bought 3313 shares,$28.19,"$93,391.46",MACD,MACD crossed above signal line - momentum turning positive,
+05/03/2023,12:00 AM,NVDA,Sold 3313 shares,$27.78,"$92,040.74",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,397.42"
+05/05/2023,12:00 AM,TSLA,Sold 576 shares,$170.06,"$97,892.94",Pairs Trading,Price returned to near its average - taking profits,"Made $4,022.84"
+05/05/2023,12:00 AM,NVDA,Bought 3208 shares,$28.66,"$91,925.52",MACD,MACD crossed above signal line - momentum turning positive,
+05/05/2023,12:00 AM,TSLA,Bought 504 shares,$170.06,"$85,714.77",MACD,MACD crossed above signal line - momentum turning positive,
+05/05/2023,12:00 AM,TSLA,Sold 576 shares,$170.06,"$97,892.94",Pairs Trading,Price returned to near its average - taking profits,"Made $4,022.84"
+05/05/2023,12:00 AM,AAPL,Bought 542 shares,$171.25,"$92,783.45",MACD,MACD crossed above signal line - momentum turning positive,
+05/08/2023,12:00 AM,TSLA,Sold 593 shares,$171.79,"$101,900.48",Mean Reversion,"Price bounced back to $171.79, reaching the average at $170.28 - target hit","Made $5,171.54"
+05/08/2023,12:00 AM,TSLA,Sold 593 shares,$171.79,"$101,900.48",Mean Reversion,"Price bounced back to $171.79, reaching the average at $170.28 - target hit","Made $5,171.54"
+05/09/2023,12:00 AM,META,Sold 384 shares,$231.94,"$89,138.91",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,700.55"
+05/09/2023,12:00 AM,META,Sold 384 shares,$231.94,"$89,138.91",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,700.55"
+05/09/2023,12:00 AM,META,Sold 384 shares,$231.94,"$89,138.91",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,700.55"
+05/12/2023,12:00 AM,NVDA,Sold 3208 shares,$28.32,"$90,835.74",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,135.74"
+05/16/2023,12:00 AM,NVDA,Bought 3107 shares,$29.19,"$90,698.03",MACD,MACD crossed above signal line - momentum turning positive,
+05/16/2023,12:00 AM,AAPL,Sold 542 shares,$170.01,"$92,108.85",MACD,MACD crossed below signal line - momentum turning negative,Lost $720.99
+05/17/2023,12:00 AM,TSLA,Bought 498 shares,$173.86,"$86,582.90",Momentum,Stock rose 6.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/18/2023,12:00 AM,META,Bought 363 shares,$245.34,"$89,160.15",MACD,MACD crossed above signal line - momentum turning positive,
+05/18/2023,12:00 AM,META,Bought 363 shares,$245.34,"$89,160.15",MACD,MACD crossed above signal line - momentum turning positive,
+05/18/2023,12:00 AM,META,Bought 363 shares,$245.34,"$89,160.15",MACD,MACD crossed above signal line - momentum turning positive,
+05/18/2023,12:00 AM,AAPL,Bought 532 shares,$172.95,"$91,926.75",MACD,MACD crossed above signal line - momentum turning positive,
+05/19/2023,12:00 AM,TSLA,Bought 402 shares,$180.14,"$72,436.51",Breakout,Price $180.14 broke above resistance at $177.38 - bullish breakout,
+05/22/2023,12:00 AM,AAPL,Sold 532 shares,$172.11,"$91,480.35",MACD,MACD crossed below signal line - momentum turning negative,Lost $492.37
+05/30/2023,12:00 AM,TSLA,Sold 585 shares,$201.16,"$117,752.20",RSI,"RSI at 70.4 (above 70) - stock is overbought, time to sell","Made $27,707.20"
+05/30/2023,12:00 AM,TSLA,Sold 585 shares,$201.16,"$117,752.20",RSI,"RSI at 70.4 (above 70) - stock is overbought, time to sell","Made $27,707.20"
+05/31/2023,12:00 AM,AAPL,Bought 521 shares,$175.12,"$91,277.43",MACD,MACD crossed above signal line - momentum turning positive,
+06/02/2023,12:00 AM,TSLA,Bought 421 shares,$213.97,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+06/08/2023,12:00 AM,META,Sold 363 shares,$262.96,"$95,564.08",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,359.35"
+06/08/2023,12:00 AM,META,Sold 363 shares,$262.96,"$95,564.08",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,359.35"
+06/08/2023,12:00 AM,META,Sold 363 shares,$262.96,"$95,564.08",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,359.35"
+06/15/2023,12:00 AM,META,Bought 338 shares,$280.10,"$94,674.35",MACD,MACD crossed above signal line - momentum turning positive,
+06/15/2023,12:00 AM,META,Bought 338 shares,$280.10,"$94,674.35",MACD,MACD crossed above signal line - momentum turning positive,
+06/15/2023,12:00 AM,META,Bought 338 shares,$280.10,"$94,674.35",MACD,MACD crossed above signal line - momentum turning positive,
+06/23/2023,12:00 AM,NVDA,Sold 3107 shares,$42.18,"$131,060.46",MACD,MACD crossed below signal line - momentum turning negative,"Made $40,317.08"
+06/26/2023,12:00 AM,TSLA,Sold 504 shares,$241.05,"$121,495.63",MACD,MACD crossed below signal line - momentum turning negative,"Made $35,738.00"
+06/26/2023,12:00 AM,TSLA,Sold 504 shares,$241.05,"$121,495.63",MACD,MACD crossed below signal line - momentum turning negative,"Made $35,738.00"
+06/26/2023,12:00 AM,META,Sold 338 shares,$276.76,"$93,545.63",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,176.06"
+06/26/2023,12:00 AM,META,Sold 338 shares,$276.76,"$93,545.64",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,176.05"
+06/26/2023,12:00 AM,META,Sold 338 shares,$276.76,"$93,545.64",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,176.05"
+06/26/2023,12:00 AM,AAPL,Sold 521 shares,$183.05,"$95,407.43",MACD,MACD crossed below signal line - momentum turning negative,"Made $4,084.37"
+06/27/2023,12:00 AM,AAPL,Bought 510 shares,$185.80,"$94,742.45",MACD,MACD crossed above signal line - momentum turning positive,
+07/05/2023,12:00 AM,TSLA,Bought 416 shares,$282.48,"$117,637.86",MACD,MACD crossed above signal line - momentum turning positive,
+07/06/2023,12:00 AM,TSLA,Sold 416 shares,$276.54,"$115,164.17",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,532.51"
+07/06/2023,12:00 AM,TSLA,Sold 416 shares,$276.54,"$115,164.17",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,532.51"
+07/10/2023,12:00 AM,AAPL,Sold 510 shares,$186.35,"$95,019.54",MACD,MACD crossed below signal line - momentum turning negative,Made $229.72
+07/12/2023,12:00 AM,META,Bought 304 shares,$307.44,"$93,404.44",MACD,MACD crossed above signal line - momentum turning positive,
+07/12/2023,12:00 AM,META,Bought 304 shares,$307.44,"$93,404.45",MACD,MACD crossed above signal line - momentum turning positive,
+07/12/2023,12:00 AM,META,Bought 304 shares,$307.44,"$93,404.45",MACD,MACD crossed above signal line - momentum turning positive,
+07/14/2023,12:00 AM,NVDA,Bought 2789 shares,$45.44,"$126,724.90",MACD,MACD crossed above signal line - momentum turning positive,
+07/21/2023,12:00 AM,NVDA,Sold 2789 shares,$44.28,"$123,491.90",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,296.37"
+07/21/2023,12:00 AM,META,Sold 304 shares,$292.46,"$88,851.09",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,600.05"
+07/21/2023,12:00 AM,META,Sold 304 shares,$292.46,"$88,851.07",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,600.08"
+07/21/2023,12:00 AM,META,Sold 304 shares,$292.46,"$88,851.07",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,600.08"
+07/31/2023,12:00 AM,TSLA,Sold 498 shares,$267.43,"$133,181.09",Momentum,Stock fell 4.4% in 20 days (below -2.0% trigger) - momentum died,"Made $46,554.90"
+07/31/2023,12:00 AM,TSLA,Sold 498 shares,$267.43,"$133,181.09",Momentum,Stock fell 4.4% in 20 days (below -2.0% trigger) - momentum died,"Made $46,554.90"
+07/31/2023,12:00 AM,META,Bought 281 shares,$316.65,"$89,060.42",MACD,MACD crossed above signal line - momentum turning positive,
+07/31/2023,12:00 AM,META,Bought 281 shares,$316.65,"$89,060.41",MACD,MACD crossed above signal line - momentum turning positive,
+07/31/2023,12:00 AM,META,Bought 281 shares,$316.65,"$89,060.41",MACD,MACD crossed above signal line - momentum turning positive,
+08/02/2023,12:00 AM,TSLA,Sold 402 shares,$254.11,"$102,180.76",Breakout,Price $254.11 broke below support at $254.12 - exiting to prevent larger losses,"Made $29,708.03"
+08/02/2023,12:00 AM,TSLA,Sold 402 shares,$254.11,"$102,180.76",Breakout,Price $254.11 broke below support at $254.12 - exiting to prevent larger losses,"Made $29,708.03"
+08/03/2023,12:00 AM,META,Sold 281 shares,$311.27,"$87,548.14",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,556.81"
+08/03/2023,12:00 AM,META,Sold 281 shares,$311.27,"$87,548.12",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,556.82"
+08/03/2023,12:00 AM,META,Sold 281 shares,$311.27,"$87,548.12",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,556.82"
+08/04/2023,12:00 AM,AAPL,Sold 585 shares,$179.81,"$105,118.94",Momentum,Stock fell 3.5% in 20 days (below -2.0% trigger) - momentum died,"Made $14,283.59"
+08/04/2023,12:00 AM,AAPL,Bought 501 shares,$179.81,"$90,000.00",Mean Reversion,"Price dropped to $179.81, below the safety band at $183.25 - stock is oversold",
+08/04/2023,12:00 AM,AAPL,Sold 606 shares,$179.81,"$108,916.57",Breakout,Price $179.81 broke below support at $184.36 - exiting to prevent larger losses,"Made $18,871.57"
+08/04/2023,12:00 AM,AAPL,Bought 501 shares,$179.81,"$90,000.00",Pairs Trading,Price is 3.0 standard deviations below average - extremely oversold,
+08/07/2023,12:00 AM,AAPL,Bought 509 shares,$176.71,"$90,000.00",RSI,"RSI at 29.6 (below 30) - stock is oversold, expecting bounce",
+08/09/2023,12:00 AM,NVDA,Sold 4611 shares,$42.53,"$196,084.67",Momentum,Stock fell 7.4% in 20 days (below -2.0% trigger) - momentum died,"Made $106,039.67"
+08/09/2023,12:00 AM,NVDA,Bought 2116 shares,$42.53,"$90,000.00",Mean Reversion,"Price dropped to $42.53, below the safety band at $43.10 - stock is oversold",
+08/09/2023,12:00 AM,NVDA,Sold 4301 shares,$42.53,"$182,920.63",Breakout,Price $42.53 broke below support at $42.75 - exiting to prevent larger losses,"Made $92,875.63"
+08/09/2023,12:00 AM,NVDA,Bought 2116 shares,$42.53,"$90,000.00",Pairs Trading,Price is 2.5 standard deviations below average - extremely oversold,
+08/09/2023,12:00 AM,META,Sold 574 shares,$303.34,"$174,088.55",Momentum,Stock fell 2.6% in 20 days (below -2.0% trigger) - momentum died,"Made $70,402.69"
+08/09/2023,12:00 AM,META,Sold 574 shares,$303.34,"$174,088.54",Momentum,Stock fell 2.6% in 20 days (below -2.0% trigger) - momentum died,"Made $70,402.68"
+08/09/2023,12:00 AM,META,Sold 574 shares,$303.34,"$174,088.54",Momentum,Stock fell 2.6% in 20 days (below -2.0% trigger) - momentum died,"Made $70,402.68"
+08/15/2023,12:00 AM,TSLA,Sold 421 shares,$232.96,"$97,987.57",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $7,942.57"
+08/15/2023,12:00 AM,TSLA,Sold 421 shares,$232.96,"$97,987.57",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $7,942.57"
+08/16/2023,12:00 AM,TSLA,Bought 448 shares,$225.60,"$101,110.45",Mean Reversion,"Price dropped to $225.60, below the safety band at $229.15 - stock is oversold",
+08/16/2023,12:00 AM,TSLA,Bought 431 shares,$225.60,"$97,227.19",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+08/17/2023,12:00 AM,TSLA,Bought 523 shares,$219.22,"$114,696.57",RSI,"RSI at 28.8 (below 30) - stock is oversold, expecting bounce",
+08/17/2023,12:00 AM,META,Sold 480 shares,$283.34,"$135,922.56",Breakout,Price $283.34 broke below support at $286.53 - exiting to prevent larger losses,"Made $45,877.56"
+08/17/2023,12:00 AM,META,Sold 480 shares,$283.34,"$135,922.56",Breakout,Price $283.34 broke below support at $286.53 - exiting to prevent larger losses,"Made $45,877.56"
+08/17/2023,12:00 AM,META,Sold 480 shares,$283.34,"$135,922.56",Breakout,Price $283.34 broke below support at $286.53 - exiting to prevent larger losses,"Made $45,877.56"
+08/21/2023,12:00 AM,NVDA,Bought 3944 shares,$46.94,"$185,090.07",Momentum,Stock rose 2.8% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/21/2023,12:00 AM,NVDA,Sold 2116 shares,$46.94,"$99,333.31",Mean Reversion,"Price bounced back to $46.94, reaching the average at $44.53 - target hit","Made $9,288.31"
+08/22/2023,12:00 AM,NVDA,Bought 2706 shares,$45.64,"$123,477.46",MACD,MACD crossed above signal line - momentum turning positive,
+08/23/2023,12:00 AM,TSLA,Sold 431 shares,$236.86,"$102,079.93",Pairs Trading,Price returned to near its average - taking profits,"Made $4,804.12"
+08/23/2023,12:00 AM,TSLA,Sold 431 shares,$236.86,"$102,079.93",Pairs Trading,Price returned to near its average - taking profits,"Made $4,804.12"
+08/23/2023,12:00 AM,AAPL,Sold 501 shares,$179.19,"$89,690.70",Pairs Trading,Price returned to near its average - taking profits,Lost $354.30
+08/25/2023,12:00 AM,TSLA,Bought 482 shares,$238.59,"$115,097.31",MACD,MACD crossed above signal line - momentum turning positive,
+08/25/2023,12:00 AM,AAPL,Bought 536 shares,$176.71,"$94,735.69",MACD,MACD crossed above signal line - momentum turning positive,
+08/28/2023,12:00 AM,AAPL,Sold 501 shares,$178.27,"$89,230.16",Mean Reversion,"Price bounced back to $178.27, reaching the average at $178.24 - target hit",Lost $814.84
+08/29/2023,12:00 AM,TSLA,Sold 448 shares,$257.18,"$115,264.12",Mean Reversion,"Price bounced back to $257.18, reaching the average at $239.88 - target hit","Made $14,103.11"
+08/29/2023,12:00 AM,NVDA,Sold 2116 shares,$48.75,"$103,176.19",Pairs Trading,"z_score_overbought: value=2.0394, threshold=2.0000, direction=above","Made $13,131.19"
+08/29/2023,12:00 AM,TSLA,Sold 448 shares,$257.18,"$115,264.12",Mean Reversion,"Price bounced back to $257.18, reaching the average at $239.88 - target hit","Made $14,103.11"
+08/31/2023,12:00 AM,AAPL,Bought 556 shares,$185.87,"$103,421.61",Momentum,Stock rose 3.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/01/2023,12:00 AM,META,Bought 297 shares,$294.56,"$87,460.99",MACD,MACD crossed above signal line - momentum turning positive,
+09/01/2023,12:00 AM,META,Bought 297 shares,$294.56,"$87,460.97",MACD,MACD crossed above signal line - momentum turning positive,
+09/01/2023,12:00 AM,META,Bought 297 shares,$294.56,"$87,460.97",MACD,MACD crossed above signal line - momentum turning positive,
+09/01/2023,12:00 AM,AAPL,Bought 570 shares,$187.44,"$106,756.43",Breakout,Price $187.44 broke above resistance at $187.10 - bullish breakout,
+09/05/2023,12:00 AM,TSLA,Bought 500 shares,$256.49,"$128,224.65",Momentum,Stock rose 2.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/07/2023,12:00 AM,NVDA,Sold 2706 shares,$46.21,"$125,037.05",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,497.85"
+09/11/2023,12:00 AM,TSLA,Bought 362 shares,$273.58,"$98,970.65",Breakout,Price $273.58 broke above resistance at $261.18 - bullish breakout,
+09/11/2023,12:00 AM,META,Bought 429 shares,$305.68,"$131,025.37",Breakout,Price $305.68 broke above resistance at $305.35 - bullish breakout,
+09/11/2023,12:00 AM,META,Bought 429 shares,$305.68,"$131,025.37",Breakout,Price $305.68 broke above resistance at $305.35 - bullish breakout,
+09/11/2023,12:00 AM,META,Bought 429 shares,$305.68,"$131,025.37",Breakout,Price $305.68 broke above resistance at $305.35 - bullish breakout,
+09/11/2023,12:00 AM,AAPL,Sold 536 shares,$177.45,"$95,133.51",MACD,MACD crossed below signal line - momentum turning negative,Made $350.44
+09/13/2023,12:00 AM,META,Bought 550 shares,$303.19,"$166,668.25",Momentum,Stock rose 3.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/13/2023,12:00 AM,META,Bought 550 shares,$303.19,"$166,668.24",Momentum,Stock rose 3.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/13/2023,12:00 AM,META,Bought 550 shares,$303.19,"$166,668.24",Momentum,Stock rose 3.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/18/2023,12:00 AM,NVDA,Sold 3944 shares,$43.94,"$173,277.85",Momentum,Stock fell 6.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $11,904.77"
+09/20/2023,12:00 AM,TSLA,Bought 369 shares,$262.59,"$96,935.07",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+09/20/2023,12:00 AM,AAPL,Sold 556 shares,$173.62,"$96,606.49",Momentum,Stock fell 3.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $6,866.83"
+09/21/2023,12:00 AM,NVDA,Bought 2394 shares,$40.99,"$98,144.42",Mean Reversion,"Price dropped to $40.99, below the safety band at $41.30 - stock is oversold",
+09/21/2023,12:00 AM,NVDA,Bought 2478 shares,$40.99,"$101,597.83",Pairs Trading,Price is 2.1 standard deviations below average - extremely oversold,
+09/21/2023,12:00 AM,META,Sold 297 shares,$293.92,"$87,269.15",MACD,MACD crossed below signal line - momentum turning negative,Lost $235.56
+09/21/2023,12:00 AM,META,Sold 297 shares,$293.92,"$87,269.14",MACD,MACD crossed below signal line - momentum turning negative,Lost $235.56
+09/21/2023,12:00 AM,META,Sold 297 shares,$293.92,"$87,269.14",MACD,MACD crossed below signal line - momentum turning negative,Lost $235.56
+09/22/2023,12:00 AM,TSLA,Sold 482 shares,$244.88,"$118,131.65",MACD,MACD crossed below signal line - momentum turning negative,"Made $2,976.79"
+09/22/2023,12:00 AM,TSLA,Sold 482 shares,$244.88,"$118,131.65",MACD,MACD crossed below signal line - momentum turning negative,"Made $2,976.79"
+09/26/2023,12:00 AM,TSLA,Sold 500 shares,$244.12,"$122,040.63",Momentum,Stock fell 5.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $6,248.13"
+09/26/2023,12:00 AM,TSLA,Sold 500 shares,$244.12,"$122,040.63",Momentum,Stock fell 5.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $6,248.13"
+09/26/2023,12:00 AM,AAPL,Sold 570 shares,$170.13,"$96,895.58",Breakout,Price $170.13 broke below support at $171.69 - exiting to prevent larger losses,"Lost $9,914.23"
+09/29/2023,12:00 AM,NVDA,Sold 2478 shares,$43.47,"$107,745.66",Pairs Trading,Price returned to near its average - taking profits,"Made $6,097.04"
+09/29/2023,12:00 AM,TSLA,Bought 489 shares,$250.22,"$122,321.23",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/29/2023,12:00 AM,META,Bought 302 shares,$298.37,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+09/29/2023,12:00 AM,META,Bought 302 shares,$298.37,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+09/29/2023,12:00 AM,META,Bought 302 shares,$298.37,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+10/02/2023,12:00 AM,NVDA,Sold 2394 shares,$44.76,"$107,153.22",Mean Reversion,"Price bounced back to $44.76, reaching the average at $44.11 - target hit","Made $8,959.72"
+10/02/2023,12:00 AM,NVDA,Bought 2783 shares,$44.76,"$124,545.65",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2023,12:00 AM,META,Bought 285 shares,$304.94,"$87,052.49",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2023,12:00 AM,META,Bought 285 shares,$304.94,"$87,052.48",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2023,12:00 AM,META,Bought 285 shares,$304.94,"$87,052.48",MACD,MACD crossed above signal line - momentum turning positive,
+10/03/2023,12:00 AM,TSLA,Sold 489 shares,$246.53,"$120,517.35",Momentum,Stock fell 2.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $1,865.04"
+10/03/2023,12:00 AM,TSLA,Sold 489 shares,$246.53,"$120,517.35",Momentum,Stock fell 2.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $1,865.04"
+10/04/2023,12:00 AM,TSLA,Bought 461 shares,$261.16,"$120,369.96",Momentum,Stock rose 3.8% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/04/2023,12:00 AM,AAPL,Bought 552 shares,$171.81,"$94,837.44",MACD,MACD crossed above signal line - momentum turning positive,
+10/05/2023,12:00 AM,TSLA,Bought 452 shares,$260.05,"$117,513.41",MACD,MACD crossed above signal line - momentum turning positive,
+10/06/2023,12:00 AM,TSLA,Sold 461 shares,$260.53,"$120,079.59",Momentum,Stock fell 4.8% in 20 days (below -2.0% trigger) - momentum died,Lost $350.56
+10/06/2023,12:00 AM,TSLA,Sold 461 shares,$260.53,"$120,079.59",Momentum,Stock fell 4.8% in 20 days (below -2.0% trigger) - momentum died,Lost $350.56
+10/10/2023,12:00 AM,AAPL,Bought 550 shares,$176.49,"$97,018.01",Momentum,Stock rose 2.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/11/2023,12:00 AM,NVDA,Bought 3719 shares,$46.78,"$173,975.35",Momentum,Stock rose 2.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/11/2023,12:00 AM,NVDA,Bought 3704 shares,$46.78,"$173,260.21",Breakout,Price $46.78 broke above resistance at $46.23 - bullish breakout,
+10/11/2023,12:00 AM,AAPL,Bought 549 shares,$177.88,"$97,606.78",Breakout,Price $177.88 broke above resistance at $177.80 - bullish breakout,
+10/16/2023,12:00 AM,TSLA,Sold 452 shares,$253.92,"$114,743.34",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,828.82"
+10/16/2023,12:00 AM,TSLA,Sold 452 shares,$253.92,"$114,743.34",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,828.82"
+10/18/2023,12:00 AM,NVDA,Sold 2783 shares,$42.17,"$117,353.57",MACD,MACD crossed below signal line - momentum turning negative,"Lost $7,254.35"
+10/19/2023,12:00 AM,TSLA,Sold 362 shares,$220.11,"$79,627.28",Breakout,Price $220.11 broke below support at $234.58 - exiting to prevent larger losses,"Lost $19,392.86"
+10/19/2023,12:00 AM,TSLA,Bought 516 shares,$220.11,"$113,556.70",Mean Reversion,"Price dropped to $220.11, below the safety band at $230.44 - stock is oversold",
+10/19/2023,12:00 AM,TSLA,Sold 362 shares,$220.11,"$79,627.28",Breakout,Price $220.11 broke below support at $234.58 - exiting to prevent larger losses,"Lost $19,392.86"
+10/19/2023,12:00 AM,TSLA,Bought 460 shares,$220.11,"$101,325.63",Pairs Trading,Price is 3.0 standard deviations below average - extremely oversold,
+10/20/2023,12:00 AM,META,Sold 285 shares,$306.76,"$87,571.68",MACD,MACD crossed below signal line - momentum turning negative,Made $475.66
+10/20/2023,12:00 AM,META,Sold 285 shares,$306.76,"$87,571.68",MACD,MACD crossed below signal line - momentum turning negative,Made $475.67
+10/20/2023,12:00 AM,META,Sold 285 shares,$306.76,"$87,571.68",MACD,MACD crossed below signal line - momentum turning negative,Made $475.67
+10/20/2023,12:00 AM,AAPL,Sold 552 shares,$171.04,"$94,411.48",MACD,MACD crossed below signal line - momentum turning negative,Lost $473.38
+10/23/2023,12:00 AM,TSLA,Sold 369 shares,$212.08,"$78,289.31",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $18,694.23"
+10/23/2023,12:00 AM,TSLA,Sold 369 shares,$212.08,"$78,289.31",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $18,694.23"
+10/25/2023,12:00 AM,NVDA,Sold 3719 shares,$41.75,"$155,290.26",Momentum,Stock fell 3.0% in 20 days (below -2.0% trigger) - momentum died,"Lost $18,772.08"
+10/26/2023,12:00 AM,NVDA,Bought 2630 shares,$40.30,"$105,975.24",Mean Reversion,"Price dropped to $40.30, below the safety band at $40.30 - stock is oversold",
+10/26/2023,12:00 AM,NVDA,Sold 3704 shares,$40.30,"$149,273.40",Breakout,Price $40.30 broke below support at $40.92 - exiting to prevent larger losses,"Lost $24,073.44"
+10/26/2023,12:00 AM,NVDA,Bought 2651 shares,$40.30,"$106,848.31",Pairs Trading,Price is 2.0 standard deviations below average - extremely oversold,
+10/26/2023,12:00 AM,META,Sold 550 shares,$286.58,"$157,538.80",Momentum,Stock fell 4.0% in 20 days (below -2.0% trigger) - momentum died,"Lost $9,212.78"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Mean Reversion,"Price dropped to $286.58, below the safety band at $290.04 - stock is oversold",
+10/26/2023,12:00 AM,META,Sold 429 shares,$286.58,"$122,841.60",Breakout,Price $286.58 broke below support at $294.88 - exiting to prevent larger losses,"Lost $8,249.28"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+10/26/2023,12:00 AM,META,Sold 550 shares,$286.58,"$157,538.81",Momentum,Stock fell 4.0% in 20 days (below -2.0% trigger) - momentum died,"Lost $9,212.76"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Mean Reversion,"Price dropped to $286.58, below the safety band at $290.04 - stock is oversold",
+10/26/2023,12:00 AM,META,Sold 429 shares,$286.58,"$122,841.62",Breakout,Price $286.58 broke below support at $294.88 - exiting to prevent larger losses,"Lost $8,249.27"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+10/26/2023,12:00 AM,META,Sold 550 shares,$286.58,"$157,538.81",Momentum,Stock fell 4.0% in 20 days (below -2.0% trigger) - momentum died,"Lost $9,212.76"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Mean Reversion,"Price dropped to $286.58, below the safety band at $290.04 - stock is oversold",
+10/26/2023,12:00 AM,META,Sold 429 shares,$286.58,"$122,841.62",Breakout,Price $286.58 broke below support at $294.88 - exiting to prevent larger losses,"Lost $8,249.27"
+10/26/2023,12:00 AM,META,Bought 314 shares,$286.58,"$90,000.00",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+10/26/2023,12:00 AM,AAPL,Sold 550 shares,$165.11,"$90,763.71",Momentum,Stock fell 2.5% in 20 days (below -2.0% trigger) - momentum died,"Lost $6,302.81"
+10/26/2023,12:00 AM,AAPL,Bought 539 shares,$165.11,"$89,065.23",Mean Reversion,"Price dropped to $165.11, below the safety band at $166.35 - stock is oversold",
+10/26/2023,12:00 AM,AAPL,Sold 549 shares,$165.11,"$90,598.41",Breakout,Price $165.11 broke below support at $165.83 - exiting to prevent larger losses,"Lost $7,057.17"
+10/26/2023,12:00 AM,AAPL,Bought 542 shares,$165.11,"$89,479.09",Pairs Trading,Price is 2.4 standard deviations below average - extremely oversold,
+11/01/2023,12:00 AM,META,Bought 510 shares,$309.94,"$158,014.14",Momentum,Stock rose 2.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/01/2023,12:00 AM,META,Sold 314 shares,$309.94,"$97,334.84",Pairs Trading,Price returned to near its average - taking profits,"Made $7,289.84"
+11/01/2023,12:00 AM,META,Bought 510 shares,$309.94,"$158,014.15",Momentum,Stock rose 2.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/01/2023,12:00 AM,META,Sold 314 shares,$309.94,"$97,334.84",Pairs Trading,Price returned to near its average - taking profits,"Made $7,289.84"
+11/01/2023,12:00 AM,META,Bought 510 shares,$309.94,"$158,014.15",Momentum,Stock rose 2.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/01/2023,12:00 AM,META,Sold 314 shares,$309.94,"$97,334.84",Pairs Trading,Price returned to near its average - taking profits,"Made $7,289.84"
+11/01/2023,12:00 AM,AAPL,Sold 542 shares,$172.12,"$93,275.07",Pairs Trading,Price returned to near its average - taking profits,"Made $3,751.24"
+11/02/2023,12:00 AM,TSLA,Sold 460 shares,$218.51,"$100,589.09",Pairs Trading,Price returned to near its average - taking profits,Lost $787.21
+11/02/2023,12:00 AM,NVDA,Sold 2630 shares,$43.48,"$114,332.16",Mean Reversion,"Price bounced back to $43.48, reaching the average at $43.41 - target hit","Made $8,303.94"
+11/02/2023,12:00 AM,NVDA,Sold 2651 shares,$43.48,"$115,274.08",Pairs Trading,Price returned to near its average - taking profits,"Made $8,372.35"
+11/02/2023,12:00 AM,TSLA,Sold 460 shares,$218.51,"$100,589.09",Pairs Trading,Price returned to near its average - taking profits,Lost $787.21
+11/02/2023,12:00 AM,AAPL,Sold 539 shares,$175.68,"$94,764.90",Mean Reversion,"Price bounced back to $175.68, reaching the average at $173.11 - target hit","Made $5,655.14"
+11/02/2023,12:00 AM,AAPL,Bought 536 shares,$175.68,"$94,198.63",MACD,MACD crossed above signal line - momentum turning positive,
+11/03/2023,12:00 AM,NVDA,Bought 2618 shares,$44.98,"$117,746.27",MACD,MACD crossed above signal line - momentum turning positive,
+11/03/2023,12:00 AM,META,Sold 314 shares,$312.67,"$98,193.19",Mean Reversion,"Price bounced back to $312.67, reaching the average at $310.23 - target hit","Made $8,148.19"
+11/03/2023,12:00 AM,META,Sold 314 shares,$312.67,"$98,193.19",Mean Reversion,"Price bounced back to $312.67, reaching the average at $310.23 - target hit","Made $8,148.19"
+11/03/2023,12:00 AM,META,Sold 314 shares,$312.67,"$98,193.19",Mean Reversion,"Price bounced back to $312.67, reaching the average at $310.23 - target hit","Made $8,148.19"
+11/06/2023,12:00 AM,TSLA,Bought 523 shares,$219.27,"$114,706.85",MACD,MACD crossed above signal line - momentum turning positive,
+11/06/2023,12:00 AM,META,Bought 278 shares,$313.87,"$87,284.06",MACD,MACD crossed above signal line - momentum turning positive,
+11/06/2023,12:00 AM,META,Bought 278 shares,$313.87,"$87,284.05",MACD,MACD crossed above signal line - momentum turning positive,
+11/06/2023,12:00 AM,META,Bought 278 shares,$313.87,"$87,284.05",MACD,MACD crossed above signal line - momentum turning positive,
+11/07/2023,12:00 AM,META,Sold 510 shares,$316.87,"$161,545.84",Momentum,Stock fell 2.7% in 20 days (below -2.0% trigger) - momentum died,"Made $3,452.69"
+11/07/2023,12:00 AM,META,Sold 510 shares,$316.87,"$161,545.85",Momentum,Stock fell 2.7% in 20 days (below -2.0% trigger) - momentum died,"Made $3,452.69"
+11/07/2023,12:00 AM,META,Sold 510 shares,$316.87,"$161,545.85",Momentum,Stock fell 2.7% in 20 days (below -2.0% trigger) - momentum died,"Made $3,452.69"
+11/08/2023,12:00 AM,AAPL,Bought 503 shares,$180.94,"$91,045.21",Breakout,Price $180.94 broke above resistance at $180.50 - bullish breakout,
+11/09/2023,12:00 AM,NVDA,Bought 3340 shares,$46.92,"$156,714.33",Momentum,Stock rose 3.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/10/2023,12:00 AM,NVDA,Bought 3131 shares,$48.31,"$151,236.73",Breakout,Price $48.31 broke above resistance at $48.20 - bullish breakout,
+11/10/2023,12:00 AM,META,Bought 492 shares,$326.76,"$160,761.33",Momentum,Stock rose 2.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/10/2023,12:00 AM,META,Bought 377 shares,$326.76,"$123,317.31",Breakout,Price $326.76 broke above resistance at $323.94 - bullish breakout,
+11/10/2023,12:00 AM,META,Bought 492 shares,$326.76,"$160,761.34",Momentum,Stock rose 2.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/10/2023,12:00 AM,META,Bought 377 shares,$326.76,"$123,317.33",Breakout,Price $326.76 broke above resistance at $323.94 - bullish breakout,
+11/10/2023,12:00 AM,META,Bought 492 shares,$326.76,"$160,761.34",Momentum,Stock rose 2.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/10/2023,12:00 AM,META,Bought 377 shares,$326.76,"$123,317.33",Breakout,Price $326.76 broke above resistance at $323.94 - bullish breakout,
+11/10/2023,12:00 AM,AAPL,Bought 494 shares,$184.66,"$91,135.67",Momentum,Stock rose 4.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/13/2023,12:00 AM,TSLA,Sold 516 shares,$223.71,"$115,413.97",Mean Reversion,"Price bounced back to $223.71, reaching the average at $216.90 - target hit","Made $1,800.50"
+11/13/2023,12:00 AM,TSLA,Sold 516 shares,$223.71,"$115,413.97",Mean Reversion,"Price bounced back to $223.71, reaching the average at $216.90 - target hit","Made $1,800.50"
+11/14/2023,12:00 AM,AAPL,Bought 485 shares,$185.69,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+11/15/2023,12:00 AM,NVDA,Bought 1842 shares,$48.86,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+11/15/2023,12:00 AM,TSLA,Bought 493 shares,$242.84,"$119,784.07",Momentum,Stock rose 10.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/16/2023,12:00 AM,AAPL,Sold 509 shares,$187.94,"$95,719.78",RSI,"RSI at 71.2 (above 70) - stock is overbought, time to sell","Made $5,674.78"
+11/28/2023,12:00 AM,NVDA,Sold 2618 shares,$47.79,"$125,113.74",MACD,MACD crossed below signal line - momentum turning negative,"Made $7,308.60"
+11/28/2023,12:00 AM,TSLA,Bought 330 shares,$246.72,"$81,320.54",Breakout,Price $246.72 broke above resistance at $246.70 - bullish breakout,
+11/29/2023,12:00 AM,META,Sold 278 shares,$330.16,"$91,816.87",MACD,MACD crossed below signal line - momentum turning negative,"Made $4,489.17"
+11/29/2023,12:00 AM,META,Sold 278 shares,$330.16,"$91,816.86",MACD,MACD crossed below signal line - momentum turning negative,"Made $4,489.16"
+11/29/2023,12:00 AM,META,Sold 278 shares,$330.16,"$91,816.86",MACD,MACD crossed below signal line - momentum turning negative,"Made $4,489.16"
+11/30/2023,12:00 AM,AAPL,Sold 536 shares,$188.17,"$100,898.80",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,653.07"
+12/06/2023,12:00 AM,NVDA,Sold 3340 shares,$45.48,"$151,897.76",Momentum,Stock fell 2.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,894.93"
+12/07/2023,12:00 AM,TSLA,Bought 329 shares,$242.64,"$79,917.37",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+12/08/2023,12:00 AM,AAPL,Bought 516 shares,$193.88,"$99,965.45",MACD,MACD crossed above signal line - momentum turning positive,
+12/11/2023,12:00 AM,AAPL,Sold 516 shares,$191.37,"$98,673.16",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,342.27"
+12/13/2023,12:00 AM,TSLA,Sold 523 shares,$239.29,"$125,179.92",MACD,MACD crossed below signal line - momentum turning negative,"Made $10,415.72"
+12/13/2023,12:00 AM,TSLA,Sold 523 shares,$239.29,"$125,179.92",MACD,MACD crossed below signal line - momentum turning negative,"Made $10,415.72"
+12/13/2023,12:00 AM,AAPL,Bought 502 shares,$196.11,"$98,534.27",MACD,MACD crossed above signal line - momentum turning positive,
+12/14/2023,12:00 AM,TSLA,Bought 493 shares,$251.05,"$123,808.82",MACD,MACD crossed above signal line - momentum turning positive,
+12/15/2023,12:00 AM,NVDA,Bought 2539 shares,$48.87,"$124,049.19",MACD,MACD crossed above signal line - momentum turning positive,
+12/15/2023,12:00 AM,META,Bought 274 shares,$332.87,"$91,121.85",MACD,MACD crossed above signal line - momentum turning positive,
+12/15/2023,12:00 AM,META,Bought 270 shares,$332.87,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+12/15/2023,12:00 AM,META,Bought 274 shares,$332.87,"$91,121.83",MACD,MACD crossed above signal line - momentum turning positive,
+12/15/2023,12:00 AM,META,Bought 270 shares,$332.87,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+12/15/2023,12:00 AM,META,Bought 274 shares,$332.87,"$91,121.83",MACD,MACD crossed above signal line - momentum turning positive,
+12/15/2023,12:00 AM,META,Bought 270 shares,$332.87,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+12/19/2023,12:00 AM,AAPL,Sold 502 shares,$195.10,"$98,026.56",MACD,MACD crossed below signal line - momentum turning negative,Lost $556.98
+12/21/2023,12:00 AM,NVDA,Bought 3103 shares,$48.97,"$151,962.86",Momentum,Stock rose 2.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/29/2023,12:00 AM,TSLA,Sold 493 shares,$248.48,"$122,541.39",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,329.34"
+12/29/2023,12:00 AM,TSLA,Sold 493 shares,$248.48,"$122,541.39",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,329.34"
+01/02/2024,12:00 AM,NVDA,Sold 2539 shares,$48.14,"$122,217.25",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,893.96"
+01/02/2024,12:00 AM,AAPL,Sold 494 shares,$183.90,"$90,764.07",Momentum,Stock fell 2.0% in 20 days (below -2.0% trigger) - momentum died,Lost $417.17
+01/02/2024,12:00 AM,AAPL,Bought 511 shares,$183.90,"$93,946.80",Mean Reversion,"Price dropped to $183.90, below the safety band at $186.45 - stock is oversold",
+01/02/2024,12:00 AM,AAPL,Sold 503 shares,$183.90,"$92,535.93",Breakout,Price $183.90 broke below support at $185.70 - exiting to prevent larger losses,"Made $1,445.20"
+01/02/2024,12:00 AM,AAPL,Bought 504 shares,$183.90,"$92,648.80",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+01/03/2024,12:00 AM,META,Sold 274 shares,$342.36,"$93,720.11",MACD,MACD crossed below signal line - momentum turning negative,"Made $2,552.70"
+01/03/2024,12:00 AM,META,Sold 274 shares,$342.36,"$93,720.10",MACD,MACD crossed below signal line - momentum turning negative,"Made $2,552.71"
+01/03/2024,12:00 AM,META,Sold 274 shares,$342.36,"$93,720.10",MACD,MACD crossed below signal line - momentum turning negative,"Made $2,552.71"
+01/04/2024,12:00 AM,AAPL,Bought 527 shares,$180.21,"$94,897.12",RSI,"RSI at 29.8 (below 30) - stock is oversold, expecting bounce",
+01/05/2024,12:00 AM,TSLA,Sold 493 shares,$237.49,"$117,145.12",Momentum,Stock fell 2.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,698.85"
+01/05/2024,12:00 AM,TSLA,Sold 493 shares,$237.49,"$117,145.12",Momentum,Stock fell 2.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,698.85"
+01/08/2024,12:00 AM,NVDA,Bought 2337 shares,$52.23,"$122,068.04",MACD,MACD crossed above signal line - momentum turning positive,
+01/10/2024,12:00 AM,META,Bought 253 shares,$368.20,"$93,210.79",MACD,MACD crossed above signal line - momentum turning positive,
+01/10/2024,12:00 AM,META,Bought 253 shares,$368.20,"$93,210.78",MACD,MACD crossed above signal line - momentum turning positive,
+01/10/2024,12:00 AM,META,Bought 253 shares,$368.20,"$93,210.78",MACD,MACD crossed above signal line - momentum turning positive,
+01/11/2024,12:00 AM,TSLA,Sold 330 shares,$227.22,"$74,893.22",Breakout,Price $227.22 broke below support at $228.20 - exiting to prevent larger losses,"Lost $6,467.99"
+01/11/2024,12:00 AM,TSLA,Bought 506 shares,$227.22,"$114,919.19",Mean Reversion,"Price dropped to $227.22, below the safety band at $227.58 - stock is oversold",
+01/11/2024,12:00 AM,TSLA,Sold 330 shares,$227.22,"$74,893.22",Breakout,Price $227.22 broke below support at $228.20 - exiting to prevent larger losses,"Lost $6,467.99"
+01/11/2024,12:00 AM,TSLA,Bought 442 shares,$227.22,"$100,390.20",Pairs Trading,Price is 2.0 standard deviations below average - extremely oversold,
+01/17/2024,12:00 AM,AAPL,Sold 485 shares,$180.97,"$87,714.46",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $2,330.54"
+01/18/2024,12:00 AM,AAPL,Sold 511 shares,$186.87,"$95,459.96",Mean Reversion,"Price bounced back to $186.87, reaching the average at $186.67 - target hit","Made $1,466.19"
+01/18/2024,12:00 AM,AAPL,Sold 504 shares,$186.87,"$94,141.05",Pairs Trading,Price returned to near its average - taking profits,"Made $1,445.93"
+01/19/2024,12:00 AM,AAPL,Bought 515 shares,$189.77,"$97,812.02",MACD,MACD crossed above signal line - momentum turning positive,
+01/22/2024,12:00 AM,TSLA,Sold 329 shares,$208.80,"$68,771.63",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $11,185.70"
+01/22/2024,12:00 AM,TSLA,Sold 329 shares,$208.80,"$68,771.63",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $11,185.70"
+01/31/2024,12:00 AM,AAPL,Sold 515 shares,$182.67,"$94,156.08",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,704.84"
+02/01/2024,12:00 AM,AAPL,Bought 489 shares,$185.11,"$90,555.70",Momentum,Stock rose 2.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+02/08/2024,12:00 AM,TSLA,Bought 645 shares,$189.56,"$122,335.61",MACD,MACD crossed above signal line - momentum turning positive,
+02/09/2024,12:00 AM,TSLA,Sold 442 shares,$193.57,"$85,522.98",Pairs Trading,Price returned to near its average - taking profits,"Lost $14,917.41"
+02/09/2024,12:00 AM,TSLA,Sold 442 shares,$193.57,"$85,522.98",Pairs Trading,Price returned to near its average - taking profits,"Lost $14,917.41"
+02/14/2024,12:00 AM,AAPL,Sold 489 shares,$182.66,"$89,356.25",Momentum,Stock fell 2.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $1,244.73"
+02/15/2024,12:00 AM,TSLA,Sold 506 shares,$200.45,"$101,379.94",Mean Reversion,"Price bounced back to $200.45, reaching the average at $192.43 - target hit","Lost $13,596.70"
+02/15/2024,12:00 AM,TSLA,Sold 506 shares,$200.45,"$101,379.94",Mean Reversion,"Price bounced back to $200.45, reaching the average at $192.43 - target hit","Lost $13,596.70"
+02/20/2024,12:00 AM,NVDA,Sold 2337 shares,$69.42,"$162,246.58",MACD,MACD crossed below signal line - momentum turning negative,"Made $40,117.51"
+02/21/2024,12:00 AM,META,Sold 253 shares,$465.66,"$117,881.96",MACD,MACD crossed below signal line - momentum turning negative,"Made $24,624.57"
+02/21/2024,12:00 AM,META,Sold 253 shares,$465.66,"$117,881.96",MACD,MACD crossed below signal line - momentum turning negative,"Made $24,624.58"
+02/21/2024,12:00 AM,META,Sold 253 shares,$465.66,"$117,881.96",MACD,MACD crossed below signal line - momentum turning negative,"Made $24,624.58"
+02/22/2024,12:00 AM,TSLA,Bought 593 shares,$197.41,"$117,089.21",Momentum,Stock rose 8.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+02/23/2024,12:00 AM,NVDA,Bought 2004 shares,$78.78,"$157,844.98",MACD,MACD crossed above signal line - momentum turning positive,
+03/04/2024,12:00 AM,AAPL,Bought 547 shares,$173.68,"$95,052.99",Mean Reversion,"Price dropped to $173.68, below the safety band at $175.09 - stock is oversold",
+03/04/2024,12:00 AM,AAPL,Bought 540 shares,$173.68,"$93,739.70",Pairs Trading,Price is 2.4 standard deviations below average - extremely oversold,
+03/05/2024,12:00 AM,TSLA,Sold 593 shares,$180.74,"$107,201.79",Momentum,Stock fell 2.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $9,945.97"
+03/05/2024,12:00 AM,TSLA,Sold 593 shares,$180.74,"$107,201.79",Momentum,Stock fell 2.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $9,945.97"
+03/06/2024,12:00 AM,TSLA,Sold 645 shares,$176.54,"$113,932.94",MACD,MACD crossed below signal line - momentum turning negative,"Lost $8,463.84"
+03/06/2024,12:00 AM,TSLA,Bought 580 shares,$176.54,"$102,441.91",Mean Reversion,"Price dropped to $176.54, below the safety band at $177.99 - stock is oversold",
+03/06/2024,12:00 AM,TSLA,Sold 645 shares,$176.54,"$113,932.94",MACD,MACD crossed below signal line - momentum turning negative,"Lost $8,463.84"
+03/06/2024,12:00 AM,TSLA,Bought 491 shares,$176.54,"$86,758.76",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+03/15/2024,12:00 AM,NVDA,Sold 2004 shares,$87.80,"$175,917.36",MACD,MACD crossed below signal line - momentum turning negative,"Made $17,993.46"
+03/18/2024,12:00 AM,AAPL,Bought 547 shares,$172.31,"$94,262.56",MACD,MACD crossed above signal line - momentum turning positive,
+03/18/2024,12:00 AM,AAPL,Sold 540 shares,$172.31,"$93,000.91",Pairs Trading,Price returned to near its average - taking profits,Lost $785.66
+03/19/2024,12:00 AM,AAPL,Sold 547 shares,$174.66,"$95,584.98",Mean Reversion,"Price bounced back to $174.66, reaching the average at $174.65 - target hit",Made $484.46
+03/21/2024,12:00 AM,TSLA,Bought 662 shares,$172.82,"$114,454.30",MACD,MACD crossed above signal line - momentum turning positive,
+03/26/2024,12:00 AM,TSLA,Sold 491 shares,$177.67,"$87,314.09",Pairs Trading,Price returned to near its average - taking profits,Made $511.95
+03/26/2024,12:00 AM,TSLA,Sold 491 shares,$177.67,"$87,314.09",Pairs Trading,Price returned to near its average - taking profits,Made $511.95
+03/27/2024,12:00 AM,TSLA,Sold 580 shares,$179.83,"$104,351.02",Mean Reversion,"Price bounced back to $179.83, reaching the average at $177.47 - target hit","Made $1,857.89"
+03/27/2024,12:00 AM,TSLA,Sold 580 shares,$179.83,"$104,351.02",Mean Reversion,"Price bounced back to $179.83, reaching the average at $177.47 - target hit","Made $1,857.89"
+03/28/2024,12:00 AM,META,Sold 492 shares,$483.12,"$237,689.97",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $76,848.25"
+03/28/2024,12:00 AM,META,Sold 492 shares,$483.12,"$237,689.94",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $76,848.22"
+03/28/2024,12:00 AM,META,Sold 492 shares,$483.12,"$237,689.94",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $76,848.22"
+04/03/2024,12:00 AM,META,Bought 455 shares,$504.17,"$229,459.30",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/03/2024,12:00 AM,META,Bought 455 shares,$504.17,"$229,459.28",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/03/2024,12:00 AM,META,Bought 455 shares,$504.17,"$229,459.28",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/04/2024,12:00 AM,NVDA,Sold 3103 shares,$85.87,"$266,482.50",Momentum,Stock fell 7.3% in 20 days (below -2.0% trigger) - momentum died,"Made $114,443.66"
+04/05/2024,12:00 AM,META,Bought 219 shares,$524.67,"$115,129.92",MACD,MACD crossed above signal line - momentum turning positive,
+04/05/2024,12:00 AM,META,Bought 219 shares,$524.67,"$115,129.92",MACD,MACD crossed above signal line - momentum turning positive,
+04/05/2024,12:00 AM,META,Bought 219 shares,$524.67,"$115,129.92",MACD,MACD crossed above signal line - momentum turning positive,
+04/11/2024,12:00 AM,NVDA,Bought 2809 shares,$90.57,"$254,465.75",Momentum,Stock rose 3.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/11/2024,12:00 AM,TSLA,Bought 618 shares,$174.60,"$107,887.79",Momentum,Stock rose 7.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/12/2024,12:00 AM,META,Sold 219 shares,$509.30,"$111,759.03",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,428.46"
+04/12/2024,12:00 AM,META,Sold 219 shares,$509.30,"$111,759.04",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,428.45"
+04/12/2024,12:00 AM,META,Sold 219 shares,$509.30,"$111,759.04",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,428.45"
+04/12/2024,12:00 AM,AAPL,Bought 510 shares,$175.12,"$89,233.36",Momentum,Stock rose 2.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/15/2024,12:00 AM,TSLA,Sold 618 shares,$161.48,"$99,780.75",Momentum,Stock fell 7.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $8,160.98"
+04/15/2024,12:00 AM,NVDA,Sold 2809 shares,$85.96,"$241,506.03",Momentum,Stock fell 2.8% in 20 days (below -2.0% trigger) - momentum died,"Lost $13,086.96"
+04/15/2024,12:00 AM,TSLA,Sold 618 shares,$161.48,"$99,780.75",Momentum,Stock fell 7.1% in 20 days (below -2.0% trigger) - momentum died,"Lost $8,160.98"
+04/15/2024,12:00 AM,TSLA,Bought 643 shares,$161.48,"$103,880.99",Mean Reversion,"Price dropped to $161.48, below the safety band at $163.41 - stock is oversold",
+04/15/2024,12:00 AM,TSLA,Bought 539 shares,$161.48,"$87,023.60",Pairs Trading,Price is 2.4 standard deviations below average - extremely oversold,
+04/16/2024,12:00 AM,TSLA,Sold 662 shares,$157.11,"$104,049.96",MACD,MACD crossed below signal line - momentum turning negative,"Lost $10,461.57"
+04/16/2024,12:00 AM,TSLA,Sold 662 shares,$157.11,"$104,049.96",MACD,MACD crossed below signal line - momentum turning negative,"Lost $10,461.57"
+04/16/2024,12:00 AM,AAPL,Sold 510 shares,$168.01,"$85,609.44",Momentum,Stock fell 3.8% in 20 days (below -2.0% trigger) - momentum died,"Lost $3,668.54"
+04/17/2024,12:00 AM,META,Sold 455 shares,$491.66,"$223,767.45",Momentum,Stock fell 2.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $5,806.58"
+04/17/2024,12:00 AM,META,Sold 455 shares,$491.66,"$223,767.42",Momentum,Stock fell 2.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $5,806.59"
+04/17/2024,12:00 AM,META,Sold 455 shares,$491.66,"$223,767.42",Momentum,Stock fell 2.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $5,806.59"
+04/19/2024,12:00 AM,NVDA,Bought 1486 shares,$76.17,"$113,199.11",Mean Reversion,"Price dropped to $76.17, below the safety band at $79.86 - stock is oversold",
+04/19/2024,12:00 AM,NVDA,Sold 3131 shares,$76.17,"$238,456.46",Breakout,Price $76.17 broke below support at $82.36 - exiting to prevent larger losses,"Made $87,144.11"
+04/19/2024,12:00 AM,NVDA,Bought 1498 shares,$76.17,"$114,131.69",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/19/2024,12:00 AM,META,Sold 377 shares,$478.63,"$180,634.54",Breakout,Price $478.63 broke below support at $479.34 - exiting to prevent larger losses,"Made $57,255.56"
+04/19/2024,12:00 AM,META,Sold 377 shares,$478.63,"$180,634.55",Breakout,Price $478.63 broke below support at $479.34 - exiting to prevent larger losses,"Made $57,255.57"
+04/19/2024,12:00 AM,META,Sold 377 shares,$478.63,"$180,634.55",Breakout,Price $478.63 broke below support at $479.34 - exiting to prevent larger losses,"Made $57,255.57"
+04/19/2024,12:00 AM,AAPL,Sold 547 shares,$163.66,"$89,530.99",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,778.70"
+04/24/2024,12:00 AM,TSLA,Sold 539 shares,$162.13,"$87,373.90",Pairs Trading,Price returned to near its average - taking profits,Made $306.79
+04/24/2024,12:00 AM,TSLA,Sold 539 shares,$162.13,"$87,373.90",Pairs Trading,Price returned to near its average - taking profits,Made $306.79
+04/25/2024,12:00 AM,TSLA,Sold 643 shares,$170.18,"$109,477.74",Mean Reversion,"Price bounced back to $170.18, reaching the average at $163.97 - target hit","Made $5,544.82"
+04/25/2024,12:00 AM,TSLA,Sold 643 shares,$170.18,"$109,477.74",Mean Reversion,"Price bounced back to $170.18, reaching the average at $163.97 - target hit","Made $5,544.82"
+04/25/2024,12:00 AM,TSLA,Bought 616 shares,$170.18,"$104,795.46",MACD,MACD crossed above signal line - momentum turning positive,
+04/25/2024,12:00 AM,META,Bought 221 shares,$439.14,"$97,119.85",Mean Reversion,"Price dropped to $439.14, below the safety band at $458.86 - stock is oversold",
+04/25/2024,12:00 AM,META,Bought 219 shares,$439.14,"$96,348.49",Pairs Trading,Price is 3.0 standard deviations below average - extremely oversold,
+04/25/2024,12:00 AM,META,Bought 221 shares,$439.14,"$97,119.85",Mean Reversion,"Price dropped to $439.14, below the safety band at $458.86 - stock is oversold",
+04/25/2024,12:00 AM,META,Bought 219 shares,$439.14,"$96,348.49",Pairs Trading,Price is 3.0 standard deviations below average - extremely oversold,
+04/25/2024,12:00 AM,META,Bought 221 shares,$439.14,"$97,119.85",Mean Reversion,"Price dropped to $439.14, below the safety band at $458.86 - stock is oversold",
+04/25/2024,12:00 AM,META,Bought 219 shares,$439.14,"$96,348.49",Pairs Trading,Price is 3.0 standard deviations below average - extremely oversold,
+04/25/2024,12:00 AM,AAPL,Bought 533 shares,$168.52,"$89,756.06",MACD,MACD crossed above signal line - momentum turning positive,
+04/26/2024,12:00 AM,NVDA,Sold 1486 shares,$87.70,"$130,334.96",Mean Reversion,"Price bounced back to $87.70, reaching the average at $85.53 - target hit","Made $17,079.25"
+04/29/2024,12:00 AM,TSLA,Bought 517 shares,$194.05,"$100,311.14",Momentum,Stock rose 16.5% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/29/2024,12:00 AM,TSLA,Bought 388 shares,$194.05,"$75,325.09",Breakout,Price $194.05 broke above resistance at $179.22 - bullish breakout,
+04/29/2024,12:00 AM,META,Bought 209 shares,$430.43,"$90,000.00",RSI,"RSI at 29.6 (below 30) - stock is oversold, expecting bounce",
+04/29/2024,12:00 AM,META,Bought 209 shares,$430.43,"$90,000.00",RSI,"RSI at 29.6 (below 30) - stock is oversold, expecting bounce",
+04/29/2024,12:00 AM,META,Bought 209 shares,$430.43,"$90,000.00",RSI,"RSI at 29.6 (below 30) - stock is oversold, expecting bounce",
+04/29/2024,12:00 AM,AAPL,Bought 498 shares,$172.10,"$85,735.83",Momentum,Stock rose 2.8% in 20 days (above 2.0% trigger) - upward momentum detected,
+04/30/2024,12:00 AM,NVDA,Sold 1842 shares,$86.36,"$159,082.57",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $69,037.57"
+04/30/2024,12:00 AM,NVDA,Bought 2011 shares,$86.36,"$173,659.62",MACD,MACD crossed above signal line - momentum turning positive,
+04/30/2024,12:00 AM,NVDA,Sold 1498 shares,$86.36,"$129,412.16",Pairs Trading,Price returned to near its average - taking profits,"Made $15,223.40"
+04/30/2024,12:00 AM,META,Sold 302 shares,$427.99,"$129,097.55",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $39,052.55"
+04/30/2024,12:00 AM,META,Sold 302 shares,$427.99,"$129,097.55",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $39,052.55"
+04/30/2024,12:00 AM,META,Sold 302 shares,$427.99,"$129,097.55",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $39,052.55"
+05/01/2024,12:00 AM,NVDA,Sold 2011 shares,$83.00,"$166,904.32",MACD,MACD crossed below signal line - momentum turning negative,"Lost $6,842.13"
+05/02/2024,12:00 AM,NVDA,Bought 1948 shares,$85.78,"$167,120.17",MACD,MACD crossed above signal line - momentum turning positive,
+05/03/2024,12:00 AM,AAPL,Bought 507 shares,$181.90,"$92,139.07",Breakout,Price $181.90 broke above resistance at $176.92 - bullish breakout,
+05/06/2024,12:00 AM,NVDA,Bought 2629 shares,$92.10,"$242,132.55",Momentum,Stock rose 8.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/06/2024,12:00 AM,NVDA,Bought 2489 shares,$92.10,"$229,208.51",Breakout,Price $92.10 broke above resistance at $90.70 - bullish breakout,
+05/06/2024,12:00 AM,META,Sold 219 shares,$463.32,"$101,652.93",Pairs Trading,Price returned to near its average - taking profits,"Made $5,256.26"
+05/06/2024,12:00 AM,META,Sold 219 shares,$463.32,"$101,652.91",Pairs Trading,Price returned to near its average - taking profits,"Made $5,256.24"
+05/06/2024,12:00 AM,META,Sold 219 shares,$463.32,"$101,652.91",Pairs Trading,Price returned to near its average - taking profits,"Made $5,256.24"
+05/08/2024,12:00 AM,META,Bought 238 shares,$470.20,"$111,789.87",MACD,MACD crossed above signal line - momentum turning positive,
+05/08/2024,12:00 AM,META,Bought 238 shares,$470.20,"$111,789.87",MACD,MACD crossed above signal line - momentum turning positive,
+05/08/2024,12:00 AM,META,Bought 238 shares,$470.20,"$111,789.87",MACD,MACD crossed above signal line - momentum turning positive,
+05/08/2024,12:00 AM,AAPL,Bought 484 shares,$181.26,"$87,703.14",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/09/2024,12:00 AM,META,Sold 221 shares,$473.01,"$104,609.91",Mean Reversion,"Price bounced back to $473.01, reaching the average at $468.73 - target hit","Made $7,441.50"
+05/09/2024,12:00 AM,META,Sold 221 shares,$473.01,"$104,609.90",Mean Reversion,"Price bounced back to $473.01, reaching the average at $468.73 - target hit","Made $7,441.49"
+05/09/2024,12:00 AM,META,Sold 221 shares,$473.01,"$104,609.90",Mean Reversion,"Price bounced back to $473.01, reaching the average at $468.73 - target hit","Made $7,441.49"
+05/15/2024,12:00 AM,AAPL,Sold 527 shares,$188.44,"$99,232.07",RSI,"RSI at 71.3 (above 70) - stock is overbought, time to sell","Made $4,287.50"
+05/16/2024,12:00 AM,TSLA,Bought 399 shares,$174.84,"$69,685.50",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/20/2024,12:00 AM,NVDA,Bought 1603 shares,$94.74,"$151,838.13",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/22/2024,12:00 AM,META,Bought 481 shares,$465.41,"$223,724.88",Momentum,Stock rose 6.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/22/2024,12:00 AM,META,Bought 481 shares,$465.41,"$223,724.85",Momentum,Stock rose 6.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/22/2024,12:00 AM,META,Bought 481 shares,$465.41,"$223,724.85",Momentum,Stock rose 6.0% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/24/2024,12:00 AM,TSLA,Sold 517 shares,$179.24,"$92,655.34",Momentum,Stock fell 7.6% in 20 days (below -2.0% trigger) - momentum died,"Lost $7,705.95"
+05/24/2024,12:00 AM,TSLA,Sold 517 shares,$179.24,"$92,655.34",Momentum,Stock fell 7.6% in 20 days (below -2.0% trigger) - momentum died,"Lost $7,705.95"
+05/29/2024,12:00 AM,TSLA,Sold 616 shares,$176.19,"$108,496.38",MACD,MACD crossed below signal line - momentum turning negative,"Made $3,648.52"
+05/29/2024,12:00 AM,TSLA,Sold 616 shares,$176.19,"$108,496.38",MACD,MACD crossed below signal line - momentum turning negative,"Made $3,648.52"
+05/29/2024,12:00 AM,AAPL,Sold 533 shares,$189.01,"$100,670.11",MACD,MACD crossed below signal line - momentum turning negative,"Made $10,869.17"
+06/05/2024,12:00 AM,META,Bought 354 shares,$492.55,"$174,492.56",Breakout,Price $492.55 broke above resistance at $480.05 - bullish breakout,
+06/05/2024,12:00 AM,META,Bought 354 shares,$492.55,"$174,492.58",Breakout,Price $492.55 broke above resistance at $480.05 - bullish breakout,
+06/05/2024,12:00 AM,META,Bought 354 shares,$492.55,"$174,492.58",Breakout,Price $492.55 broke above resistance at $480.05 - bullish breakout,
+06/05/2024,12:00 AM,AAPL,Bought 511 shares,$194.55,"$99,321.68",MACD,MACD crossed above signal line - momentum turning positive,
+06/06/2024,12:00 AM,TSLA,Bought 524 shares,$177.94,"$93,160.46",Momentum,Stock rose 3.5% in 20 days (above 2.0% trigger) - upward momentum detected,
+06/06/2024,12:00 AM,AAPL,Sold 511 shares,$193.17,"$98,616.84",MACD,MACD crossed below signal line - momentum turning negative,Lost $754.50
+06/07/2024,12:00 AM,AAPL,Bought 503 shares,$195.56,"$98,420.15",MACD,MACD crossed above signal line - momentum turning positive,
+06/10/2024,12:00 AM,AAPL,Sold 503 shares,$191.82,"$96,535.60",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,933.76"
+06/11/2024,12:00 AM,TSLA,Sold 524 shares,$170.66,"$89,349.02",Momentum,Stock fell 3.9% in 20 days (below -2.0% trigger) - momentum died,"Lost $3,858.02"
+06/11/2024,12:00 AM,TSLA,Sold 524 shares,$170.66,"$89,349.02",Momentum,Stock fell 3.9% in 20 days (below -2.0% trigger) - momentum died,"Lost $3,858.02"
+06/11/2024,12:00 AM,AAPL,Bought 469 shares,$205.75,"$96,460.91",MACD,MACD crossed above signal line - momentum turning positive,
+06/13/2024,12:00 AM,TSLA,Bought 490 shares,$182.47,"$89,483.82",Momentum,Stock rose 4.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+06/13/2024,12:00 AM,META,Bought 249 shares,$501.54,"$124,892.07",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+06/13/2024,12:00 AM,META,Bought 249 shares,$501.54,"$124,892.07",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+06/13/2024,12:00 AM,META,Bought 249 shares,$501.54,"$124,892.07",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+06/14/2024,12:00 AM,TSLA,Bought 606 shares,$178.01,"$107,838.39",MACD,MACD crossed above signal line - momentum turning positive,
+06/24/2024,12:00 AM,NVDA,Sold 1948 shares,$118.07,"$230,026.50",MACD,MACD crossed below signal line - momentum turning negative,"Made $62,822.77"
+06/25/2024,12:00 AM,AAPL,Sold 469 shares,$207.66,"$97,354.99",MACD,MACD crossed below signal line - momentum turning negative,Made $845.84
+07/01/2024,12:00 AM,TSLA,Sold 523 shares,$209.86,"$109,799.38",RSI,"RSI at 73.1 (above 70) - stock is overbought, time to sell","Lost $4,954.53"
+07/01/2024,12:00 AM,TSLA,Sold 523 shares,$209.86,"$109,799.38",RSI,"RSI at 73.1 (above 70) - stock is overbought, time to sell","Lost $4,954.53"
+07/01/2024,12:00 AM,META,Sold 238 shares,$502.62,"$119,496.67",MACD,MACD crossed below signal line - momentum turning negative,"Made $7,650.90"
+07/01/2024,12:00 AM,META,Sold 238 shares,$502.62,"$119,496.67",MACD,MACD crossed below signal line - momentum turning negative,"Made $7,650.90"
+07/01/2024,12:00 AM,META,Sold 238 shares,$502.62,"$119,496.67",MACD,MACD crossed below signal line - momentum turning negative,"Made $7,650.90"
+07/02/2024,12:00 AM,AAPL,Bought 443 shares,$218.78,"$97,003.97",MACD,MACD crossed above signal line - momentum turning positive,
+07/05/2024,12:00 AM,META,Sold 209 shares,$537.70,"$112,431.56",RSI,"RSI at 71.2 (above 70) - stock is overbought, time to sell","Made $22,386.56"
+07/05/2024,12:00 AM,META,Bought 220 shares,$537.70,"$118,413.80",MACD,MACD crossed above signal line - momentum turning positive,
+07/05/2024,12:00 AM,META,Sold 209 shares,$537.70,"$112,431.57",RSI,"RSI at 71.2 (above 70) - stock is overbought, time to sell","Made $22,386.57"
+07/05/2024,12:00 AM,META,Bought 220 shares,$537.70,"$118,413.81",MACD,MACD crossed above signal line - momentum turning positive,
+07/05/2024,12:00 AM,META,Sold 209 shares,$537.70,"$112,431.57",RSI,"RSI at 71.2 (above 70) - stock is overbought, time to sell","Made $22,386.57"
+07/05/2024,12:00 AM,META,Bought 220 shares,$537.70,"$118,413.81",MACD,MACD crossed above signal line - momentum turning positive,
+07/12/2024,12:00 AM,META,Sold 220 shares,$496.83,"$109,412.87",MACD,MACD crossed below signal line - momentum turning negative,"Lost $9,060.14"
+07/12/2024,12:00 AM,META,Sold 220 shares,$496.83,"$109,412.87",MACD,MACD crossed below signal line - momentum turning negative,"Lost $9,060.15"
+07/12/2024,12:00 AM,META,Sold 220 shares,$496.83,"$109,412.87",MACD,MACD crossed below signal line - momentum turning negative,"Lost $9,060.15"
+07/15/2024,12:00 AM,NVDA,Sold 2629 shares,$128.39,"$337,552.21",Momentum,Stock fell 2.6% in 20 days (below -2.0% trigger) - momentum died,"Made $95,298.60"
+07/16/2024,12:00 AM,META,Sold 481 shares,$487.79,"$234,484.18",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $10,647.44"
+07/16/2024,12:00 AM,META,Sold 354 shares,$487.79,"$172,806.46",Breakout,Price $487.79 broke below support at $490.38 - exiting to prevent larger losses,"Lost $1,773.34"
+07/16/2024,12:00 AM,META,Sold 481 shares,$487.79,"$234,484.18",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $10,647.47"
+07/16/2024,12:00 AM,META,Sold 354 shares,$487.79,"$172,806.50",Breakout,Price $487.79 broke below support at $490.38 - exiting to prevent larger losses,"Lost $1,773.32"
+07/16/2024,12:00 AM,META,Sold 481 shares,$487.79,"$234,484.18",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Made $10,647.47"
+07/16/2024,12:00 AM,META,Sold 354 shares,$487.79,"$172,806.50",Breakout,Price $487.79 broke below support at $490.38 - exiting to prevent larger losses,"Lost $1,773.32"
+07/17/2024,12:00 AM,NVDA,Sold 2489 shares,$117.95,"$293,537.38",Breakout,Price $117.95 broke below support at $118.00 - exiting to prevent larger losses,"Made $64,214.27"
+07/17/2024,12:00 AM,META,Bought 225 shares,$460.10,"$103,588.61",Mean Reversion,"Price dropped to $460.10, below the safety band at $470.73 - stock is oversold",
+07/17/2024,12:00 AM,META,Bought 219 shares,$460.10,"$100,855.23",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+07/17/2024,12:00 AM,META,Bought 225 shares,$460.10,"$103,588.61",Mean Reversion,"Price dropped to $460.10, below the safety band at $470.73 - stock is oversold",
+07/17/2024,12:00 AM,META,Bought 219 shares,$460.10,"$100,855.21",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+07/17/2024,12:00 AM,META,Bought 225 shares,$460.10,"$103,588.61",Mean Reversion,"Price dropped to $460.10, below the safety band at $470.73 - stock is oversold",
+07/17/2024,12:00 AM,META,Bought 219 shares,$460.10,"$100,855.21",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+07/18/2024,12:00 AM,AAPL,Sold 443 shares,$222.67,"$98,725.87",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,673.40"
+07/19/2024,12:00 AM,TSLA,Sold 606 shares,$239.20,"$144,907.27",MACD,MACD crossed below signal line - momentum turning negative,"Made $37,014.96"
+07/19/2024,12:00 AM,TSLA,Sold 606 shares,$239.20,"$144,907.27",MACD,MACD crossed below signal line - momentum turning negative,"Made $37,014.96"
+07/22/2024,12:00 AM,NVDA,Bought 2650 shares,$123.49,"$327,227.82",Momentum,Stock rose 4.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+07/23/2024,12:00 AM,NVDA,Sold 2650 shares,$122.54,"$324,711.48",Momentum,Stock fell 2.8% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,679.95"
+07/24/2024,12:00 AM,NVDA,Bought 1123 shares,$114.21,"$128,292.66",Mean Reversion,"Price dropped to $114.21, below the safety band at $115.17 - stock is oversold",
+07/24/2024,12:00 AM,NVDA,Bought 1117 shares,$114.21,"$127,555.39",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+07/30/2024,12:00 AM,TSLA,Sold 490 shares,$222.62,"$109,173.49",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $19,644.93"
+07/30/2024,12:00 AM,TSLA,Sold 490 shares,$222.62,"$109,173.49",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $19,644.93"
+07/31/2024,12:00 AM,META,Sold 249 shares,$472.89,"$117,757.14",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $7,197.37"
+07/31/2024,12:00 AM,META,Sold 249 shares,$472.89,"$117,757.16",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $7,197.36"
+07/31/2024,12:00 AM,META,Sold 249 shares,$472.89,"$117,757.16",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Lost $7,197.36"
+08/01/2024,12:00 AM,META,Sold 225 shares,$495.71,"$111,604.58",Mean Reversion,"Price bounced back to $495.71, reaching the average at $488.20 - target hit","Made $7,964.17"
+08/01/2024,12:00 AM,META,Sold 219 shares,$495.71,"$108,659.68",Pairs Trading,Price returned to near its average - taking profits,"Made $7,754.02"
+08/01/2024,12:00 AM,META,Sold 225 shares,$495.71,"$111,604.57",Mean Reversion,"Price bounced back to $495.71, reaching the average at $488.20 - target hit","Made $7,964.16"
+08/01/2024,12:00 AM,META,Sold 219 shares,$495.71,"$108,659.66",Pairs Trading,Price returned to near its average - taking profits,"Made $7,754.01"
+08/01/2024,12:00 AM,META,Sold 225 shares,$495.71,"$111,604.57",Mean Reversion,"Price bounced back to $495.71, reaching the average at $488.20 - target hit","Made $7,964.16"
+08/01/2024,12:00 AM,META,Sold 219 shares,$495.71,"$108,659.66",Pairs Trading,Price returned to near its average - taking profits,"Made $7,754.01"
+08/01/2024,12:00 AM,AAPL,Sold 498 shares,$216.89,"$108,049.96",Momentum,Stock fell 3.5% in 20 days (below -2.0% trigger) - momentum died,"Made $22,271.26"
+08/02/2024,12:00 AM,TSLA,Sold 388 shares,$207.67,"$80,612.02",Breakout,Price $207.67 broke below support at $214.33 - exiting to prevent larger losses,"Made $5,249.26"
+08/02/2024,12:00 AM,NVDA,Sold 1603 shares,$107.23,"$171,861.30",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $19,947.25"
+08/02/2024,12:00 AM,TSLA,Sold 388 shares,$207.67,"$80,612.02",Breakout,Price $207.67 broke below support at $214.33 - exiting to prevent larger losses,"Made $5,249.26"
+08/02/2024,12:00 AM,META,Bought 226 shares,$486.15,"$110,005.44",MACD,MACD crossed above signal line - momentum turning positive,
+08/02/2024,12:00 AM,META,Bought 226 shares,$486.15,"$110,005.44",MACD,MACD crossed above signal line - momentum turning positive,
+08/02/2024,12:00 AM,META,Bought 226 shares,$486.15,"$110,005.44",MACD,MACD crossed above signal line - momentum turning positive,
+08/05/2024,12:00 AM,AAPL,Bought 458 shares,$207.86,"$95,274.46",Mean Reversion,"Price dropped to $207.86, below the safety band at $209.03 - stock is oversold",
+08/05/2024,12:00 AM,AAPL,Sold 507 shares,$207.86,"$105,290.09",Breakout,Price $207.86 broke below support at $213.17 - exiting to prevent larger losses,"Made $13,104.95"
+08/05/2024,12:00 AM,AAPL,Bought 447 shares,$207.86,"$92,822.73",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+08/08/2024,12:00 AM,META,Bought 459 shares,$507.55,"$232,789.78",Momentum,Stock rose 2.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/08/2024,12:00 AM,META,Bought 459 shares,$507.55,"$232,789.77",Momentum,Stock rose 2.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/08/2024,12:00 AM,META,Bought 459 shares,$507.55,"$232,789.77",Momentum,Stock rose 2.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/12/2024,12:00 AM,NVDA,Sold 1117 shares,$108.98,"$121,716.31",Pairs Trading,Price returned to near its average - taking profits,"Lost $5,902.85"
+08/12/2024,12:00 AM,AAPL,Sold 447 shares,$216.31,"$96,598.17",Pairs Trading,Price returned to near its average - taking profits,"Made $3,729.02"
+08/13/2024,12:00 AM,NVDA,Sold 1123 shares,$116.10,"$130,414.97",Mean Reversion,"Price bounced back to $116.10, reaching the average at $111.46 - target hit","Made $2,058.16"
+08/13/2024,12:00 AM,NVDA,Bought 1923 shares,$116.10,"$223,199.82",MACD,MACD crossed above signal line - momentum turning positive,
+08/13/2024,12:00 AM,META,Bought 328 shares,$526.38,"$172,506.30",Breakout,Price $526.38 broke above resistance at $525.02 - bullish breakout,
+08/13/2024,12:00 AM,META,Bought 328 shares,$526.38,"$172,506.33",Breakout,Price $526.38 broke above resistance at $525.02 - bullish breakout,
+08/13/2024,12:00 AM,META,Bought 328 shares,$526.38,"$172,506.33",Breakout,Price $526.38 broke above resistance at $525.02 - bullish breakout,
+08/13/2024,12:00 AM,AAPL,Sold 458 shares,$220.03,"$100,854.30",Mean Reversion,"Price bounced back to $220.03, reaching the average at $217.17 - target hit","Made $5,532.20"
+08/14/2024,12:00 AM,AAPL,Bought 446 shares,$220.48,"$98,289.49",MACD,MACD crossed above signal line - momentum turning positive,
+08/15/2024,12:00 AM,NVDA,Bought 2639 shares,$122.81,"$324,083.14",Momentum,Stock rose 4.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/19/2024,12:00 AM,TSLA,Sold 399 shares,$222.72,"$88,768.91",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $19,048.56"
+08/19/2024,12:00 AM,NVDA,Bought 2204 shares,$129.95,"$286,398.92",Breakout,Price $129.95 broke above resistance at $124.95 - bullish breakout,
+08/19/2024,12:00 AM,TSLA,Sold 399 shares,$222.72,"$88,768.91",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $19,048.56"
+08/19/2024,12:00 AM,TSLA,Bought 632 shares,$222.72,"$140,859.24",MACD,MACD crossed above signal line - momentum turning positive,
+08/20/2024,12:00 AM,TSLA,Bought 484 shares,$221.10,"$106,936.38",Momentum,Stock rose 2.4% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/20/2024,12:00 AM,AAPL,Bought 469 shares,$225.24,"$105,556.98",Momentum,Stock rose 3.8% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/20/2024,12:00 AM,AAPL,Sold 484 shares,$225.24,"$108,983.31",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $21,236.32"
+08/22/2024,12:00 AM,TSLA,Sold 484 shares,$210.66,"$101,887.01",Momentum,Stock fell 4.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $5,102.84"
+08/22/2024,12:00 AM,TSLA,Sold 484 shares,$210.66,"$101,887.01",Momentum,Stock fell 4.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $5,102.84"
+08/22/2024,12:00 AM,META,Bought 223 shares,$529.76,"$118,143.11",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+08/22/2024,12:00 AM,META,Bought 223 shares,$529.76,"$118,143.13",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+08/22/2024,12:00 AM,META,Bought 223 shares,$529.76,"$118,143.13",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+08/27/2024,12:00 AM,AAPL,Bought 470 shares,$226.75,"$106,589.81",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+08/28/2024,12:00 AM,META,Sold 226 shares,$514.67,"$116,459.65",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,399.21"
+08/28/2024,12:00 AM,META,Sold 226 shares,$514.67,"$116,459.66",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,399.22"
+08/28/2024,12:00 AM,META,Sold 226 shares,$514.67,"$116,459.66",MACD,MACD crossed below signal line - momentum turning negative,"Made $6,399.22"
+08/29/2024,12:00 AM,TSLA,Sold 632 shares,$206.28,"$130,461.76",MACD,MACD crossed below signal line - momentum turning negative,"Lost $10,467.91"
+08/29/2024,12:00 AM,TSLA,Sold 632 shares,$206.28,"$130,461.76",MACD,MACD crossed below signal line - momentum turning negative,"Lost $10,467.91"
+08/30/2024,12:00 AM,TSLA,Bought 477 shares,$214.11,"$102,110.08",Momentum,Stock rose 7.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+08/30/2024,12:00 AM,TSLA,Bought 612 shares,$214.11,"$131,135.29",MACD,MACD crossed above signal line - momentum turning positive,
+09/03/2024,12:00 AM,NVDA,Sold 1923 shares,$107.96,"$207,556.23",MACD,MACD crossed below signal line - momentum turning negative,"Lost $15,755.19"
+09/04/2024,12:00 AM,AAPL,Sold 446 shares,$219.61,"$97,903.81",MACD,MACD crossed below signal line - momentum turning negative,Lost $434.82
+09/05/2024,12:00 AM,TSLA,Bought 347 shares,$230.17,"$79,872.85",Breakout,Price $230.17 broke above resistance at $228.22 - bullish breakout,
+09/06/2024,12:00 AM,NVDA,Bought 1648 shares,$102.79,"$169,422.06",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+09/06/2024,12:00 AM,META,Sold 459 shares,$498.23,"$228,514.28",Momentum,Stock fell 3.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,391.89"
+09/06/2024,12:00 AM,META,Bought 222 shares,$498.23,"$110,512.52",Mean Reversion,"Price dropped to $498.23, below the safety band at $502.28 - stock is oversold",
+09/06/2024,12:00 AM,META,Bought 216 shares,$498.23,"$107,596.44",Pairs Trading,Price is 2.5 standard deviations below average - extremely oversold,
+09/06/2024,12:00 AM,META,Sold 459 shares,$498.23,"$228,514.27",Momentum,Stock fell 3.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,391.89"
+09/06/2024,12:00 AM,META,Bought 222 shares,$498.23,"$110,512.51",Mean Reversion,"Price dropped to $498.23, below the safety band at $502.28 - stock is oversold",
+09/06/2024,12:00 AM,META,Bought 216 shares,$498.23,"$107,596.42",Pairs Trading,Price is 2.5 standard deviations below average - extremely oversold,
+09/06/2024,12:00 AM,META,Sold 459 shares,$498.23,"$228,514.27",Momentum,Stock fell 3.4% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,391.89"
+09/06/2024,12:00 AM,META,Bought 222 shares,$498.23,"$110,512.51",Mean Reversion,"Price dropped to $498.23, below the safety band at $502.28 - stock is oversold",
+09/06/2024,12:00 AM,META,Bought 216 shares,$498.23,"$107,596.42",Pairs Trading,Price is 2.5 standard deviations below average - extremely oversold,
+09/09/2024,12:00 AM,NVDA,Sold 2639 shares,$106.43,"$280,849.19",Momentum,Stock fell 2.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $43,396.00"
+09/12/2024,12:00 AM,META,Sold 222 shares,$523.45,"$116,108.05",Mean Reversion,"Price bounced back to $523.45, reaching the average at $517.93 - target hit","Made $5,540.27"
+09/12/2024,12:00 AM,META,Sold 222 shares,$523.45,"$116,108.06",Mean Reversion,"Price bounced back to $523.45, reaching the average at $517.93 - target hit","Made $5,540.29"
+09/12/2024,12:00 AM,META,Sold 222 shares,$523.45,"$116,108.06",Mean Reversion,"Price bounced back to $523.45, reaching the average at $517.93 - target hit","Made $5,540.29"
+09/13/2024,12:00 AM,NVDA,Bought 1751 shares,$119.07,"$208,539.16",MACD,MACD crossed above signal line - momentum turning positive,
+09/16/2024,12:00 AM,META,Bought 217 shares,$531.61,"$115,508.56",MACD,MACD crossed above signal line - momentum turning positive,
+09/16/2024,12:00 AM,META,Bought 217 shares,$531.61,"$115,508.56",MACD,MACD crossed above signal line - momentum turning positive,
+09/16/2024,12:00 AM,META,Bought 217 shares,$531.61,"$115,508.56",MACD,MACD crossed above signal line - momentum turning positive,
+09/16/2024,12:00 AM,AAPL,Sold 469 shares,$215.11,"$100,808.30",Momentum,Stock fell 4.2% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,801.46"
+09/16/2024,12:00 AM,AAPL,Bought 465 shares,$215.11,"$100,031.59",Mean Reversion,"Price dropped to $215.11, below the safety band at $215.99 - stock is oversold",
+09/16/2024,12:00 AM,AAPL,Bought 446 shares,$215.11,"$95,964.95",Pairs Trading,Price is 2.3 standard deviations below average - extremely oversold,
+09/19/2024,12:00 AM,NVDA,Sold 1648 shares,$117.84,"$194,218.50",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $24,711.72"
+09/19/2024,12:00 AM,META,Bought 410 shares,$557.35,"$228,319.17",Momentum,Stock rose 5.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/19/2024,12:00 AM,META,Sold 216 shares,$557.35,"$120,364.11",Pairs Trading,"z_score_overbought: value=2.7258, threshold=2.0000, direction=above","Made $12,713.88"
+09/19/2024,12:00 AM,META,Bought 410 shares,$557.35,"$228,319.16",Momentum,Stock rose 5.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/19/2024,12:00 AM,META,Sold 216 shares,$557.35,"$120,364.11",Pairs Trading,"z_score_overbought: value=2.7258, threshold=2.0000, direction=above","Made $12,713.90"
+09/19/2024,12:00 AM,META,Bought 410 shares,$557.35,"$228,319.16",Momentum,Stock rose 5.2% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/19/2024,12:00 AM,META,Sold 216 shares,$557.35,"$120,364.11",Pairs Trading,"z_score_overbought: value=2.7258, threshold=2.0000, direction=above","Made $12,713.90"
+09/19/2024,12:00 AM,AAPL,Sold 465 shares,$227.59,"$105,835.00",Mean Reversion,"Price bounced back to $227.59, reaching the average at $222.26 - target hit","Made $5,753.40"
+09/20/2024,12:00 AM,AAPL,Bought 430 shares,$226.92,"$97,677.56",MACD,MACD crossed above signal line - momentum turning positive,
+09/23/2024,12:00 AM,TSLA,Bought 347 shares,$250.00,"$86,646.69",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+09/26/2024,12:00 AM,NVDA,Bought 2293 shares,$124.00,"$284,356.05",Momentum,Stock rose 5.5% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/30/2024,12:00 AM,AAPL,Bought 436 shares,$231.70,"$101,004.62",Momentum,Stock rose 4.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/30/2024,12:00 AM,AAPL,Sold 446 shares,$231.70,"$103,364.61",Pairs Trading,"z_score_overbought: value=2.1615, threshold=2.0000, direction=above","Made $7,351.68"
+10/02/2024,12:00 AM,NVDA,Bought 1610 shares,$118.82,"$191,248.02",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+10/03/2024,12:00 AM,TSLA,Sold 612 shares,$240.66,"$147,396.28",MACD,MACD crossed below signal line - momentum turning negative,"Made $16,195.43"
+10/03/2024,12:00 AM,TSLA,Sold 612 shares,$240.66,"$147,396.28",MACD,MACD crossed below signal line - momentum turning negative,"Made $16,195.43"
+10/07/2024,12:00 AM,AAPL,Sold 430 shares,$220.45,"$94,891.05",MACD,MACD crossed below signal line - momentum turning negative,"Lost $2,835.35"
+10/10/2024,12:00 AM,AAPL,Bought 417 shares,$227.76,"$94,909.78",MACD,MACD crossed above signal line - momentum turning positive,
+10/11/2024,12:00 AM,TSLA,Sold 477 shares,$217.80,"$103,869.86",Momentum,Stock fell 4.0% in 20 days (below -2.0% trigger) - momentum died,"Made $1,708.72"
+10/11/2024,12:00 AM,TSLA,Sold 347 shares,$217.80,"$75,580.25",Breakout,Price $217.80 broke below support at $223.53 - exiting to prevent larger losses,"Lost $4,332.53"
+10/11/2024,12:00 AM,TSLA,Sold 477 shares,$217.80,"$103,869.86",Momentum,Stock fell 4.0% in 20 days (below -2.0% trigger) - momentum died,"Made $1,708.72"
+10/11/2024,12:00 AM,TSLA,Bought 499 shares,$217.80,"$108,630.08",Mean Reversion,"Price dropped to $217.80, below the safety band at $219.53 - stock is oversold",
+10/11/2024,12:00 AM,TSLA,Sold 347 shares,$217.80,"$75,580.25",Breakout,Price $217.80 broke below support at $223.53 - exiting to prevent larger losses,"Lost $4,332.53"
+10/11/2024,12:00 AM,TSLA,Bought 400 shares,$217.80,"$87,103.47",Pairs Trading,Price is 2.1 standard deviations below average - extremely oversold,
+10/14/2024,12:00 AM,META,Sold 217 shares,$588.57,"$127,885.10",MACD,MACD crossed below signal line - momentum turning negative,"Made $12,318.79"
+10/14/2024,12:00 AM,META,Sold 217 shares,$588.57,"$127,885.10",MACD,MACD crossed below signal line - momentum turning negative,"Made $12,318.78"
+10/14/2024,12:00 AM,META,Sold 217 shares,$588.57,"$127,885.10",MACD,MACD crossed below signal line - momentum turning negative,"Made $12,318.78"
+10/15/2024,12:00 AM,AAPL,Bought 446 shares,$232.54,"$103,708.50",Breakout,Price $232.54 broke above resistance at $231.79 - bullish breakout,
+10/24/2024,12:00 AM,TSLA,Sold 499 shares,$260.48,"$129,917.19",Mean Reversion,"Price bounced back to $260.48, reaching the average at $235.77 - target hit","Made $21,232.80"
+10/24/2024,12:00 AM,TSLA,Sold 499 shares,$260.48,"$129,917.19",Mean Reversion,"Price bounced back to $260.48, reaching the average at $235.77 - target hit","Made $21,232.80"
+10/24/2024,12:00 AM,TSLA,Bought 558 shares,$260.48,"$145,394.23",MACD,MACD crossed above signal line - momentum turning positive,
+10/24/2024,12:00 AM,TSLA,Bought 346 shares,$260.48,"$90,000.00",AI Hybrid,3 out of 3 indicators are bullish - strong buy signal,
+10/25/2024,12:00 AM,TSLA,Bought 384 shares,$269.19,"$103,415.86",Momentum,Stock rose 2.9% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/25/2024,12:00 AM,TSLA,Bought 282 shares,$269.19,"$75,799.68",Breakout,Price $269.19 broke above resistance at $264.86 - bullish breakout,
+10/25/2024,12:00 AM,AAPL,Sold 417 shares,$230.11,"$95,891.86",MACD,MACD crossed below signal line - momentum turning negative,Made $934.63
+10/30/2024,12:00 AM,NVDA,Sold 1751 shares,$139.30,"$243,978.55",MACD,MACD crossed below signal line - momentum turning negative,"Made $35,335.12"
+10/31/2024,12:00 AM,META,Sold 410 shares,$565.80,"$231,782.17",Momentum,Stock fell 4.8% in 20 days (below -2.0% trigger) - momentum died,"Made $3,348.84"
+10/31/2024,12:00 AM,META,Sold 410 shares,$565.80,"$231,782.14",Momentum,Stock fell 4.8% in 20 days (below -2.0% trigger) - momentum died,"Made $3,348.81"
+10/31/2024,12:00 AM,META,Sold 410 shares,$565.80,"$231,782.14",Momentum,Stock fell 4.8% in 20 days (below -2.0% trigger) - momentum died,"Made $3,348.81"
+11/04/2024,12:00 AM,TSLA,Sold 400 shares,$242.84,"$97,117.56",Pairs Trading,Price returned to near its average - taking profits,"Made $9,970.54"
+11/04/2024,12:00 AM,TSLA,Sold 400 shares,$242.84,"$97,117.56",Pairs Trading,Price returned to near its average - taking profits,"Made $9,970.54"
+11/04/2024,12:00 AM,META,Sold 328 shares,$558.92,"$183,170.82",Breakout,Price $558.92 broke below support at $559.76 - exiting to prevent larger losses,"Made $10,578.27"
+11/04/2024,12:00 AM,META,Sold 328 shares,$558.92,"$183,170.88",Breakout,Price $558.92 broke below support at $559.76 - exiting to prevent larger losses,"Made $10,578.29"
+11/04/2024,12:00 AM,META,Sold 328 shares,$558.92,"$183,170.88",Breakout,Price $558.92 broke below support at $559.76 - exiting to prevent larger losses,"Made $10,578.29"
+11/04/2024,12:00 AM,AAPL,Bought 476 shares,$220.77,"$104,976.79",Mean Reversion,"Price dropped to $220.77, below the safety band at $221.19 - stock is oversold",
+11/04/2024,12:00 AM,AAPL,Bought 464 shares,$220.77,"$102,355.60",Pairs Trading,Price is 2.1 standard deviations below average - extremely oversold,
+11/05/2024,12:00 AM,AAPL,Sold 436 shares,$222.20,"$96,864.73",Momentum,Stock fell 2.7% in 20 days (below -2.0% trigger) - momentum died,"Lost $4,190.39"
+11/07/2024,12:00 AM,NVDA,Bought 1611 shares,$148.84,"$239,823.82",MACD,MACD crossed above signal line - momentum turning positive,
+11/12/2024,12:00 AM,META,Bought 217 shares,$582.99,"$126,318.93",MACD,MACD crossed above signal line - momentum turning positive,
+11/12/2024,12:00 AM,META,Bought 217 shares,$582.99,"$126,318.92",MACD,MACD crossed above signal line - momentum turning positive,
+11/12/2024,12:00 AM,META,Bought 217 shares,$582.99,"$126,318.92",MACD,MACD crossed above signal line - momentum turning positive,
+11/13/2024,12:00 AM,META,Sold 217 shares,$578.18,"$125,277.81",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,104.27"
+11/13/2024,12:00 AM,META,Sold 217 shares,$578.18,"$125,277.82",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,104.26"
+11/13/2024,12:00 AM,META,Sold 217 shares,$578.18,"$125,277.82",MACD,MACD crossed below signal line - momentum turning negative,"Lost $1,104.26"
+11/14/2024,12:00 AM,AAPL,Sold 464 shares,$227.19,"$105,334.42",Pairs Trading,Price returned to near its average - taking profits,"Made $2,927.65"
+11/15/2024,12:00 AM,NVDA,Sold 1611 shares,$141.94,"$228,708.88",MACD,MACD crossed below signal line - momentum turning negative,"Lost $11,234.85"
+11/15/2024,12:00 AM,META,Bought 209 shares,$552.34,"$115,242.61",Mean Reversion,"Price dropped to $552.34, below the safety band at $552.63 - stock is oversold",
+11/15/2024,12:00 AM,META,Bought 215 shares,$552.34,"$118,779.65",Pairs Trading,Price is 2.0 standard deviations below average - extremely oversold,
+11/15/2024,12:00 AM,META,Bought 209 shares,$552.34,"$115,242.62",Mean Reversion,"Price dropped to $552.34, below the safety band at $552.63 - stock is oversold",
+11/15/2024,12:00 AM,META,Bought 215 shares,$552.34,"$118,779.65",Pairs Trading,Price is 2.0 standard deviations below average - extremely oversold,
+11/15/2024,12:00 AM,META,Bought 209 shares,$552.34,"$115,242.62",Mean Reversion,"Price dropped to $552.34, below the safety band at $552.63 - stock is oversold",
+11/15/2024,12:00 AM,META,Bought 215 shares,$552.34,"$118,779.65",Pairs Trading,Price is 2.0 standard deviations below average - extremely oversold,
+11/18/2024,12:00 AM,NVDA,Sold 2293 shares,$140.11,"$321,287.44",Momentum,Stock fell 2.4% in 20 days (below -2.0% trigger) - momentum died,"Made $36,789.22"
+11/18/2024,12:00 AM,AAPL,Sold 476 shares,$226.99,"$107,937.23",Mean Reversion,"Price bounced back to $226.99, reaching the average at $226.41 - target hit","Made $2,907.95"
+11/19/2024,12:00 AM,NVDA,Bought 2155 shares,$146.97,"$316,776.83",Momentum,Stock rose 5.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/19/2024,12:00 AM,AAPL,Sold 470 shares,$227.25,"$106,824.06",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,Made $180.96
+11/19/2024,12:00 AM,AAPL,Bought 420 shares,$227.25,"$95,536.12",MACD,MACD crossed above signal line - momentum turning positive,
+11/25/2024,12:00 AM,NVDA,Sold 2155 shares,$135.98,"$293,095.61",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Lost $23,839.61"
+11/25/2024,12:00 AM,META,Sold 223 shares,$563.34,"$125,632.23",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $7,430.05"
+11/25/2024,12:00 AM,META,Sold 223 shares,$563.34,"$125,632.24",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $7,430.05"
+11/25/2024,12:00 AM,META,Sold 223 shares,$563.34,"$125,632.24",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $7,430.05"
+11/26/2024,12:00 AM,META,Sold 209 shares,$571.74,"$119,290.07",Mean Reversion,"Price bounced back to $571.74, reaching the average at $569.90 - target hit","Made $3,989.83"
+11/26/2024,12:00 AM,META,Sold 215 shares,$571.74,"$122,951.33",Pairs Trading,Price returned to near its average - taking profits,"Made $4,112.29"
+11/26/2024,12:00 AM,META,Sold 209 shares,$571.74,"$119,290.07",Mean Reversion,"Price bounced back to $571.74, reaching the average at $569.90 - target hit","Made $3,989.83"
+11/26/2024,12:00 AM,META,Sold 215 shares,$571.74,"$122,951.32",Pairs Trading,Price returned to near its average - taking profits,"Made $4,112.29"
+11/26/2024,12:00 AM,META,Sold 209 shares,$571.74,"$119,290.07",Mean Reversion,"Price bounced back to $571.74, reaching the average at $569.90 - target hit","Made $3,989.83"
+11/26/2024,12:00 AM,META,Sold 215 shares,$571.74,"$122,951.32",Pairs Trading,Price returned to near its average - taking profits,"Made $4,112.29"
+11/26/2024,12:00 AM,AAPL,Bought 415 shares,$234.00,"$97,011.64",Momentum,Stock rose 2.3% in 20 days (above 2.0% trigger) - upward momentum detected,
+11/27/2024,12:00 AM,TSLA,Sold 558 shares,$332.89,"$185,811.91",MACD,MACD crossed below signal line - momentum turning negative,"Made $40,344.98"
+11/27/2024,12:00 AM,TSLA,Sold 558 shares,$332.89,"$185,811.91",MACD,MACD crossed below signal line - momentum turning negative,"Made $40,344.98"
+11/29/2024,12:00 AM,NVDA,Bought 2132 shares,$138.21,"$294,640.53",Momentum,Stock rose 2.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/02/2024,12:00 AM,META,Bought 391 shares,$590.97,"$230,814.84",Momentum,Stock rose 5.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/02/2024,12:00 AM,META,Bought 212 shares,$590.97,"$125,042.33",MACD,MACD crossed above signal line - momentum turning positive,
+12/02/2024,12:00 AM,META,Bought 391 shares,$590.97,"$230,814.81",Momentum,Stock rose 5.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/02/2024,12:00 AM,META,Bought 212 shares,$590.97,"$125,042.33",MACD,MACD crossed above signal line - momentum turning positive,
+12/02/2024,12:00 AM,META,Bought 391 shares,$590.97,"$230,814.81",Momentum,Stock rose 5.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/02/2024,12:00 AM,META,Bought 212 shares,$590.97,"$125,042.33",MACD,MACD crossed above signal line - momentum turning positive,
+12/03/2024,12:00 AM,META,Bought 297 shares,$611.73,"$181,624.29",Breakout,Price $611.73 broke above resistance at $597.78 - bullish breakout,
+12/03/2024,12:00 AM,META,Bought 297 shares,$611.73,"$181,624.34",Breakout,Price $611.73 broke above resistance at $597.78 - bullish breakout,
+12/03/2024,12:00 AM,META,Bought 297 shares,$611.73,"$181,624.34",Breakout,Price $611.73 broke above resistance at $597.78 - bullish breakout,
+12/03/2024,12:00 AM,AAPL,Bought 441 shares,$241.56,"$106,512.58",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+12/05/2024,12:00 AM,NVDA,Sold 2132 shares,$145.03,"$309,175.41",Momentum,Stock fell 2.6% in 20 days (below -2.0% trigger) - momentum died,"Made $14,387.56"
+12/05/2024,12:00 AM,META,Bought 205 shares,$607.02,"$124,554.27",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+12/05/2024,12:00 AM,META,Bought 205 shares,$607.02,"$124,554.29",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+12/05/2024,12:00 AM,META,Bought 205 shares,$607.02,"$124,554.29",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+12/06/2024,12:00 AM,TSLA,Bought 466 shares,$389.22,"$181,323.10",MACD,MACD crossed above signal line - momentum turning positive,
+12/17/2024,12:00 AM,NVDA,Sold 1610 shares,$130.36,"$209,832.13",Trend Following,20-day average crossed BELOW 50-day average - trend turning negative (Death Cros,"Made $18,488.48"
+12/17/2024,12:00 AM,NVDA,Sold 2204 shares,$130.36,"$287,302.49",Breakout,Price $130.36 broke below support at $130.39 - exiting to prevent larger losses,Made $760.37
+12/18/2024,12:00 AM,META,Sold 212 shares,$595.80,"$126,063.55",MACD,MACD crossed below signal line - momentum turning negative,Made $958.70
+12/18/2024,12:00 AM,META,Sold 212 shares,$595.80,"$126,063.56",MACD,MACD crossed below signal line - momentum turning negative,Made $958.70
+12/18/2024,12:00 AM,META,Sold 212 shares,$595.80,"$126,063.56",MACD,MACD crossed below signal line - momentum turning negative,Made $958.70
+12/23/2024,12:00 AM,TSLA,Sold 466 shares,$430.60,"$200,600.50",MACD,MACD crossed below signal line - momentum turning negative,"Made $19,186.74"
+12/23/2024,12:00 AM,NVDA,Bought 2198 shares,$139.64,"$306,906.91",Momentum,Stock rose 2.7% in 20 days (above 2.0% trigger) - upward momentum detected,
+12/23/2024,12:00 AM,TSLA,Sold 466 shares,$430.60,"$200,600.50",MACD,MACD crossed below signal line - momentum turning negative,"Made $19,186.74"
+12/24/2024,12:00 AM,NVDA,Bought 1635 shares,$140.19,"$229,187.96",MACD,MACD crossed above signal line - momentum turning positive,
+12/30/2024,12:00 AM,TSLA,Sold 384 shares,$417.41,"$160,358.16",Momentum,Backtest period ended - closing all positions,"Made $56,890.60"
+12/30/2024,12:00 AM,TSLA,Sold 347 shares,$417.41,"$144,668.78",Trend Following,Backtest period ended - closing all positions,"Made $57,978.77"
+12/30/2024,12:00 AM,TSLA,Sold 282 shares,$417.41,"$117,536.11",Breakout,Backtest period ended - closing all positions,"Made $41,698.53"
+12/30/2024,12:00 AM,TSLA,Sold 346 shares,$417.41,"$144,221.82",AI Hybrid,Backtest period ended - closing all positions,"Made $54,176.82"
+12/30/2024,12:00 AM,NVDA,Sold 2198 shares,$137.46,"$302,116.65",Momentum,Backtest period ended - closing all positions,"Lost $4,943.71"
+12/30/2024,12:00 AM,NVDA,Sold 1635 shares,$137.46,"$224,725.79",MACD,Backtest period ended - closing all positions,"Lost $4,576.76"
+12/30/2024,12:00 AM,NVDA,Sold 3501 shares,$137.46,"$481,282.63",AI Hybrid,Backtest period ended - closing all positions,"Made $391,237.63"
+12/30/2024,12:00 AM,TSLA,Sold 384 shares,$417.41,"$160,358.16",Momentum,Backtest period ended - closing all positions,"Made $56,890.60"
+12/30/2024,12:00 AM,TSLA,Sold 347 shares,$417.41,"$144,668.78",Trend Following,Backtest period ended - closing all positions,"Made $57,978.77"
+12/30/2024,12:00 AM,TSLA,Sold 282 shares,$417.41,"$117,536.11",Breakout,Backtest period ended - closing all positions,"Made $41,698.53"
+12/30/2024,12:00 AM,TSLA,Sold 346 shares,$417.41,"$144,221.82",AI Hybrid,Backtest period ended - closing all positions,"Made $54,176.82"
+12/30/2024,12:00 AM,META,Sold 391 shares,$589.86,"$230,381.43",Momentum,Backtest period ended - closing all positions,Lost $548.81
+12/30/2024,12:00 AM,META,Sold 205 shares,$589.86,"$121,033.38",Trend Following,Backtest period ended - closing all positions,"Lost $3,583.17"
+12/30/2024,12:00 AM,META,Sold 297 shares,$589.86,"$175,132.66",Breakout,Backtest period ended - closing all positions,"Lost $6,582.44"
+12/30/2024,12:00 AM,META,Sold 270 shares,$589.86,"$159,485.42",AI Hybrid,Backtest period ended - closing all positions,"Made $69,440.42"
+12/30/2024,12:00 AM,META,Sold 391 shares,$589.86,"$230,381.40",Momentum,Backtest period ended - closing all positions,Lost $548.81
+12/30/2024,12:00 AM,META,Sold 205 shares,$589.86,"$121,033.41",Trend Following,Backtest period ended - closing all positions,"Lost $3,583.16"
+12/30/2024,12:00 AM,META,Sold 297 shares,$589.86,"$175,132.71",Breakout,Backtest period ended - closing all positions,"Lost $6,582.44"
+12/30/2024,12:00 AM,META,Sold 270 shares,$589.86,"$159,485.44",AI Hybrid,Backtest period ended - closing all positions,"Made $69,440.44"
+12/30/2024,12:00 AM,META,Sold 391 shares,$589.86,"$230,381.40",Momentum,Backtest period ended - closing all positions,Lost $548.81
+12/30/2024,12:00 AM,META,Sold 205 shares,$589.86,"$121,033.41",Trend Following,Backtest period ended - closing all positions,"Lost $3,583.16"
+12/30/2024,12:00 AM,META,Sold 297 shares,$589.86,"$175,132.71",Breakout,Backtest period ended - closing all positions,"Lost $6,582.44"
+12/30/2024,12:00 AM,META,Sold 270 shares,$589.86,"$159,485.44",AI Hybrid,Backtest period ended - closing all positions,"Made $69,440.44"
+12/30/2024,12:00 AM,AAPL,Sold 415 shares,$251.06,"$104,085.49",Momentum,Backtest period ended - closing all positions,"Made $7,025.35"
+12/30/2024,12:00 AM,AAPL,Sold 441 shares,$251.06,"$110,704.61",Trend Following,Backtest period ended - closing all positions,"Made $4,138.77"
+12/30/2024,12:00 AM,AAPL,Sold 446 shares,$251.06,"$111,969.47",Breakout,Backtest period ended - closing all positions,"Made $8,209.11"
+12/30/2024,12:00 AM,AAPL,Sold 420 shares,$251.06,"$105,546.73",MACD,MACD crossed below signal line - momentum turning negative,"Made $9,962.85"
+12/30/2024,12:00 AM,AAPL,Sold 589 shares,$251.06,"$147,753.03",AI Hybrid,Backtest period ended - closing all positions,"Made $57,708.03"
+01/21/2025,05:00 AM,SPY,Bought 149 shares,$603.05,"$90,000.00",Momentum,Stock rose 2.9% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/21/2025,05:00 AM,SPY,Bought 149 shares,$603.05,"$90,000.00",Momentum,Stock rose 2.9% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/21/2025,05:00 AM,SPY,Bought 149 shares,$603.05,"$90,000.00",Momentum,Stock rose 2.9% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/21/2025,05:00 AM,SPY,Bought 149 shares,$603.05,"$90,000.00",Momentum,Stock rose 2.9% in 20 days (above 2.0% trigger) - upward momentum detected,
+01/22/2025,05:00 AM,SPY,Bought 148 shares,$606.44,"$90,000.00",Breakout,Price $606.44 broke above resistance at $603.06 - bullish breakout,
+01/22/2025,05:00 AM,SPY,Bought 148 shares,$606.44,"$90,000.00",Breakout,Price $606.44 broke above resistance at $603.06 - bullish breakout,
+01/22/2025,05:00 AM,SPY,Bought 148 shares,$606.44,"$90,000.00",Breakout,Price $606.44 broke above resistance at $603.06 - bullish breakout,
+01/22/2025,05:00 AM,SPY,Bought 148 shares,$606.44,"$90,000.00",Breakout,Price $606.44 broke above resistance at $603.06 - bullish breakout,
+02/27/2025,05:00 AM,SPY,Sold 149 shares,$585.05,"$87,313.66",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,731.34"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Mean Reversion,"Price dropped to $585.05, below the safety band at $589.14 - stock is oversold",
+02/27/2025,05:00 AM,SPY,Sold 148 shares,$585.05,"$86,825.57",Breakout,Price $585.05 broke below support at $589.56 - exiting to prevent larger losses,"Lost $3,219.43"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+02/27/2025,05:00 AM,SPY,Sold 149 shares,$585.05,"$87,313.66",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,731.34"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Mean Reversion,"Price dropped to $585.05, below the safety band at $589.14 - stock is oversold",
+02/27/2025,05:00 AM,SPY,Sold 148 shares,$585.05,"$86,825.57",Breakout,Price $585.05 broke below support at $589.56 - exiting to prevent larger losses,"Lost $3,219.43"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+02/27/2025,05:00 AM,SPY,Sold 149 shares,$585.05,"$87,313.66",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,731.34"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Mean Reversion,"Price dropped to $585.05, below the safety band at $589.14 - stock is oversold",
+02/27/2025,05:00 AM,SPY,Sold 148 shares,$585.05,"$86,825.57",Breakout,Price $585.05 broke below support at $589.56 - exiting to prevent larger losses,"Lost $3,219.43"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+02/27/2025,05:00 AM,SPY,Sold 149 shares,$585.05,"$87,313.66",Momentum,Stock fell 3.3% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,731.34"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Mean Reversion,"Price dropped to $585.05, below the safety band at $589.14 - stock is oversold",
+02/27/2025,05:00 AM,SPY,Sold 148 shares,$585.05,"$86,825.57",Breakout,Price $585.05 broke below support at $589.56 - exiting to prevent larger losses,"Lost $3,219.43"
+02/27/2025,05:00 AM,SPY,Bought 154 shares,$585.05,"$90,000.00",Pairs Trading,Price is 2.6 standard deviations below average - extremely oversold,
+03/11/2025,04:00 AM,SPY,Bought 18 shares,$555.92,"$10,000.00",RSI_Strategy,"RSI at 28.3 (below 30) - stock is oversold, expecting bounce",
+03/11/2025,04:00 AM,SPY,Bought 162 shares,$555.92,"$90,000.00",RSI,"RSI at 28.3 (below 30) - stock is oversold, expecting bounce",
+03/11/2025,04:00 AM,SPY,Bought 162 shares,$555.92,"$90,000.00",RSI,"RSI at 28.3 (below 30) - stock is oversold, expecting bounce",
+03/11/2025,04:00 AM,SPY,Bought 162 shares,$555.92,"$90,000.00",RSI,"RSI at 28.3 (below 30) - stock is oversold, expecting bounce",
+03/11/2025,04:00 AM,SPY,Bought 162 shares,$555.92,"$90,000.00",RSI,"RSI at 28.3 (below 30) - stock is oversold, expecting bounce",
+03/21/2025,04:00 AM,SPY,Bought 160 shares,$563.98,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/21/2025,04:00 AM,SPY,Bought 160 shares,$563.98,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/21/2025,04:00 AM,SPY,Bought 160 shares,$563.98,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/21/2025,04:00 AM,SPY,Bought 160 shares,$563.98,"$90,000.00",MACD,MACD crossed above signal line - momentum turning positive,
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Mean Reversion,"Price bounced back to $574.08, reaching the average at $572.44 - target hit","Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Pairs Trading,Price returned to near its average - taking profits,"Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Mean Reversion,"Price bounced back to $574.08, reaching the average at $572.44 - target hit","Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Pairs Trading,Price returned to near its average - taking profits,"Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Mean Reversion,"Price bounced back to $574.08, reaching the average at $572.44 - target hit","Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Pairs Trading,Price returned to near its average - taking profits,"Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Mean Reversion,"Price bounced back to $574.08, reaching the average at $572.44 - target hit","Lost $1,732.55"
+03/24/2025,04:00 AM,SPY,Sold 154 shares,$574.08,"$88,312.45",Pairs Trading,Price returned to near its average - taking profits,"Lost $1,732.55"
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Mean Reversion,"Price dropped to $536.70, below the safety band at $544.82 - stock is oversold",
+04/03/2025,04:00 AM,SPY,Sold 160 shares,$536.70,"$85,646.65",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,398.35"
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Mean Reversion,"Price dropped to $536.70, below the safety band at $544.82 - stock is oversold",
+04/03/2025,04:00 AM,SPY,Sold 160 shares,$536.70,"$85,646.65",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,398.35"
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Mean Reversion,"Price dropped to $536.70, below the safety band at $544.82 - stock is oversold",
+04/03/2025,04:00 AM,SPY,Sold 160 shares,$536.70,"$85,646.65",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,398.35"
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Mean Reversion,"Price dropped to $536.70, below the safety band at $544.82 - stock is oversold",
+04/03/2025,04:00 AM,SPY,Sold 160 shares,$536.70,"$85,646.65",MACD,MACD crossed below signal line - momentum turning negative,"Lost $4,398.35"
+04/03/2025,04:00 AM,SPY,Bought 164 shares,$536.70,"$88,240.52",Pairs Trading,Price is 2.9 standard deviations below average - extremely oversold,
+04/09/2025,04:00 AM,SPY,Sold 164 shares,$548.62,"$90,200.33",Pairs Trading,Price returned to near its average - taking profits,"Made $1,915.68"
+04/09/2025,04:00 AM,SPY,Sold 164 shares,$548.62,"$90,200.33",Pairs Trading,Price returned to near its average - taking profits,"Made $1,915.68"
+04/09/2025,04:00 AM,SPY,Sold 164 shares,$548.62,"$90,200.33",Pairs Trading,Price returned to near its average - taking profits,"Made $1,915.68"
+04/09/2025,04:00 AM,SPY,Sold 164 shares,$548.62,"$90,200.33",Pairs Trading,Price returned to near its average - taking profits,"Made $1,915.68"
+04/15/2025,04:00 AM,SPY,Bought 160 shares,$537.61,"$85,844.90",MACD,MACD crossed above signal line - momentum turning positive,
+04/15/2025,04:00 AM,SPY,Bought 160 shares,$537.61,"$85,844.90",MACD,MACD crossed above signal line - momentum turning positive,
+04/15/2025,04:00 AM,SPY,Bought 160 shares,$537.61,"$85,844.90",MACD,MACD crossed above signal line - momentum turning positive,
+04/15/2025,04:00 AM,SPY,Bought 160 shares,$537.61,"$85,844.90",MACD,MACD crossed above signal line - momentum turning positive,
+04/21/2025,04:00 AM,SPY,Sold 160 shares,$513.88,"$82,055.73",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,832.10"
+04/21/2025,04:00 AM,SPY,Sold 160 shares,$513.88,"$82,055.73",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,832.10"
+04/21/2025,04:00 AM,SPY,Sold 160 shares,$513.88,"$82,055.73",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,832.10"
+04/21/2025,04:00 AM,SPY,Sold 160 shares,$513.88,"$82,055.73",MACD,MACD crossed below signal line - momentum turning negative,"Lost $3,832.10"
+04/22/2025,04:00 AM,SPY,Bought 156 shares,$527.25,"$82,208.02",MACD,MACD crossed above signal line - momentum turning positive,
+04/22/2025,04:00 AM,SPY,Bought 156 shares,$527.25,"$82,208.02",MACD,MACD crossed above signal line - momentum turning positive,
+04/22/2025,04:00 AM,SPY,Bought 156 shares,$527.25,"$82,208.02",MACD,MACD crossed above signal line - momentum turning positive,
+04/22/2025,04:00 AM,SPY,Bought 156 shares,$527.25,"$82,208.02",MACD,MACD crossed above signal line - momentum turning positive,
+04/24/2025,04:00 AM,SPY,Sold 164 shares,$546.69,"$89,883.01",Mean Reversion,"Price bounced back to $546.69, reaching the average at $535.48 - target hit","Made $1,598.37"
+04/24/2025,04:00 AM,SPY,Sold 164 shares,$546.69,"$89,883.01",Mean Reversion,"Price bounced back to $546.69, reaching the average at $535.48 - target hit","Made $1,598.37"
+04/24/2025,04:00 AM,SPY,Sold 164 shares,$546.69,"$89,883.01",Mean Reversion,"Price bounced back to $546.69, reaching the average at $535.48 - target hit","Made $1,598.37"
+04/24/2025,04:00 AM,SPY,Sold 164 shares,$546.69,"$89,883.01",Mean Reversion,"Price bounced back to $546.69, reaching the average at $535.48 - target hit","Made $1,598.37"
+05/01/2025,04:00 AM,SPY,Bought 156 shares,$558.47,"$87,342.96",Momentum,Stock rose 4.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/01/2025,04:00 AM,SPY,Bought 156 shares,$558.47,"$87,342.96",Momentum,Stock rose 4.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/01/2025,04:00 AM,SPY,Bought 156 shares,$558.47,"$87,342.96",Momentum,Stock rose 4.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/01/2025,04:00 AM,SPY,Bought 156 shares,$558.47,"$87,342.96",Momentum,Stock rose 4.1% in 20 days (above 2.0% trigger) - upward momentum detected,
+05/02/2025,04:00 AM,SPY,Bought 153 shares,$566.76,"$86,904.34",Breakout,Price $566.76 broke above resistance at $564.07 - bullish breakout,
+05/02/2025,04:00 AM,SPY,Bought 153 shares,$566.76,"$86,904.34",Breakout,Price $566.76 broke above resistance at $564.07 - bullish breakout,
+05/02/2025,04:00 AM,SPY,Bought 153 shares,$566.76,"$86,904.34",Breakout,Price $566.76 broke above resistance at $564.07 - bullish breakout,
+05/02/2025,04:00 AM,SPY,Bought 153 shares,$566.76,"$86,904.34",Breakout,Price $566.76 broke above resistance at $564.07 - bullish breakout,
+05/14/2025,04:00 AM,SPY,Bought 153 shares,$587.59,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/14/2025,04:00 AM,SPY,Bought 153 shares,$587.59,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/14/2025,04:00 AM,SPY,Bought 153 shares,$587.59,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/14/2025,04:00 AM,SPY,Bought 153 shares,$587.59,"$90,000.00",Trend Following,20-day average crossed ABOVE 50-day average - trend turning positive (Golden Cro,
+05/28/2025,04:00 AM,SPY,Sold 156 shares,$587.73,"$91,637.97",MACD,MACD crossed below signal line - momentum turning negative,"Made $9,388.85"
+05/28/2025,04:00 AM,SPY,Sold 156 shares,$587.73,"$91,637.97",MACD,MACD crossed below signal line - momentum turning negative,"Made $9,388.85"
+05/28/2025,04:00 AM,SPY,Sold 156 shares,$587.73,"$91,637.97",MACD,MACD crossed below signal line - momentum turning negative,"Made $9,388.85"
+05/28/2025,04:00 AM,SPY,Sold 156 shares,$587.73,"$91,637.97",MACD,MACD crossed below signal line - momentum turning negative,"Made $9,388.85"
+06/10/2025,04:00 AM,SPY,Bought 150 shares,$603.08,"$90,460.32",MACD,MACD crossed above signal line - momentum turning positive,
+06/10/2025,04:00 AM,SPY,Bought 150 shares,$603.08,"$90,460.32",MACD,MACD crossed above signal line - momentum turning positive,
+06/10/2025,04:00 AM,SPY,Bought 150 shares,$603.08,"$90,460.32",MACD,MACD crossed above signal line - momentum turning positive,
+06/10/2025,04:00 AM,SPY,Bought 150 shares,$603.08,"$90,460.32",MACD,MACD crossed above signal line - momentum turning positive,
+06/11/2025,04:00 AM,SPY,Sold 150 shares,$601.36,"$90,202.32",MACD,MACD crossed below signal line - momentum turning negative,Lost $303.23
+06/11/2025,04:00 AM,SPY,Sold 150 shares,$601.36,"$90,202.32",MACD,MACD crossed below signal line - momentum turning negative,Lost $303.23
+06/11/2025,04:00 AM,SPY,Sold 150 shares,$601.36,"$90,202.32",MACD,MACD crossed below signal line - momentum turning negative,Lost $303.23
+06/11/2025,04:00 AM,SPY,Sold 150 shares,$601.36,"$90,202.32",MACD,MACD crossed below signal line - momentum turning negative,Lost $303.23
+06/27/2025,04:00 AM,SPY,Bought 146 shares,$614.91,"$89,984.27",MACD,MACD crossed above signal line - momentum turning positive,
+06/27/2025,04:00 AM,SPY,Bought 146 shares,$614.91,"$89,984.27",MACD,MACD crossed above signal line - momentum turning positive,
+06/27/2025,04:00 AM,SPY,Bought 146 shares,$614.91,"$89,984.27",MACD,MACD crossed above signal line - momentum turning positive,
+06/27/2025,04:00 AM,SPY,Bought 146 shares,$614.91,"$89,984.27",MACD,MACD crossed above signal line - momentum turning positive,
+06/30/2025,04:00 AM,SPY,Sold 18 shares,$617.85,"$11,114.01",RSI_Strategy,"RSI at 70.3 (above 70) - stock is overbought, time to sell","Made $1,109.01"
+06/30/2025,04:00 AM,SPY,Sold 162 shares,$617.85,"$100,026.08",RSI,"RSI at 70.3 (above 70) - stock is overbought, time to sell","Made $9,981.08"
+06/30/2025,04:00 AM,SPY,Sold 162 shares,$617.85,"$100,026.08",RSI,"RSI at 70.3 (above 70) - stock is overbought, time to sell","Made $9,981.08"
+06/30/2025,04:00 AM,SPY,Sold 162 shares,$617.85,"$100,026.08",RSI,"RSI at 70.3 (above 70) - stock is overbought, time to sell","Made $9,981.08"
+06/30/2025,04:00 AM,SPY,Sold 162 shares,$617.85,"$100,026.08",RSI,"RSI at 70.3 (above 70) - stock is overbought, time to sell","Made $9,981.08"
+07/15/2025,04:00 AM,SPY,Sold 146 shares,$622.14,"$91,042.29",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,013.03"
+07/15/2025,04:00 AM,SPY,Sold 146 shares,$622.14,"$91,042.29",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,013.03"
+07/15/2025,04:00 AM,SPY,Sold 146 shares,$622.14,"$91,042.29",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,013.03"
+07/15/2025,04:00 AM,SPY,Sold 146 shares,$622.14,"$91,042.29",MACD,MACD crossed below signal line - momentum turning negative,"Made $1,013.03"
+07/25/2025,04:00 AM,SPY,Bought 142 shares,$637.10,"$90,692.14",MACD,MACD crossed above signal line - momentum turning positive,
+07/25/2025,04:00 AM,SPY,Bought 142 shares,$637.10,"$90,692.14",MACD,MACD crossed above signal line - momentum turning positive,
+07/25/2025,04:00 AM,SPY,Bought 142 shares,$637.10,"$90,692.14",MACD,MACD crossed above signal line - momentum turning positive,
+07/25/2025,04:00 AM,SPY,Bought 142 shares,$637.10,"$90,692.14",MACD,MACD crossed above signal line - momentum turning positive,
+07/29/2025,04:00 AM,SPY,Sold 142 shares,$635.26,"$90,430.21",MACD,MACD crossed below signal line - momentum turning negative,Lost $307.27
+07/29/2025,04:00 AM,SPY,Sold 142 shares,$635.26,"$90,430.21",MACD,MACD crossed below signal line - momentum turning negative,Lost $307.27
+07/29/2025,04:00 AM,SPY,Sold 142 shares,$635.26,"$90,430.21",MACD,MACD crossed below signal line - momentum turning negative,Lost $307.27
+07/29/2025,04:00 AM,SPY,Sold 142 shares,$635.26,"$90,430.21",MACD,MACD crossed below signal line - momentum turning negative,Lost $307.27
+07/31/2025,12:00 AM,AAPL,Sold 434 shares,$207.13,"$89,891.74",Momentum,Stock fell 2.8% in 20 days (below -2.0% trigger) - momentum died,Lost $153.26
+08/13/2025,04:00 AM,SPY,Bought 140 shares,$644.89,"$90,211.93",MACD,MACD crossed above signal line - momentum turning positive,
+08/13/2025,04:00 AM,SPY,Bought 140 shares,$644.89,"$90,211.93",MACD,MACD crossed above signal line - momentum turning positive,
+08/13/2025,04:00 AM,SPY,Bought 140 shares,$644.89,"$90,211.93",MACD,MACD crossed above signal line - momentum turning positive,
+08/13/2025,04:00 AM,SPY,Bought 140 shares,$644.89,"$90,211.93",MACD,MACD crossed above signal line - momentum turning positive,
+08/19/2025,04:00 AM,SPY,Sold 140 shares,$639.81,"$89,501.31",MACD,MACD crossed below signal line - momentum turning negative,Lost $755.73
+08/19/2025,04:00 AM,SPY,Sold 140 shares,$639.81,"$89,501.31",MACD,MACD crossed below signal line - momentum turning negative,Lost $755.73
+08/19/2025,04:00 AM,SPY,Sold 140 shares,$639.81,"$89,501.31",MACD,MACD crossed below signal line - momentum turning negative,Lost $755.73
+08/19/2025,04:00 AM,SPY,Sold 140 shares,$639.81,"$89,501.31",MACD,MACD crossed below signal line - momentum turning negative,Lost $755.73
+08/28/2025,04:00 AM,SPY,Bought 138 shares,$648.92,"$89,329.80",MACD,MACD crossed above signal line - momentum turning positive,
+08/28/2025,04:00 AM,SPY,Bought 138 shares,$648.92,"$89,329.80",MACD,MACD crossed above signal line - momentum turning positive,
+08/28/2025,04:00 AM,SPY,Bought 138 shares,$648.92,"$89,329.80",MACD,MACD crossed above signal line - momentum turning positive,
+08/28/2025,04:00 AM,SPY,Bought 138 shares,$648.92,"$89,329.80",MACD,MACD crossed above signal line - momentum turning positive,
+08/29/2025,04:00 AM,SPY,Sold 138 shares,$645.05,"$88,797.05",MACD,MACD crossed below signal line - momentum turning negative,Lost $577.41
+08/29/2025,04:00 AM,SPY,Sold 138 shares,$645.05,"$88,797.05",MACD,MACD crossed below signal line - momentum turning negative,Lost $577.41
+08/29/2025,04:00 AM,SPY,Sold 138 shares,$645.05,"$88,797.05",MACD,MACD crossed below signal line - momentum turning negative,Lost $577.41
+08/29/2025,04:00 AM,SPY,Sold 138 shares,$645.05,"$88,797.05",MACD,MACD crossed below signal line - momentum turning negative,Lost $577.41
+09/10/2025,12:00 AM,AAPL,Sold 408 shares,$226.57,"$92,519.25",Momentum,Stock fell 2.8% in 20 days (below -2.0% trigger) - momentum died,"Made $2,814.67"
+09/10/2025,04:00 AM,SPY,Bought 136 shares,$652.21,"$88,609.90",MACD,MACD crossed above signal line - momentum turning positive,
+09/10/2025,04:00 AM,SPY,Bought 136 shares,$652.21,"$88,609.90",MACD,MACD crossed above signal line - momentum turning positive,
+09/10/2025,04:00 AM,SPY,Bought 136 shares,$652.21,"$88,609.90",MACD,MACD crossed above signal line - momentum turning positive,
+09/10/2025,04:00 AM,SPY,Bought 136 shares,$652.21,"$88,609.90",MACD,MACD crossed above signal line - momentum turning positive,
+09/25/2025,04:00 AM,SPY,Sold 136 shares,$658.05,"$89,403.33",MACD,MACD crossed below signal line - momentum turning negative,Made $749.12
+09/25/2025,04:00 AM,SPY,Sold 136 shares,$658.05,"$89,403.33",MACD,MACD crossed below signal line - momentum turning negative,Made $749.12
+09/25/2025,04:00 AM,SPY,Sold 136 shares,$658.05,"$89,403.33",MACD,MACD crossed below signal line - momentum turning negative,Made $749.12
+09/25/2025,04:00 AM,SPY,Sold 136 shares,$658.05,"$89,403.33",MACD,MACD crossed below signal line - momentum turning negative,Made $749.12
+09/26/2025,04:00 AM,SPY,Bought 15 shares,$661.82,"$10,000.00",Momentum,Stock rose 2.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+09/26/2025,04:00 AM,SPY,Bought 15 shares,$661.82,"$10,000.00",Momentum,Stock rose 2.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/02/2025,04:00 AM,SPY,Bought 133 shares,$669.22,"$89,083.71",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2025,04:00 AM,SPY,Bought 133 shares,$669.22,"$89,083.71",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2025,04:00 AM,SPY,Bought 133 shares,$669.22,"$89,083.71",MACD,MACD crossed above signal line - momentum turning positive,
+10/02/2025,04:00 AM,SPY,Bought 133 shares,$669.22,"$89,083.71",MACD,MACD crossed above signal line - momentum turning positive,
+10/09/2025,04:00 AM,SPY,Sold 133 shares,$671.16,"$89,341.95",MACD,MACD crossed below signal line - momentum turning negative,Made $213.70
+10/09/2025,04:00 AM,SPY,Sold 133 shares,$671.16,"$89,341.95",MACD,MACD crossed below signal line - momentum turning negative,Made $213.70
+10/09/2025,04:00 AM,SPY,Sold 133 shares,$671.16,"$89,341.95",MACD,MACD crossed below signal line - momentum turning negative,Made $213.70
+10/09/2025,04:00 AM,SPY,Sold 133 shares,$671.16,"$89,341.95",MACD,MACD crossed below signal line - momentum turning negative,Made $213.70
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,478.34",Mean Reversion,"Price dropped to $653.02, below the safety band at $654.13 - stock is oversold",
+10/10/2025,04:00 AM,SPY,Sold 153 shares,$653.02,"$100,131.05",Breakout,Price $653.02 broke below support at $654.30 - exiting to prevent larger losses,"Made $13,183.25"
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,763.49",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,478.34",Mean Reversion,"Price dropped to $653.02, below the safety band at $654.13 - stock is oversold",
+10/10/2025,04:00 AM,SPY,Sold 153 shares,$653.02,"$100,131.05",Breakout,Price $653.02 broke below support at $654.30 - exiting to prevent larger losses,"Made $13,183.25"
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,763.49",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,478.34",Mean Reversion,"Price dropped to $653.02, below the safety band at $654.13 - stock is oversold",
+10/10/2025,04:00 AM,SPY,Sold 153 shares,$653.02,"$100,131.05",Breakout,Price $653.02 broke below support at $654.30 - exiting to prevent larger losses,"Made $13,183.25"
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,763.49",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,478.34",Mean Reversion,"Price dropped to $653.02, below the safety band at $654.13 - stock is oversold",
+10/10/2025,04:00 AM,SPY,Sold 153 shares,$653.02,"$100,131.05",Breakout,Price $653.02 broke below support at $654.30 - exiting to prevent larger losses,"Made $13,183.25"
+10/10/2025,04:00 AM,SPY,Bought 137 shares,$653.02,"$89,763.49",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+10/13/2025,04:00 AM,SPY,Sold 137 shares,$663.04,"$91,140.83",Pairs Trading,Price returned to near its average - taking profits,"Made $1,332.46"
+10/13/2025,04:00 AM,SPY,Sold 137 shares,$663.04,"$91,140.83",Pairs Trading,Price returned to near its average - taking profits,"Made $1,332.46"
+10/13/2025,04:00 AM,SPY,Sold 137 shares,$663.04,"$91,140.83",Pairs Trading,Price returned to near its average - taking profits,"Made $1,332.46"
+10/13/2025,04:00 AM,SPY,Sold 137 shares,$663.04,"$91,140.83",Pairs Trading,Price returned to near its average - taking profits,"Made $1,332.46"
+10/15/2025,04:00 AM,SPY,Sold 137 shares,$665.17,"$91,143.16",Mean Reversion,"Price bounced back to $665.17, reaching the average at $665.11 - target hit","Made $1,620.08"
+10/15/2025,04:00 AM,SPY,Sold 137 shares,$665.17,"$91,143.16",Mean Reversion,"Price bounced back to $665.17, reaching the average at $665.11 - target hit","Made $1,620.08"
+10/15/2025,04:00 AM,SPY,Sold 137 shares,$665.17,"$91,143.16",Mean Reversion,"Price bounced back to $665.17, reaching the average at $665.11 - target hit","Made $1,620.08"
+10/15/2025,04:00 AM,SPY,Sold 137 shares,$665.17,"$91,143.16",Mean Reversion,"Price bounced back to $665.17, reaching the average at $665.11 - target hit","Made $1,620.08"
+10/24/2025,04:00 AM,SPY,Bought 146 shares,$677.25,"$98,555.92",Breakout,Price $677.25 broke above resistance at $673.95 - bullish breakout,
+10/24/2025,04:00 AM,SPY,Bought 132 shares,$677.25,"$89,075.29",MACD,MACD crossed above signal line - momentum turning positive,
+10/24/2025,04:00 AM,SPY,Bought 146 shares,$677.25,"$98,555.92",Breakout,Price $677.25 broke above resistance at $673.95 - bullish breakout,
+10/24/2025,04:00 AM,SPY,Bought 132 shares,$677.25,"$89,075.29",MACD,MACD crossed above signal line - momentum turning positive,
+10/24/2025,04:00 AM,SPY,Bought 146 shares,$677.25,"$98,555.92",Breakout,Price $677.25 broke above resistance at $673.95 - bullish breakout,
+10/24/2025,04:00 AM,SPY,Bought 132 shares,$677.25,"$89,075.29",MACD,MACD crossed above signal line - momentum turning positive,
+10/24/2025,04:00 AM,SPY,Bought 146 shares,$677.25,"$98,555.92",Breakout,Price $677.25 broke above resistance at $673.95 - bullish breakout,
+10/24/2025,04:00 AM,SPY,Bought 132 shares,$677.25,"$89,075.29",MACD,MACD crossed above signal line - momentum turning positive,
+10/27/2025,12:00 AM,MSFT,Bought 170 shares,$530.53,"$90,000.00",Momentum,Stock rose 2.6% in 20 days (above 2.0% trigger) - upward momentum detected,
+10/31/2025,12:00 AM,MSFT,Sold 170 shares,$516.84,"$87,678.53",Momentum,Stock fell 2.0% in 20 days (below -2.0% trigger) - momentum died,"Lost $2,366.47"
+11/05/2025,05:00 AM,SPY,Sold 132 shares,$677.58,"$89,118.69",MACD,MACD crossed below signal line - momentum turning negative,Lost $1.13
+11/05/2025,05:00 AM,SPY,Sold 132 shares,$677.58,"$89,118.69",MACD,MACD crossed below signal line - momentum turning negative,Lost $1.13
+11/05/2025,05:00 AM,SPY,Sold 132 shares,$677.58,"$89,118.69",MACD,MACD crossed below signal line - momentum turning negative,Lost $1.13
+11/05/2025,05:00 AM,SPY,Sold 132 shares,$677.58,"$89,118.69",MACD,MACD crossed below signal line - momentum turning negative,Lost $1.13
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,732.88",Mean Reversion,"Price dropped to $660.08, below the safety band at $661.40 - stock is oversold",
+11/18/2025,05:00 AM,SPY,Sold 146 shares,$660.08,"$96,057.28",Breakout,Price $660.08 broke below support at $661.21 - exiting to prevent larger losses,"Lost $2,547.92"
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,758.92",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,732.88",Mean Reversion,"Price dropped to $660.08, below the safety band at $661.40 - stock is oversold",
+11/18/2025,05:00 AM,SPY,Sold 146 shares,$660.08,"$96,057.28",Breakout,Price $660.08 broke below support at $661.21 - exiting to prevent larger losses,"Lost $2,547.92"
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,758.92",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,732.88",Mean Reversion,"Price dropped to $660.08, below the safety band at $661.40 - stock is oversold",
+11/18/2025,05:00 AM,SPY,Sold 146 shares,$660.08,"$96,057.28",Breakout,Price $660.08 broke below support at $661.21 - exiting to prevent larger losses,"Lost $2,547.92"
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,758.92",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,732.88",Mean Reversion,"Price dropped to $660.08, below the safety band at $661.40 - stock is oversold",
+11/18/2025,05:00 AM,SPY,Sold 146 shares,$660.08,"$96,057.28",Breakout,Price $660.08 broke below support at $661.21 - exiting to prevent larger losses,"Lost $2,547.92"
+11/18/2025,05:00 AM,SPY,Bought 137 shares,$660.08,"$90,758.92",Pairs Trading,Price is 2.2 standard deviations below average - extremely oversold,
+11/20/2025,05:00 AM,SPY,Sold 15 shares,$652.53,"$9,859.63",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,Lost $145.37
+11/20/2025,05:00 AM,SPY,Sold 15 shares,$652.53,"$9,859.63",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,Lost $145.37
+11/20/2025,05:00 AM,SPY,Sold 156 shares,$652.53,"$102,053.64",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $14,667.02"
+11/20/2025,05:00 AM,SPY,Sold 156 shares,$652.53,"$102,053.64",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $14,667.02"
+11/20/2025,05:00 AM,SPY,Sold 156 shares,$652.53,"$102,053.64",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $14,667.02"
+11/20/2025,05:00 AM,SPY,Sold 156 shares,$652.53,"$102,053.64",Momentum,Stock fell 3.7% in 20 days (below -2.0% trigger) - momentum died,"Made $14,667.02"
+11/24/2025,12:00 AM,AAPL,Sold 389 shares,$275.92,"$107,333.21",Momentum,Backtest period ended - closing all positions,"Made $15,299.81"
+11/24/2025,05:00 AM,SPY,Sold 137 shares,$668.73,"$91,948.27",Pairs Trading,Price returned to near its average - taking profits,"Made $1,143.97"
+11/24/2025,05:00 AM,SPY,Sold 137 shares,$668.73,"$91,948.27",Pairs Trading,Price returned to near its average - taking profits,"Made $1,143.97"
+11/24/2025,05:00 AM,SPY,Sold 137 shares,$668.73,"$91,948.27",Pairs Trading,Price returned to near its average - taking profits,"Made $1,143.97"
+11/24/2025,05:00 AM,SPY,Sold 137 shares,$668.73,"$91,948.27",Pairs Trading,Price returned to near its average - taking profits,"Made $1,143.97"
+11/25/2025,05:00 AM,SPY,Sold 137 shares,$675.02,"$92,786.49",Mean Reversion,"Price bounced back to $675.02, reaching the average at $673.11 - target hit","Made $2,008.25"
+11/25/2025,05:00 AM,SPY,Sold 153 shares,$675.02,"$103,391.48",Trend Following,Backtest period ended - closing all positions,"Made $13,346.48"
+11/25/2025,05:00 AM,SPY,Sold 137 shares,$675.02,"$92,786.49",Mean Reversion,"Price bounced back to $675.02, reaching the average at $673.11 - target hit","Made $2,008.25"
+11/25/2025,05:00 AM,SPY,Sold 153 shares,$675.02,"$103,391.48",Trend Following,Backtest period ended - closing all positions,"Made $13,346.48"
+11/25/2025,05:00 AM,SPY,Sold 137 shares,$675.02,"$92,786.49",Mean Reversion,"Price bounced back to $675.02, reaching the average at $673.11 - target hit","Made $2,008.25"
+11/25/2025,05:00 AM,SPY,Sold 153 shares,$675.02,"$103,391.48",Trend Following,Backtest period ended - closing all positions,"Made $13,346.48"
+11/25/2025,05:00 AM,SPY,Sold 137 shares,$675.02,"$92,786.49",Mean Reversion,"Price bounced back to $675.02, reaching the average at $673.11 - target hit","Made $2,008.25"
+11/25/2025,05:00 AM,SPY,Sold 153 shares,$675.02,"$103,391.48",Trend Following,Backtest period ended - closing all positions,"Made $13,346.48"

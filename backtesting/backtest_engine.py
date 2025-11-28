@@ -7,9 +7,11 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-from ..utils.logger import get_logger
-from ..utils.database import Database
-from ..config import config
+from utils.logger import get_logger
+from utils.database import Database
+from utils.trade_logger import TradeLogger, TradeReason, get_trade_logger
+from config import config
+from core.market_monitor import MarketMonitor, get_market_monitor, Prediction
 
 logger = get_logger(__name__)
 
@@ -66,7 +68,8 @@ class BacktestEngine:
         self,
         initial_capital: float = 100000.0,
         commission: float = 0.001,
-        slippage: float = 0.0005
+        slippage: float = 0.0005,
+        enable_trade_logging: bool = True
     ):
         self.initial_capital = initial_capital
         self.capital = initial_capital
@@ -78,7 +81,22 @@ class BacktestEngine:
         self.equity_curve = []
         self.trades = []
 
+        # Trade logging
+        self.enable_trade_logging = enable_trade_logging
+        self.trade_logger = get_trade_logger() if enable_trade_logging else None
+
+        # Current strategy info (set during run_backtest)
+        self.current_strategy_name = ""
+        self.current_strategy_params = {}
+
+        # Map entry trades to their trade log IDs
+        self.entry_trade_ids: Dict[str, str] = {}
+
         self.db = Database()
+
+        # AI Learning System integration
+        self.market_monitor = get_market_monitor()
+        self.backtest_predictions: Dict[str, Prediction] = {}  # Track predictions by symbol
 
     def reset(self):
         """Reset the backtest state."""
@@ -87,6 +105,8 @@ class BacktestEngine:
         self.open_positions = {}
         self.equity_curve = []
         self.trades = []
+        self.entry_trade_ids = {}
+        self.backtest_predictions = {}
 
     def enter_position(
         self,
@@ -206,11 +226,16 @@ class BacktestEngine:
         self,
         data: pd.DataFrame,
         strategy_func,
-        strategy_params: Dict[str, Any] = None
+        strategy_params: Dict[str, Any] = None,
+        strategy_name: str = None
     ) -> Dict[str, Any]:
         """Run a backtest with a given strategy."""
 
         self.reset()
+
+        # Store strategy info for trade logging
+        self.current_strategy_name = strategy_name or strategy_func.__name__
+        self.current_strategy_params = strategy_params or {}
 
         logger.info(f"Running backtest from {data.index[0]} to {data.index[-1]}")
         logger.info(f"Initial capital: ${self.initial_capital:.2f}")
@@ -237,31 +262,85 @@ class BacktestEngine:
             # Process signals
             if signals:
                 for signal in signals:
+                    # Extract reason from signal if present
+                    reason_data = signal.get('reason', {})
+
                     if signal['action'] == 'buy':
-                        self.enter_position(
+                        success = self.enter_position(
                             symbol=signal['symbol'],
                             quantity=signal['quantity'],
                             price=signal['price'],
                             timestamp=current_date,
                             side='long'
                         )
+
+                        # Log the trade with reasoning
+                        if success and self.trade_logger and reason_data:
+                            self._log_entry_trade(
+                                signal, current_date, current_data, reason_data
+                            )
+
+                        # Track prediction for AI Learning System
+                        if success:
+                            self._track_entry_prediction(signal, current_date, current_data, reason_data)
+
                     elif signal['action'] == 'sell':
-                        self.exit_position(
+                        # Get entry info before exiting
+                        entry_trade_id = self.entry_trade_ids.get(signal['symbol'])
+                        position = self.open_positions.get(signal['symbol'])
+
+                        success = self.exit_position(
                             symbol=signal['symbol'],
                             price=signal['price'],
                             timestamp=current_date
                         )
 
+                        # Log the exit trade with reasoning
+                        if success and self.trade_logger and position:
+                            self._log_exit_trade(
+                                signal, current_date, position, entry_trade_id, reason_data
+                            )
+
+                        # Resolve prediction for AI Learning System
+                        if success and position:
+                            self._resolve_prediction(signal['symbol'], signal['price'], position)
+
             # Record equity
             self.record_equity(current_date, current_prices)
 
-        # Close any remaining open positions
+        # Close any remaining open positions at end of backtest
         final_date = data.index[-1]
         final_prices = current_prices
 
         for symbol in list(self.open_positions.keys()):
             if symbol in final_prices:
+                position = self.open_positions.get(symbol)
+                entry_trade_id = self.entry_trade_ids.get(symbol)
+
                 self.exit_position(symbol, final_prices[symbol], final_date)
+
+                # Log forced exit
+                if self.trade_logger and position:
+                    self._log_exit_trade(
+                        {'symbol': symbol, 'price': final_prices[symbol]},
+                        final_date,
+                        position,
+                        entry_trade_id,
+                        {
+                            'primary_signal': 'backtest_end',
+                            'signal_value': 0,
+                            'threshold': 0,
+                            'direction': 'n/a',
+                            'explanation': 'Position closed at end of backtest period.'
+                        }
+                    )
+
+                # Resolve prediction for AI Learning System
+                if position:
+                    self._resolve_prediction(symbol, final_prices[symbol], position)
+
+        # Run AI Learning System after backtest completes
+        self._run_post_backtest_learning()
 
         # Calculate performance metrics
         results = self.calculate_performance()
@@ -273,6 +352,221 @@ class BacktestEngine:
         logger.info(f"Win rate: {results['win_rate']:.2f}%")
 
         return results
+
+    def _log_entry_trade(self, signal: Dict, timestamp, data: pd.DataFrame, reason_data: Dict):
+        """Log an entry trade with full reasoning."""
+        if not self.trade_logger:
+            return
+
+        # Build market snapshot
+        market_snapshot = {
+            'open': data['open'].iloc[-1] if 'open' in data.columns else 0,
+            'high': data['high'].iloc[-1] if 'high' in data.columns else 0,
+            'low': data['low'].iloc[-1] if 'low' in data.columns else 0,
+            'close': data['close'].iloc[-1],
+            'volume': data['volume'].iloc[-1] if 'volume' in data.columns else 0
+        }
+
+        # Build TradeReason
+        reason = TradeReason(
+            primary_signal=reason_data.get('primary_signal', 'unknown'),
+            signal_value=reason_data.get('signal_value', 0),
+            threshold=reason_data.get('threshold', 0),
+            direction=reason_data.get('direction', 'unknown'),
+            supporting_indicators=reason_data.get('supporting_indicators', {}),
+            confirmations=reason_data.get('confirmations', []),
+            explanation=reason_data.get('explanation', '')
+        )
+
+        # Convert pandas timestamp to datetime if needed
+        if hasattr(timestamp, 'to_pydatetime'):
+            timestamp = timestamp.to_pydatetime()
+
+        entry = self.trade_logger.log_trade(
+            symbol=signal['symbol'],
+            action='BUY',
+            quantity=signal['quantity'],
+            price=signal['price'],
+            strategy_name=self.current_strategy_name,
+            strategy_params=self.current_strategy_params,
+            reason=reason,
+            mode='backtest',
+            side='long',
+            portfolio_value_before=self.get_portfolio_value({signal['symbol']: signal['price']}),
+            market_snapshot=market_snapshot,
+            timestamp=timestamp
+        )
+
+        # Store the trade ID for linking to exit
+        self.entry_trade_ids[signal['symbol']] = entry.trade_id
+
+    def _log_exit_trade(self, signal: Dict, timestamp, position, entry_trade_id: str, reason_data: Dict):
+        """Log an exit trade with P&L and reasoning."""
+        if not self.trade_logger:
+            return
+
+        # Calculate P&L
+        exit_price = signal['price']
+        realized_pnl = (exit_price - position.entry_price) * position.quantity
+        realized_pnl_pct = ((exit_price / position.entry_price) - 1) * 100
+
+        # Calculate holding period
+        if hasattr(timestamp, 'to_pydatetime'):
+            exit_dt = timestamp.to_pydatetime()
+        else:
+            exit_dt = timestamp
+
+        if hasattr(position.entry_time, 'to_pydatetime'):
+            entry_dt = position.entry_time.to_pydatetime()
+        else:
+            entry_dt = position.entry_time
+
+        holding_period = (exit_dt - entry_dt).total_seconds() / 86400
+
+        # Build TradeReason
+        reason = TradeReason(
+            primary_signal=reason_data.get('primary_signal', 'unknown'),
+            signal_value=reason_data.get('signal_value', 0),
+            threshold=reason_data.get('threshold', 0),
+            direction=reason_data.get('direction', 'unknown'),
+            supporting_indicators=reason_data.get('supporting_indicators', {}),
+            confirmations=reason_data.get('confirmations', []),
+            explanation=reason_data.get('explanation', '')
+        )
+
+        self.trade_logger.log_trade(
+            symbol=signal['symbol'],
+            action='SELL',
+            quantity=position.quantity,
+            price=exit_price,
+            strategy_name=self.current_strategy_name,
+            strategy_params=self.current_strategy_params,
+            reason=reason,
+            mode='backtest',
+            side='long',
+            portfolio_value_before=self.get_portfolio_value({signal['symbol']: exit_price}),
+            entry_trade_id=entry_trade_id,
+            realized_pnl=realized_pnl,
+            realized_pnl_pct=realized_pnl_pct,
+            holding_period_days=holding_period,
+            timestamp=exit_dt
+        )
+
+        # Clear the entry trade ID
+        if signal['symbol'] in self.entry_trade_ids:
+            del self.entry_trade_ids[signal['symbol']]
+
+    def _track_entry_prediction(self, signal: Dict, timestamp, data: pd.DataFrame, reason_data: Dict):
+        """Track a prediction for AI Learning System when entering a position."""
+        try:
+            symbol = signal['symbol']
+            entry_price = signal['price']
+
+            # Extract signals from the reason_data
+            signals_dict = {}
+            if reason_data:
+                signals_dict['primary_signal'] = reason_data.get('primary_signal', 'unknown')
+                signals_dict['signal_value'] = reason_data.get('signal_value', 0)
+                if 'supporting_indicators' in reason_data:
+                    signals_dict.update(reason_data['supporting_indicators'])
+
+            # Calculate technical indicators for the prediction
+            if len(data) >= 20:
+                # RSI
+                delta = data['close'].diff()
+                gain = delta.where(delta > 0, 0).rolling(14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+                rs = gain / loss.replace(0, 0.0001)
+                rsi = 100 - (100 / (1 + rs))
+                signals_dict['rsi'] = float(rsi.iloc[-1]) if not pd.isna(rsi.iloc[-1]) else 50
+
+                # MACD
+                ema12 = data['close'].ewm(span=12).mean()
+                ema26 = data['close'].ewm(span=26).mean()
+                macd = ema12 - ema26
+                signals_dict['macd'] = float(macd.iloc[-1]) if not pd.isna(macd.iloc[-1]) else 0
+
+                # Momentum
+                momentum = (data['close'].iloc[-1] / data['close'].iloc[-5] - 1) * 100
+                signals_dict['momentum_5d'] = float(momentum) if not pd.isna(momentum) else 0
+
+            # Create prediction
+            prediction = Prediction(
+                prediction_id=self.market_monitor.prediction_tracker.generate_prediction_id(),
+                timestamp=timestamp if isinstance(timestamp, datetime) else timestamp.to_pydatetime(),
+                symbol=symbol,
+                predicted_direction='up',  # We're buying, so we predict up
+                confidence=70.0,  # Default confidence for backtest entries
+                predicted_change_pct=2.0,  # Estimated target
+                timeframe='backtest',
+                target_price=entry_price * 1.02,  # 2% target
+                entry_price=entry_price,
+                signals=signals_dict,
+                reasoning=f"Backtest entry: {reason_data.get('primary_signal', 'strategy signal')}"
+            )
+
+            # Store prediction
+            self.backtest_predictions[symbol] = prediction
+
+            # Add to market monitor's prediction tracker
+            self.market_monitor.prediction_tracker.add_prediction(prediction)
+
+            logger.debug(f"Tracked prediction for {symbol} at ${entry_price:.2f}")
+
+        except Exception as e:
+            logger.warning(f"Error tracking prediction: {e}")
+
+    def _resolve_prediction(self, symbol: str, exit_price: float, position):
+        """Resolve a prediction when a position is closed."""
+        try:
+            if symbol not in self.backtest_predictions:
+                return
+
+            prediction = self.backtest_predictions[symbol]
+
+            # Resolve the prediction in the tracker (it calculates actual_change internally)
+            self.market_monitor.prediction_tracker.resolve_prediction(
+                prediction.prediction_id,
+                exit_price
+            )
+
+            # Calculate actual change for logging
+            entry_price = position.entry_price
+            actual_change_pct = ((exit_price / entry_price) - 1) * 100
+            was_correct = actual_change_pct > 0
+
+            # Remove from our tracking
+            del self.backtest_predictions[symbol]
+
+            logger.debug(f"Resolved prediction for {symbol}: {'correct' if was_correct else 'wrong'} "
+                        f"({actual_change_pct:+.2f}%)")
+
+        except Exception as e:
+            logger.warning(f"Error resolving prediction: {e}")
+
+    def _run_post_backtest_learning(self):
+        """Run AI Learning System after backtest to update signal weights."""
+        try:
+            # Get accuracy stats
+            stats = self.market_monitor.prediction_tracker.get_accuracy_stats(days=365)
+
+            if stats['total_predictions'] > 0:
+                logger.info(f"AI Learning: {stats['total_predictions']} predictions tracked, "
+                           f"{stats['accuracy']:.1f}% accuracy")
+
+                # Run learning to adjust weights
+                self.market_monitor._learn_from_history()
+
+                logger.info("AI Learning: Signal weights updated based on backtest results")
+
+                # Log updated weights
+                logger.info("Updated signal weights:")
+                for signal, weight in sorted(self.market_monitor.signal_weights.items(),
+                                            key=lambda x: x[1], reverse=True)[:5]:
+                    logger.info(f"  {signal}: {weight:.3f}")
+
+        except Exception as e:
+            logger.warning(f"Error in post-backtest learning: {e}")
 
     def calculate_performance(self) -> Dict[str, Any]:
         """Calculate comprehensive performance metrics."""
@@ -313,25 +607,27 @@ class BacktestEngine:
 
         # Risk-adjusted returns
         if len(equity_df) > 1:
-            returns = equity_df['return'].pct_change().dropna()
+            # Calculate daily returns from equity values (not from cumulative return column)
+            equity_series = equity_df['equity']
+            daily_returns = equity_series.pct_change().dropna()
 
-            if len(returns) > 0 and returns.std() > 0:
-                sharpe_ratio = (returns.mean() / returns.std()) * np.sqrt(252)
+            if len(daily_returns) > 0 and daily_returns.std() > 0:
+                # Annualized Sharpe ratio (assuming 252 trading days)
+                sharpe_ratio = (daily_returns.mean() / daily_returns.std()) * np.sqrt(252)
             else:
                 sharpe_ratio = 0
 
             # Sortino ratio (downside deviation)
-            downside_returns = returns[returns < 0]
+            downside_returns = daily_returns[daily_returns < 0]
             if len(downside_returns) > 0 and downside_returns.std() > 0:
-                sortino_ratio = (returns.mean() / downside_returns.std()) * np.sqrt(252)
+                sortino_ratio = (daily_returns.mean() / downside_returns.std()) * np.sqrt(252)
             else:
                 sortino_ratio = 0
 
-            # Maximum drawdown
-            cumulative = (1 + returns).cumprod()
-            running_max = cumulative.expanding().max()
-            drawdown = (cumulative - running_max) / running_max
-            max_drawdown = drawdown.min() * 100
+            # Maximum drawdown from equity curve
+            running_max = equity_series.expanding().max()
+            drawdown = (equity_series - running_max) / running_max
+            max_drawdown = drawdown.min() * 100  # Convert to percentage
         else:
             sharpe_ratio = 0
             sortino_ratio = 0

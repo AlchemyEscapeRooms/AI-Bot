@@ -5,8 +5,8 @@ import pandas as pd
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from ..utils.logger import get_logger
-from ..config import config
+from utils.logger import get_logger
+from config import config
 
 logger = get_logger(__name__)
 

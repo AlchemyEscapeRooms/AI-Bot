@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from contextlib import contextmanager
 import pandas as pd
 
-from ..config import config
-from .logger import get_logger
+from config import config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -613,6 +613,17 @@ class Database:
         results: str
     ):
         """Store backtest results."""
+        # Convert pandas Timestamps to ISO format strings for SQLite
+        if hasattr(start_date, 'isoformat'):
+            start_date = start_date.isoformat()
+        else:
+            start_date = str(start_date)
+
+        if hasattr(end_date, 'isoformat'):
+            end_date = end_date.isoformat()
+        else:
+            end_date = str(end_date)
+
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -623,7 +634,7 @@ class Database:
                     parameters, results
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                datetime.now(),
+                datetime.now().isoformat(),
                 strategy_name,
                 start_date,
                 end_date,

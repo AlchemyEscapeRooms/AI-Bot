@@ -11,22 +11,14 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
-from ai_trading_bot.core.trading_bot import TradingBot
-from ai_trading_bot.core.personality_profiles import list_profiles
-from ai_trading_bot.backtesting import BacktestEngine, StrategyEvaluator
-from ai_trading_bot.data import MarketDataCollector
-from ai_trading_bot.utils.logger import get_logger
-from ai_trading_bot.config import config
-
-# Import static backtest components
-try:
-    from ai_trading_bot.backtesting.static_backtest_runner import StaticBacktestRunner
-    from ai_trading_bot.data.static_data_loader import StaticDataLoader
-    STATIC_BACKTEST_AVAILABLE = True
-except ImportError:
-    STATIC_BACKTEST_AVAILABLE = False
+from core.trading_bot import TradingBot
+from core.personality_profiles import list_profiles
+from backtesting import BacktestEngine, StrategyEvaluator
+from data import MarketDataCollector
+from utils.logger import get_logger
+from config import config
 
 logger = get_logger(__name__)
 
@@ -44,25 +36,8 @@ def run_trading_bot(args):
 
 
 def run_backtest(args):
-    """Run backtesting."""
-
-    # Check if using static data
-    use_static = getattr(args, 'static', False)
-
-    if use_static:
-        if not STATIC_BACKTEST_AVAILABLE:
-            logger.error("Static backtest not available. Missing dependencies.")
-            return
-
-        logger.info("Starting backtest mode with STATIC DATA")
-        run_static_backtest(args)
-    else:
-        logger.info("Starting backtest mode with LIVE DATA FETCH")
-        run_live_backtest(args)
-
-
-def run_live_backtest(args):
-    """Run backtesting with live data fetching."""
+    """Run backtesting with live data fetch."""
+    logger.info("Starting backtest mode with LIVE DATA FETCH")
 
     market_data = MarketDataCollector()
     evaluator = StrategyEvaluator()
@@ -94,126 +69,9 @@ def run_live_backtest(args):
         logger.info(f"Results saved to {args.output}")
 
 
-def run_static_backtest(args):
-    """Run backtesting with static pre-downloaded data."""
-
-    runner = StaticBacktestRunner(data_dir='static_data')
-
-    # Check if symbol is available
-    available_symbols = runner.list_available_symbols()
-
-    if args.symbol not in available_symbols:
-        logger.error(f"Symbol {args.symbol} not found in static data")
-        logger.info(f"Available symbols: {', '.join(available_symbols[:20])}...")
-        return
-
-    # Determine what type of backtest to run
-    if hasattr(args, 'compare') and args.compare:
-        # Compare all strategies
-        logger.info(f"Comparing strategies for {args.symbol}")
-
-        results = runner.run_strategy_comparison(
-            symbol=args.symbol,
-            start_date=args.start_date,
-            end_date=args.end_date
-        )
-
-        # Print results
-        print("\n" + "=" * 80)
-        print(f"STRATEGY COMPARISON RESULTS - {args.symbol}")
-        print("=" * 80)
-        if not results.empty:
-            print(results[['strategy_name', 'total_return', 'sharpe_ratio', 'win_rate', 'max_drawdown']].to_string())
-        print("=" * 80)
-
-        # Save results
-        if args.output:
-            results.to_csv(args.output, index=False)
-            logger.info(f"Results saved to {args.output}")
-
-    else:
-        # Single strategy backtest
-        strategy = getattr(args, 'strategy', 'momentum')
-
-        logger.info(f"Running {strategy} strategy on {args.symbol}")
-
-        result = runner.run_single_backtest(
-            symbol=args.symbol,
-            strategy_name=strategy,
-            start_date=args.start_date,
-            end_date=args.end_date
-        )
-
-        if result:
-            # Print results
-            print("\n" + "=" * 80)
-            print(f"BACKTEST RESULTS - {args.symbol}")
-            print("=" * 80)
-            print(f"Strategy: {result['strategy_name']}")
-            print(f"Period: {result['start_date']} to {result['end_date']}")
-            print(f"\nPerformance Metrics:")
-            print(f"  Total Return: {result['total_return']:.2f}%")
-            print(f"  Sharpe Ratio: {result['sharpe_ratio']:.2f}")
-            print(f"  Sortino Ratio: {result['sortino_ratio']:.2f}")
-            print(f"  Max Drawdown: {result['max_drawdown']:.2f}%")
-            print(f"\nTrading Statistics:")
-            print(f"  Total Trades: {result['total_trades']}")
-            print(f"  Winning Trades: {result['winning_trades']}")
-            print(f"  Losing Trades: {result['losing_trades']}")
-            print(f"  Win Rate: {result['win_rate']:.2f}%")
-            print(f"  Profit Factor: {result['profit_factor']:.2f}")
-            print(f"  Average Trade: ${result['avg_trade']:.2f}")
-            print(f"  Largest Win: ${result['largest_win']:.2f}")
-            print(f"  Largest Loss: ${result['largest_loss']:.2f}")
-            print("=" * 80)
-
-            # Save results
-            if args.output:
-                import json
-                with open(args.output, 'w') as f:
-                    # Remove non-serializable items
-                    save_result = {k: v for k, v in result.items()
-                                   if k not in ['equity_curve', 'trades']}
-                    json.dump(save_result, f, indent=2)
-                logger.info(f"Results saved to {args.output}")
-
-
-def list_static_symbols(args):
-    """List available symbols in static data."""
-
-    if not STATIC_BACKTEST_AVAILABLE:
-        print("Static backtest not available. Missing dependencies.")
-        return
-
-    loader = StaticDataLoader(data_dir='static_data')
-
-    symbols = loader.list_available_symbols()
-
-    print("\n" + "=" * 80)
-    print("AVAILABLE SYMBOLS IN STATIC DATA")
-    print("=" * 80)
-    print(f"Total symbols: {len(symbols)}\n")
-
-    # Print in columns
-    cols = 6
-    for i in range(0, len(symbols), cols):
-        row = symbols[i:i+cols]
-        print("  ".join(f"{s:8}" for s in row))
-
-    print("=" * 80)
-
-    # Get data info
-    info = loader.get_data_info()
-    print(f"\nData Directory: {info['data_directory']}")
-    if info.get('summary'):
-        print(f"Generation Date: {info['summary'].get('generation_date', 'Unknown')}")
-        print(f"Data Type: {info['summary'].get('data_type', 'Unknown')}")
-    print("=" * 80 + "\n")
-
-
 def show_profiles(args):
     """Show available personality profiles."""
-    from ai_trading_bot.core.personality_profiles import PERSONALITY_PROFILES
+    from core.personality_profiles import PERSONALITY_PROFILES
 
     print("\n" + "=" * 80)
     print("AVAILABLE PERSONALITY PROFILES")
@@ -242,12 +100,51 @@ def show_config(args):
     print("=" * 80 + "\n")
 
 
+def show_data_status(args):
+    """Show data source status."""
+    market_data = MarketDataCollector()
+    status = market_data.get_data_source_status()
+
+    print("\n" + "=" * 80)
+    print("DATA SOURCE STATUS")
+    print("=" * 80 + "\n")
+
+    print(f"Alpaca:")
+    print(f"  SDK Available: {status['alpaca']['available']}")
+    print(f"  Client Initialized: {status['alpaca']['initialized']}")
+    print(f"  Is Primary: {status['alpaca']['is_primary']}")
+
+    print(f"\nyfinance:")
+    print(f"  Available: {status['yfinance']['available']}")
+    print(f"  Is Backup: {status['yfinance']['is_backup']}")
+
+    print(f"\nFallback Order: {' -> '.join(status['fallback_order'])}")
+    print("=" * 80 + "\n")
+
+
+def run_auto_trader():
+    """Start the auto-trading scheduler (default behavior when no args)."""
+    from auto_trader import run_scheduler
+    logger.info("=" * 60)
+    logger.info("AI TRADING BOT - AUTO MODE")
+    logger.info("=" * 60)
+    logger.info("Starting auto-trader scheduler...")
+    logger.info("  - Morning: Set daily goals at 8:30 AM")
+    logger.info("  - Trading: Active during market hours")
+    logger.info("  - Evening: Generate reports at 4:05 PM")
+    logger.info("=" * 60)
+    run_scheduler()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AI Trading Bot - Multifaceted automated trading system",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Run auto-trader (DEFAULT - just run without arguments)
+  python main.py
+
   # Run paper trading with balanced growth personality
   python main.py trade --mode paper --personality balanced_growth
 
@@ -259,6 +156,9 @@ Examples:
 
   # Show current configuration
   python main.py config
+
+  # Show data source status
+  python main.py status
         """
     )
 
@@ -307,11 +207,6 @@ Examples:
         help='Output file for results (optional)'
     )
     backtest_parser.add_argument(
-        '--static',
-        action='store_true',
-        help='Use static pre-downloaded data instead of fetching from API'
-    )
-    backtest_parser.add_argument(
         '--strategy',
         default='momentum',
         help='Strategy to use for backtest (default: momentum)'
@@ -322,19 +217,20 @@ Examples:
         help='Compare all strategies instead of running just one'
     )
 
-    # Static data list command
-    subparsers.add_parser('list-static', help='List available symbols in static data')
-
     # Profiles command
     subparsers.add_parser('profiles', help='Show available personality profiles')
 
     # Config command
     subparsers.add_parser('config', help='Show current configuration')
 
+    # Status command
+    subparsers.add_parser('status', help='Show data source status')
+
     args = parser.parse_args()
 
+    # DEFAULT: If no command given, run the auto-trader
     if not args.command:
-        parser.print_help()
+        run_auto_trader()
         return
 
     # Route to appropriate handler
@@ -342,12 +238,12 @@ Examples:
         run_trading_bot(args)
     elif args.command == 'backtest':
         run_backtest(args)
-    elif args.command == 'list-static':
-        list_static_symbols(args)
     elif args.command == 'profiles':
         show_profiles(args)
     elif args.command == 'config':
         show_config(args)
+    elif args.command == 'status':
+        show_data_status(args)
 
 
 if __name__ == '__main__':

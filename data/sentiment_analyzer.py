@@ -5,8 +5,8 @@ from typing import Dict, List, Any, Tuple
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-from ..utils.logger import get_logger
-from ..utils.database import Database
+from utils.logger import get_logger
+from utils.database import Database
 
 logger = get_logger(__name__)
 

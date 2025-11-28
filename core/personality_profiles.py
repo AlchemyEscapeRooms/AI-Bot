@@ -192,6 +192,34 @@ PERSONALITY_PROFILES = {
             "auto_adjust_risk": True,
             "continuous_learning": True
         }
+    ),
+
+    "ai_adaptive": PersonalityProfile(
+        name="AI Adaptive Trader",
+        description="Uses AI Learning System to continuously adapt signal weights based on prediction accuracy",
+        risk_tolerance="moderate",
+        trading_style="swing_trader",
+        max_position_size=0.10,  # 10% per position
+        max_portfolio_risk=0.02,  # 2% max risk
+        preferred_strategies=["trend_following", "momentum", "rsi", "macd"],  # Multiple strategies
+        min_confidence_threshold=0.60,  # 60% confidence threshold
+        max_daily_trades=30,
+        stop_loss_pct=0.02,  # 2%
+        take_profit_targets=[0.02, 0.05, 0.10],  # 2%, 5%, 10%
+        diversification_level="medium",
+        news_sentiment_weight=0.25,
+        ml_prediction_weight=0.35,
+        technical_analysis_weight=0.40,
+        parameters={
+            "use_ai_learning_system": True,  # Enable AI Learning System
+            "adaptive_signal_weights": True,  # Adjust weights based on accuracy
+            "prediction_tracking": True,  # Track all predictions
+            "learn_from_trades": True,  # Learn from trade outcomes
+            "accuracy_threshold": 0.60,  # 60% accuracy threshold for weight adjustments
+            "weight_adjustment_rate": 0.05,  # 5% weight adjustment per learning cycle
+            "min_predictions_for_learning": 10,  # Minimum predictions before adjusting weights
+            "relearn_frequency_hours": 1  # Re-evaluate weights every hour
+        }
     )
 }
 

@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List, Dict, Any
 import talib as ta
 
-from ..utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -227,9 +227,11 @@ class FeatureEngineer:
     ) -> List[str]:
         """Select most important features."""
 
-        # Exclude non-feature columns
-        exclude_cols = ['open', 'high', 'low', 'close', 'volume', target]
-        feature_cols = [col for col in df.columns if col not in exclude_cols]
+        # Exclude non-feature columns (including 'symbol' which contains string ticker names)
+        exclude_cols = ['open', 'high', 'low', 'close', 'volume', 'symbol', target]
+        # Only include numeric columns to avoid string-to-float conversion errors
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        feature_cols = [col for col in numeric_cols if col not in exclude_cols]
 
         if method == 'correlation':
             # Select features based on correlation with target

@@ -13,8 +13,8 @@ import joblib
 from pathlib import Path
 from datetime import datetime
 
-from ..utils.logger import get_logger
-from ..utils.database import Database
+from utils.logger import get_logger
+from utils.database import Database
 
 logger = get_logger(__name__)
 
@@ -91,11 +91,19 @@ class PredictionModel:
 
         # Train the model
         if X_val is not None and y_val is not None:
-            if self.model_type in ["xgboost", "lightgbm"]:
+            if self.model_type == "xgboost":
                 self.model.fit(
                     X_train, y_train,
                     eval_set=[(X_val, y_val)],
                     verbose=False
+                )
+            elif self.model_type == "lightgbm":
+                # LightGBM 4.x uses callbacks for verbose control
+                from lightgbm import early_stopping, log_evaluation
+                self.model.fit(
+                    X_train, y_train,
+                    eval_set=[(X_val, y_val)],
+                    callbacks=[log_evaluation(period=-1)]  # Suppress logging
                 )
             else:
                 self.model.fit(X_train, y_train)

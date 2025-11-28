@@ -5,10 +5,10 @@ import numpy as np
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from .backtest_engine import BacktestEngine
-from .strategies import STRATEGY_REGISTRY, DEFAULT_PARAMS
-from ..utils.logger import get_logger
-from ..utils.database import Database
+from backtesting.backtest_engine import BacktestEngine
+from backtesting.strategies import STRATEGY_REGISTRY, DEFAULT_PARAMS
+from utils.logger import get_logger
+from utils.database import Database
 
 logger = get_logger(__name__)
 

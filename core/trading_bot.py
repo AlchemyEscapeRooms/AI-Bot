@@ -7,14 +7,17 @@ from datetime import datetime, time as dt_time
 import schedule
 import time
 
-from ..ml_models import PredictionModel, EnsemblePredictor, ModelTrainer, FeatureEngineer
-from ..backtesting import BacktestEngine, StrategyEvaluator
-from ..data import MarketDataCollector, NewsCollector, SentimentAnalyzer
-from ..portfolio import PortfolioManager, PositionTracker, RiskManager
-from ..utils.logger import get_logger
-from ..utils.database import Database
-from ..config import config
-from .personality_profiles import PersonalityProfile, get_profile
+from ml_models import PredictionModel, EnsemblePredictor, ModelTrainer, FeatureEngineer
+from backtesting import BacktestEngine, StrategyEvaluator
+from data import MarketDataCollector, NewsCollector, SentimentAnalyzer
+from portfolio import PortfolioManager, PositionTracker, RiskManager
+from utils.logger import get_logger
+from utils.database import Database
+from utils.trade_logger import TradeReason, get_trade_logger
+from config import config
+from core.personality_profiles import PersonalityProfile, get_profile
+from core.order_executor import OrderExecutor, OrderResult
+from core.market_monitor import MarketMonitor, get_market_monitor
 
 logger = get_logger(__name__)
 
@@ -49,6 +52,14 @@ class TradingBot:
         self.model_trainer = ModelTrainer()
         self.strategy_evaluator = StrategyEvaluator()
         self.feature_engineer = FeatureEngineer()
+
+        # Order execution and trade logging
+        self.order_executor = OrderExecutor(mode=mode)
+        self.trade_logger = get_trade_logger()
+
+        # AI Learning System - shared across all personality profiles
+        self.market_monitor = get_market_monitor()
+        logger.info("AI Learning System initialized - signal weights will adapt based on accuracy")
 
         # ML models
         self.prediction_models = {}
@@ -108,6 +119,9 @@ class TradingBot:
 
         # Market open preparation
         schedule.every().day.at("09:25").do(self.prepare_for_market_open)
+
+        # Active trading cycle - runs every 1 minute during market hours
+        schedule.every(1).minutes.do(self.run_trading_cycle)
 
         # Mid-day review
         schedule.every().day.at("12:00").do(self.mid_day_review)
@@ -199,7 +213,7 @@ class TradingBot:
         logger.info("Pre-market analysis complete")
 
     def _generate_daily_predictions(self) -> List[Dict[str, Any]]:
-        """Generate predictions for potential trades."""
+        """Generate predictions for potential trades using AI learning system."""
         predictions = []
 
         # Get watchlist
@@ -212,10 +226,33 @@ class TradingBot:
                 if df.empty:
                     continue
 
-                # Engineer features
+                # Use AI Learning System for predictions (applies to ALL personality profiles)
+                ai_prediction = self.market_monitor._analyze_and_predict(symbol, df)
+
+                if ai_prediction:
+                    prediction = {
+                        'symbol': symbol,
+                        'predicted_return': ai_prediction.predicted_change_pct / 100,
+                        'confidence': ai_prediction.confidence / 100,
+                        'direction': ai_prediction.predicted_direction,
+                        'current_price': ai_prediction.entry_price,
+                        'target_price': ai_prediction.target_price,
+                        'signals': ai_prediction.signals,
+                        'reasoning': ai_prediction.reasoning,
+                        'timestamp': datetime.now()
+                    }
+
+                    predictions.append(prediction)
+
+                    # Track the prediction for learning
+                    if ai_prediction.confidence >= 60:
+                        self.market_monitor.prediction_tracker.add_prediction(ai_prediction)
+
+                    self.daily_performance['predictions_made'] += 1
+
+                # Also use ML model if available (ensemble approach)
                 df_featured = self.feature_engineer.engineer_features(df)
 
-                # Get prediction from model (if trained)
                 if 'price_predictor' in self.model_trainer.models:
                     ensemble = self.model_trainer.models['price_predictor']
 
@@ -227,28 +264,15 @@ class TradingBot:
                         # Make prediction
                         pred, confidence = ensemble.predict_with_confidence(X)
 
-                        prediction = {
-                            'symbol': symbol,
-                            'predicted_return': pred[0],
-                            'confidence': confidence[0],
-                            'direction': 'up' if pred[0] > 0 else 'down',
-                            'current_price': df['close'].iloc[-1],
-                            'timestamp': datetime.now()
-                        }
-
-                        predictions.append(prediction)
-
-                        # Store in database
+                        # Store ML prediction for comparison
                         self.db.store_prediction(
                             symbol=symbol,
                             prediction_type='price_prediction',
                             predicted_value=pred[0],
-                            predicted_direction=prediction['direction'],
+                            predicted_direction='up' if pred[0] > 0 else 'down',
                             confidence=confidence[0],
                             model_version="ensemble_v1"
                         )
-
-                        self.daily_performance['predictions_made'] += 1
 
             except Exception as e:
                 logger.error(f"Error generating prediction for {symbol}: {e}")
@@ -256,6 +280,11 @@ class TradingBot:
 
         # Sort by confidence * predicted return
         predictions.sort(key=lambda x: abs(x['predicted_return']) * x['confidence'], reverse=True)
+
+        # Log current signal weights being used
+        logger.info("Current AI Signal Weights:")
+        for signal, weight in self.market_monitor.signal_weights.items():
+            logger.info(f"  {signal}: {weight:.3f}")
 
         return predictions
 
@@ -317,6 +346,104 @@ class TradingBot:
         logger.info("Preparing for market open...")
         self.market_open = True
         self.daily_trades_count = 0
+
+    def run_trading_cycle(self):
+        """
+        Run a single trading cycle - scans for signals and executes trades.
+        This runs every 1 minute during market hours.
+        """
+        # Check if market is open (9:30 AM - 4:00 PM ET on weekdays)
+        now = datetime.now()
+        market_start = now.replace(hour=9, minute=30, second=0, microsecond=0)
+        market_end = now.replace(hour=16, minute=0, second=0, microsecond=0)
+
+        # Skip weekends
+        if now.weekday() >= 5:
+            return
+
+        # Skip outside market hours
+        if now < market_start or now > market_end:
+            return
+
+        # Ensure market_open flag is set
+        if not self.market_open:
+            self.market_open = True
+
+        # Check daily trade limit
+        if self.daily_trades_count >= self.personality.max_daily_trades:
+            logger.debug(f"Daily trade limit reached ({self.daily_trades_count}/{self.personality.max_daily_trades})")
+            return
+
+        logger.info(f"Running trading cycle at {now.strftime('%H:%M:%S')}...")
+
+        # Get the current strategy
+        from backtesting.strategies import (
+            momentum_strategy, mean_reversion_strategy, trend_following_strategy,
+            breakout_strategy, rsi_strategy, macd_strategy,
+            DEFAULT_PARAMS
+        )
+
+        strategy_map = {
+            'momentum': momentum_strategy,
+            'mean_reversion': mean_reversion_strategy,
+            'trend_following': trend_following_strategy,
+            'breakout': breakout_strategy,
+            'rsi': rsi_strategy,
+            'macd': macd_strategy,
+        }
+
+        strategy_func = strategy_map.get(self.current_strategy, trend_following_strategy)
+        strategy_params = DEFAULT_PARAMS.get(self.current_strategy, {})
+
+        # Get watchlist
+        symbols = self._get_watchlist()
+        if not symbols:
+            symbols = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'AAPL', 'MSFT', 'TSLA'])
+
+        trades_this_cycle = 0
+
+        for symbol in symbols[:10]:  # Limit to 10 symbols per cycle
+            try:
+                # Skip if daily limit reached
+                if self.daily_trades_count >= self.personality.max_daily_trades:
+                    break
+
+                # Get historical data for strategy
+                df = self.market_data.get_historical_data(symbol)
+                if df.empty or len(df) < 50:
+                    continue
+
+                # Create a mock engine for position checking
+                class MockEngine:
+                    def __init__(self, positions, cash):
+                        self.open_positions = positions
+                        self.capital = cash
+
+                positions = self.portfolio.position_tracker.get_all_positions()
+                mock_engine = MockEngine(positions, self.portfolio.cash)
+
+                # Generate signals
+                signals = strategy_func(df, mock_engine, strategy_params)
+
+                # Process signals
+                for signal in signals:
+                    if signal.get('symbol') == symbol or signal.get('symbol') == 'DEFAULT':
+                        signal['symbol'] = symbol
+                        result = self.process_trading_signal(symbol, signal)
+
+                        if result and result.success:
+                            trades_this_cycle += 1
+                            logger.info(f"Trade executed for {symbol}: {signal.get('action')} "
+                                       f"(Strategy: {self.current_strategy})")
+
+            except Exception as e:
+                logger.error(f"Error in trading cycle for {symbol}: {e}")
+                continue
+
+        if trades_this_cycle > 0:
+            logger.info(f"Trading cycle complete: {trades_this_cycle} trades executed")
+        else:
+            logger.debug("Trading cycle complete: no signals triggered")
 
     def mid_day_review(self):
         """Mid-day performance review."""
@@ -389,6 +516,21 @@ class TradingBot:
 
         # Evaluate predictions
         self._evaluate_todays_predictions()
+
+        # Run AI Learning System to adjust signal weights
+        logger.info("AI Learning System updating signal weights...")
+        self.market_monitor._learn_from_history()
+
+        # Log updated weights
+        logger.info("Updated AI Signal Weights:")
+        for signal, weight in self.market_monitor.signal_weights.items():
+            logger.info(f"  {signal}: {weight:.3f}")
+
+        # Get accuracy stats
+        accuracy = self.market_monitor.prediction_tracker.get_accuracy_stats(days=7)
+        if accuracy['total_predictions'] > 0:
+            logger.info(f"AI Prediction Accuracy (7 days): {accuracy['accuracy']:.1f}% "
+                       f"({accuracy['total_predictions']} predictions)")
 
         # Analyze what worked and what didn't
         trades_today = self.db.get_trades_history(days=1)
@@ -522,3 +664,306 @@ class TradingBot:
             quote = self.market_data.get_real_time_quote(symbol)
             prices[symbol] = quote.get('price', 0)
         return prices
+
+    def execute_trade(
+        self,
+        symbol: str,
+        action: str,
+        quantity: float,
+        reason: Dict[str, Any] = None,
+        order_type: str = "market",
+        limit_price: float = None
+    ) -> OrderResult:
+        """
+        Execute a trade with full logging and reasoning.
+
+        Args:
+            symbol: Stock symbol to trade
+            action: "buy" or "sell"
+            quantity: Number of shares
+            reason: Dict with reasoning (primary_signal, explanation, etc.)
+            order_type: "market" or "limit"
+            limit_price: Price for limit orders
+
+        Returns:
+            OrderResult with execution details
+        """
+        # Check if we can trade
+        if not self.is_trading:
+            logger.warning("Trading bot is not running")
+            return None
+
+        if not self.market_open:
+            logger.warning("Market is not open")
+            return None
+
+        # Check daily trade limit
+        if self.daily_trades_count >= self.personality.max_daily_trades:
+            logger.warning(f"Daily trade limit reached ({self.personality.max_daily_trades})")
+            return None
+
+        # Get current market snapshot
+        quote = self.market_data.get_real_time_quote(symbol)
+        current_price = quote.get('price', 0)
+
+        if current_price <= 0:
+            logger.error(f"Could not get price for {symbol}")
+            return None
+
+        market_snapshot = {
+            'price': current_price,
+            'bid': quote.get('bid', current_price),
+            'ask': quote.get('ask', current_price),
+            'volume': quote.get('volume', 0)
+        }
+
+        # Build TradeReason from dict
+        if reason:
+            trade_reason = TradeReason(
+                primary_signal=reason.get('primary_signal', 'manual'),
+                signal_value=reason.get('signal_value', 0),
+                threshold=reason.get('threshold', 0),
+                direction=reason.get('direction', 'n/a'),
+                supporting_indicators=reason.get('supporting_indicators', {}),
+                confirmations=reason.get('confirmations', []),
+                explanation=reason.get('explanation', '')
+            )
+        else:
+            trade_reason = TradeReason(
+                primary_signal='manual_trade',
+                signal_value=0,
+                threshold=0,
+                direction='n/a',
+                explanation='Manual trade without detailed reasoning'
+            )
+
+        # Check with risk manager
+        current_prices = self._get_current_prices()
+        current_prices[symbol] = current_price
+        portfolio_value = self.portfolio.get_portfolio_value(current_prices)
+
+        if action.lower() == "buy":
+            trade_value = quantity * current_price
+            if not self.portfolio.risk_manager.can_trade(trade_value, 'long'):
+                logger.warning(f"Trade rejected by risk manager: {symbol}")
+                return None
+
+        # Execute the order
+        result = self.order_executor.execute_order(
+            symbol=symbol,
+            side=action.lower(),
+            quantity=quantity,
+            order_type=order_type,
+            limit_price=limit_price,
+            strategy_name=self.current_strategy,
+            strategy_params=self.current_strategy_params,
+            reason=trade_reason,
+            market_snapshot=market_snapshot,
+            portfolio_value=portfolio_value
+        )
+
+        if result.success:
+            # Update portfolio tracking
+            if action.lower() == "buy":
+                self.portfolio.position_tracker.add_position(
+                    symbol=symbol,
+                    quantity=result.filled_quantity,
+                    price=result.filled_price,
+                    order_id=result.order_id
+                )
+                self.portfolio.cash -= result.filled_quantity * result.filled_price
+
+                # Track prediction for AI Learning System
+                self._track_live_prediction(symbol, result.filled_price, reason)
+
+            else:
+                closed_lots = self.portfolio.position_tracker.remove_position(
+                    symbol=symbol,
+                    quantity=result.filled_quantity,
+                    price=result.filled_price
+                )
+                # Add proceeds to cash
+                for lot in closed_lots:
+                    self.portfolio.cash += lot['proceeds']
+
+                    # Update risk manager P&L
+                    self.portfolio.risk_manager.record_trade_result(lot['profit_loss'])
+
+                # Resolve prediction for AI Learning System
+                self._resolve_live_prediction(symbol, result.filled_price)
+
+            # Update counters
+            self.daily_trades_count += 1
+            self.daily_performance['trades'] += 1
+
+            if action.lower() == "sell":
+                # Record profit/loss
+                for lot in closed_lots:
+                    if lot['profit_loss'] > 0:
+                        self.daily_performance['profit'] += lot['profit_loss']
+                    else:
+                        self.daily_performance['loss'] += abs(lot['profit_loss'])
+
+            logger.info(f"Trade executed: {action.upper()} {result.filled_quantity} {symbol} @ ${result.filled_price:.2f}")
+
+        return result
+
+    def _track_live_prediction(self, symbol: str, entry_price: float, reason: Dict = None):
+        """Track a prediction for AI Learning System when entering a live/paper position."""
+        try:
+            from core.market_monitor import Prediction
+
+            # Get current data for signal analysis
+            df = self.market_data.get_historical_data(symbol)
+
+            # Build signals dict from current indicators
+            signals_dict = {}
+            if reason:
+                signals_dict['primary_signal'] = reason.get('primary_signal', 'unknown')
+                signals_dict['signal_value'] = reason.get('signal_value', 0)
+                if 'supporting_indicators' in reason:
+                    signals_dict.update(reason['supporting_indicators'])
+
+            # Calculate additional indicators
+            if not df.empty and len(df) >= 20:
+                # RSI
+                delta = df['close'].diff()
+                gain = delta.where(delta > 0, 0).rolling(14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+                rs = gain / loss.replace(0, 0.0001)
+                rsi = 100 - (100 / (1 + rs))
+                signals_dict['rsi'] = float(rsi.iloc[-1]) if not pd.isna(rsi.iloc[-1]) else 50
+
+                # MACD
+                ema12 = df['close'].ewm(span=12).mean()
+                ema26 = df['close'].ewm(span=26).mean()
+                macd = ema12 - ema26
+                signals_dict['macd'] = float(macd.iloc[-1]) if not pd.isna(macd.iloc[-1]) else 0
+
+            # Create prediction
+            prediction = Prediction(
+                prediction_id=self.market_monitor.prediction_tracker.generate_prediction_id(),
+                timestamp=datetime.now(),
+                symbol=symbol,
+                predicted_direction='up',  # Buying = predicting up
+                confidence=70.0,
+                predicted_change_pct=2.0,
+                timeframe=self.mode,  # 'paper' or 'live'
+                target_price=entry_price * 1.02,
+                entry_price=entry_price,
+                signals=signals_dict,
+                reasoning=f"Live trade entry: {reason.get('primary_signal', 'strategy') if reason else 'manual'}"
+            )
+
+            # Store in market monitor's active predictions
+            self.market_monitor.prediction_tracker.add_prediction(prediction)
+
+            # Also store mapping by symbol for resolution
+            if not hasattr(self, '_live_predictions'):
+                self._live_predictions = {}
+            self._live_predictions[symbol] = prediction.prediction_id
+
+            logger.info(f"AI Learning: Tracking prediction {prediction.prediction_id} for {symbol}")
+
+        except Exception as e:
+            logger.warning(f"Error tracking live prediction: {e}")
+
+    def _resolve_live_prediction(self, symbol: str, exit_price: float):
+        """Resolve a prediction when closing a live/paper position."""
+        try:
+            if not hasattr(self, '_live_predictions') or symbol not in self._live_predictions:
+                return
+
+            prediction_id = self._live_predictions[symbol]
+
+            # Resolve the prediction
+            self.market_monitor.prediction_tracker.resolve_prediction(prediction_id, exit_price)
+
+            # Remove from tracking
+            del self._live_predictions[symbol]
+
+            logger.info(f"AI Learning: Resolved prediction {prediction_id} for {symbol}")
+
+        except Exception as e:
+            logger.warning(f"Error resolving live prediction: {e}")
+
+    def process_trading_signal(
+        self,
+        symbol: str,
+        signal: Dict[str, Any]
+    ) -> Optional[OrderResult]:
+        """
+        Process a trading signal from a strategy.
+
+        Args:
+            symbol: Stock symbol
+            signal: Signal dict with action, quantity, price, reason
+
+        Returns:
+            OrderResult if trade executed, None otherwise
+        """
+        action = signal.get('action')
+        quantity = signal.get('quantity', 0)
+        reason = signal.get('reason', {})
+
+        if not action or quantity <= 0:
+            return None
+
+        return self.execute_trade(
+            symbol=symbol,
+            action=action,
+            quantity=quantity,
+            reason=reason
+        )
+
+    def run_live_strategy(self, strategy_func, strategy_params: Dict = None):
+        """
+        Run a strategy in live mode, generating and executing signals.
+
+        Args:
+            strategy_func: Strategy function from backtesting.strategies
+            strategy_params: Parameters for the strategy
+        """
+        from backtesting.strategies import DEFAULT_PARAMS
+
+        strategy_name = strategy_func.__name__
+        self.current_strategy = strategy_name
+        self.current_strategy_params = strategy_params or DEFAULT_PARAMS.get(strategy_name, {})
+
+        logger.info(f"Running live strategy: {strategy_name}")
+
+        # Get watchlist
+        symbols = self._get_watchlist()
+
+        for symbol in symbols:
+            try:
+                # Get historical data for strategy
+                df = self.market_data.get_historical_data(symbol, period='60d')
+                if df.empty or len(df) < 50:
+                    continue
+
+                # Create a mock engine for position checking
+                class MockEngine:
+                    def __init__(self, positions):
+                        self.open_positions = positions
+                        self.capital = 100000  # Will be overridden
+
+                positions = self.portfolio.position_tracker.get_all_positions()
+                mock_engine = MockEngine(positions)
+                mock_engine.capital = self.portfolio.cash
+
+                # Generate signals
+                signals = strategy_func(df, mock_engine, self.current_strategy_params)
+
+                # Process signals
+                for signal in signals:
+                    if signal.get('symbol') == symbol or signal.get('symbol') == 'DEFAULT':
+                        signal['symbol'] = symbol  # Ensure symbol is set
+                        result = self.process_trading_signal(symbol, signal)
+
+                        if result and result.success:
+                            logger.info(f"Signal executed for {symbol}: {signal.get('action')}")
+
+            except Exception as e:
+                logger.error(f"Error processing {symbol}: {e}")
+                continue

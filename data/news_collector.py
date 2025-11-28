@@ -4,8 +4,8 @@ import requests
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 
-from ..utils.logger import get_logger
-from ..config import config
+from utils.logger import get_logger
+from config import config
 
 logger = get_logger(__name__)
 

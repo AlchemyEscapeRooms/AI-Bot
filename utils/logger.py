@@ -7,16 +7,18 @@ from typing import Optional
 
 
 def setup_logger(
-    log_file: str = "logs/trading_bot.log",
+    log_dir: str = "logs",
     level: str = "INFO",
-    max_size: str = "100 MB",
-    backup_count: int = 10
+    retention_days: int = 30
 ) -> None:
-    """Configure the logger with file and console output."""
+    """Configure the logger with daily log files and console output.
+
+    Each day gets its own log file: trading_bot_2025-11-26.log
+    """
 
     # Create logs directory if it doesn't exist
-    log_path = Path(log_file)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path = Path(log_dir)
+    log_path.mkdir(parents=True, exist_ok=True)
 
     # Remove default handler
     logger.remove()
@@ -29,13 +31,15 @@ def setup_logger(
         colorize=True
     )
 
-    # Add file handler with rotation
+    # Add file handler with daily rotation
+    # File name includes date: trading_bot_2025-11-26.log
+    log_file = str(log_path / "trading_bot_{time:YYYY-MM-DD}.log")
     logger.add(
         log_file,
         level=level,
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} | {message}",
-        rotation=max_size,
-        retention=backup_count,
+        rotation="00:00",  # Rotate at midnight
+        retention=f"{retention_days} days",
         compression="zip"
     )
 

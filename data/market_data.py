@@ -19,8 +19,8 @@ try:
 except ImportError:
     ALPACA_AVAILABLE = False
 
-from ..utils.logger import get_logger
-from ..config import config
+from utils.logger import get_logger
+from config import config
 
 logger = get_logger(__name__)
 
@@ -67,8 +67,13 @@ class MarketDataCollector:
             logger.error(f"Failed to initialize Alpaca client: {e}")
             self.alpaca_client = None
 
-    def _get_alpaca_timeframe(self, interval: str) -> TimeFrame:
+    def _get_alpaca_timeframe(self, interval: str):
         """Convert interval string to Alpaca TimeFrame."""
+        if not ALPACA_AVAILABLE:
+            return None
+
+        from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+
         interval_map = {
             '1m': TimeFrame(1, TimeFrameUnit.Minute),
             '5m': TimeFrame(5, TimeFrameUnit.Minute),

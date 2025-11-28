@@ -5,7 +5,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import pandas as pd
 
-from ..utils.logger import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
