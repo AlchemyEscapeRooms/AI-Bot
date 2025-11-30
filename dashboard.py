@@ -39,6 +39,7 @@ def print_main_menu():
     print("  8. View Trade Log")
     print("  9. Bot Watchdog Status")
     print("  10. Auto Paper Trading (AI Adaptive)")
+    print("  11. Reports & Logs")
     print("  0. Exit")
     print()
 
@@ -1285,6 +1286,512 @@ def view_watchdog_status():
                 input("  Press Enter to continue...")
 
 
+def reports_menu():
+    """Reports and Logs submenu."""
+    while True:
+        clear_screen()
+        print("\n" + "=" * 60)
+        print("  REPORTS & LOGS")
+        print("=" * 60)
+        print("\n  Generate Reports:")
+        print("  1. Generate Daily Summary Report")
+        print("  2. Generate Readable Trade Logs")
+        print("  3. Generate Both Reports")
+        print("\n  View Reports:")
+        print("  4. View Today's Daily Summary")
+        print("  5. View Readable Trade Log")
+        print("  6. View Recent Log File")
+        print("\n  0. Back to Main Menu")
+        print()
+
+        choice = input("  Enter choice: ").strip()
+
+        if choice == "0":
+            break
+        elif choice == "1":
+            generate_daily_report()
+        elif choice == "2":
+            generate_readable_logs_menu()
+        elif choice == "3":
+            generate_daily_report()
+            generate_readable_logs_menu()
+        elif choice == "4":
+            view_daily_summary()
+        elif choice == "5":
+            view_readable_trade_log()
+        elif choice == "6":
+            view_recent_log()
+        else:
+            print("  Invalid choice.")
+            input("\n  Press Enter to continue...")
+
+
+def generate_daily_report():
+    """Generate daily summary report with date selection."""
+    from datetime import datetime, date, timedelta
+    
+    print("\n" + "-" * 50)
+    print("  GENERATE DAILY SUMMARY REPORT")
+    print("-" * 50)
+    
+    # Date selection
+    print("\n  Select date range:")
+    print("    1. Today only")
+    print("    2. Yesterday")
+    print("    3. Last 7 days")
+    print("    4. Last 30 days")
+    print("    5. Custom date range")
+    print("    0. Cancel")
+    
+    choice = input("\n  Choice: ").strip()
+    
+    if choice == "0":
+        return
+    
+    today = date.today()
+    date_from = None
+    date_to = None
+    
+    if choice == '1':
+        date_from = today
+        date_to = today
+    elif choice == '2':
+        date_from = today - timedelta(days=1)
+        date_to = today - timedelta(days=1)
+    elif choice == '3':
+        date_from = today - timedelta(days=7)
+        date_to = today
+    elif choice == '4':
+        date_from = today - timedelta(days=30)
+        date_to = today
+    elif choice == '5':
+        print("\n  Enter dates in YYYY-MM-DD format")
+        
+        from_input = input("  From date (e.g., 2025-01-01): ").strip()
+        to_input = input("  To date (e.g., 2025-11-30): ").strip()
+        
+        if from_input:
+            try:
+                date_from = datetime.strptime(from_input, '%Y-%m-%d').date()
+            except ValueError:
+                print(f"  Invalid from date: {from_input}")
+                input("\n  Press Enter to continue...")
+                return
+                
+        if to_input:
+            try:
+                date_to = datetime.strptime(to_input, '%Y-%m-%d').date()
+            except ValueError:
+                print(f"  Invalid to date: {to_input}")
+                input("\n  Press Enter to continue...")
+                return
+    else:
+        print("  Invalid choice.")
+        input("\n  Press Enter to continue...")
+        return
+    
+    # Display selected range
+    if date_from and date_to:
+        if date_from == date_to:
+            print(f"\n  Generating report for: {date_from}")
+        else:
+            print(f"\n  Generating report for: {date_from} to {date_to}")
+
+    try:
+        from utils.daily_summary import (
+            set_daily_goals, generate_daily_summary, save_daily_summary,
+            generate_self_reflection, DailySummaryGenerator
+        )
+
+        generator = DailySummaryGenerator()
+        
+        # Generate summary for date range
+        print("\n  Generating summary...")
+        try:
+            summary = generator.generate_summary(
+                target_date=date_to,
+                date_from=date_from,
+                date_to=date_to
+            )
+            
+            if summary:
+                # Save the summary
+                save_daily_summary(summary)
+                
+                print("\n" + "=" * 60)
+                print("  SUMMARY PREVIEW")
+                print("=" * 60)
+                print(f"  Period: {date_from} to {date_to}")
+                print(f"  Starting Value: ${summary.starting_portfolio_value:,.2f}")
+                print(f"  Ending Value: ${summary.ending_portfolio_value:,.2f}")
+                print(f"  Daily P&L: ${summary.daily_pnl:,.2f} ({summary.daily_return_pct:+.2f}%)")
+                print(f"  Total Trades: {summary.total_trades}")
+                print(f"  Win Rate: {summary.win_rate:.1f}%")
+                print("=" * 60)
+            else:
+                print("  No trading data found for this period.")
+                
+        except Exception as e:
+            print(f"  Warning: Could not generate summary: {e}")
+            import traceback
+            traceback.print_exc()
+
+        # Generate self-reflection
+        print("\n  Generating self-reflection report...")
+        try:
+            reflection = generate_self_reflection(target_date=date_to)
+            if reflection:
+                print("\n" + "-" * 50)
+                print("  SELF-REFLECTION PREVIEW")
+                print("-" * 50)
+                preview = reflection[:500] + "..." if len(reflection) > 500 else reflection
+                print(preview)
+        except Exception as e:
+            print(f"  Warning: Could not generate reflection: {e}")
+
+        print("\n" + "-" * 50)
+        print("  Reports saved to:")
+        print("    - logs/daily_summaries/")
+        print("    - logs/self_reflection/")
+        print("-" * 50)
+
+    except ImportError as e:
+        print(f"\n  Error: Could not import daily_summary module: {e}")
+        # Fallback to simpler version
+        try:
+            from utils.daily_summary import print_daily_summary
+            print("\n  Using simplified report generator...")
+            print_daily_summary()
+        except Exception as e2:
+            print(f"  Fallback also failed: {e2}")
+    except Exception as e:
+        print(f"\n  Error generating report: {e}")
+        import traceback
+        traceback.print_exc()
+
+    input("\n  Press Enter to continue...")
+
+
+def generate_readable_logs_menu():
+    """Generate readable trade logs with filtering options."""
+    from datetime import datetime
+    
+    print("\n" + "-" * 50)
+    print("  GENERATE READABLE TRADE LOGS")
+    print("-" * 50)
+
+    try:
+        from utils.readable_trade_log import ReadableTradeLog
+
+        reader = ReadableTradeLog()
+        
+        # Show current trade counts
+        counts = reader.get_trade_counts()
+        print("\n  Available trades in database:")
+        print(f"    Total:     {counts['total']:,}")
+        print(f"    Backtest:  {counts['backtest']:,}")
+        print(f"    Paper:     {counts['paper']:,}")
+        print(f"    Live:      {counts['live']:,}")
+        print(f"    Today:     {counts['today']:,}")
+        
+        # Select trade type filter
+        print("\n  Select trade type to include:")
+        print("    1. All trades")
+        print("    2. Backtest only")
+        print("    3. Live/Paper only (real trading)")
+        print("    4. Paper only")
+        print("    5. Live only")
+        print("    0. Cancel")
+        
+        type_choice = input("\n  Choice: ").strip()
+        
+        if type_choice == "0":
+            return
+        
+        filter_type = {
+            '1': 'all',
+            '2': 'backtest',
+            '3': 'live_paper',
+            '4': 'paper',
+            '5': 'live'
+        }.get(type_choice, 'all')
+        
+        # Select date filter
+        print("\n  Select time period:")
+        print("    1. All time")
+        print("    2. Today only")
+        print("    3. Last 7 days")
+        print("    4. Last 30 days")
+        print("    5. Custom date range")
+        
+        date_choice = input("\n  Choice: ").strip()
+        
+        date_filter = None
+        date_from = None
+        date_to = None
+        
+        if date_choice == '5':
+            # Custom date range
+            print("\n  Enter dates in YYYY-MM-DD format (or press Enter to skip)")
+            
+            from_input = input("  From date (e.g., 2025-01-01): ").strip()
+            to_input = input("  To date (e.g., 2025-11-30): ").strip()
+            
+            # Validate and parse dates
+            if from_input:
+                try:
+                    datetime.strptime(from_input, '%Y-%m-%d')
+                    date_from = from_input
+                except ValueError:
+                    print(f"  Invalid from date: {from_input}, ignoring")
+                    
+            if to_input:
+                try:
+                    datetime.strptime(to_input, '%Y-%m-%d')
+                    date_to = to_input
+                except ValueError:
+                    print(f"  Invalid to date: {to_input}, ignoring")
+            
+            date_filter = 'custom'
+        else:
+            date_filter = {
+                '1': None,
+                '2': 'today',
+                '3': 'week',
+                '4': 'month'
+            }.get(date_choice, None)
+
+        # Generate text report
+        print("\n  Generating detailed text report...")
+        txt_path = "trade_logs/trades_readable.txt"
+        try:
+            result = reader.generate_readable_report(
+                txt_path, 
+                filter_type=filter_type, 
+                date_filter=date_filter,
+                date_from=date_from,
+                date_to=date_to
+            )
+            if "No trades found" in result:
+                print(f"  {result}")
+            else:
+                print(f"  Created: {txt_path}")
+        except Exception as e:
+            print(f"  Error creating text report: {e}")
+
+        # Generate simple CSV
+        print("\n  Generating simple CSV...")
+        csv_path = "trade_logs/trades_simple.csv"
+        try:
+            result = reader.generate_simple_csv(
+                csv_path, 
+                filter_type=filter_type, 
+                date_filter=date_filter,
+                date_from=date_from,
+                date_to=date_to
+            )
+            if result == "No trades found.":
+                print(f"  {result}")
+            else:
+                print(f"  Created: {csv_path}")
+        except Exception as e:
+            print(f"  Error creating CSV: {e}")
+
+        print("\n" + "-" * 50)
+        print("  Files saved to trade_logs/ folder:")
+        print("    - trades_readable.txt (detailed report)")
+        print("    - trades_simple.csv (spreadsheet)")
+        print("-" * 50)
+
+    except ImportError as e:
+        print(f"\n  Error: Could not import readable_trade_log module: {e}")
+    except Exception as e:
+        print(f"\n  Error generating logs: {e}")
+        import traceback
+        traceback.print_exc()
+
+    input("\n  Press Enter to continue...")
+
+
+def view_daily_summary():
+    """View today's daily summary."""
+    from pathlib import Path
+    from datetime import date
+
+    print("\n" + "-" * 50)
+    print("  TODAY'S DAILY SUMMARY")
+    print("-" * 50)
+
+    # Find today's summary file
+    today = date.today().isoformat()
+    summary_dir = Path(__file__).parent / "logs" / "daily_summaries"
+    summary_file = summary_dir / f"daily_summary_{today}.txt"
+
+    if summary_file.exists():
+        print(f"\n  File: {summary_file.name}")
+        print("=" * 60)
+        try:
+            # Try UTF-8 first, then fallback to other encodings
+            content = None
+            for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+                try:
+                    content = summary_file.read_text(encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if content:
+                print(content)
+            else:
+                # Last resort: read as bytes and decode with error handling
+                content = summary_file.read_bytes().decode('utf-8', errors='replace')
+                print(content)
+        except Exception as e:
+            print(f"  Error reading file: {e}")
+    else:
+        # Try to find the most recent summary
+        if summary_dir.exists():
+            summaries = sorted(summary_dir.glob("daily_summary_*.txt"), reverse=True)
+            if summaries:
+                most_recent = summaries[0]
+                print(f"\n  No summary for today. Showing most recent:")
+                print(f"  File: {most_recent.name}")
+                print("=" * 60)
+                try:
+                    # Try UTF-8 first, then fallback to other encodings
+                    content = None
+                    for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+                        try:
+                            content = most_recent.read_text(encoding=encoding)
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    
+                    if content:
+                        print(content)
+                    else:
+                        content = most_recent.read_bytes().decode('utf-8', errors='replace')
+                        print(content)
+                except Exception as e:
+                    print(f"  Error reading file: {e}")
+            else:
+                print("\n  No daily summaries found.")
+                print("  Generate one using option 1 from this menu.")
+        else:
+            print("\n  Daily summaries folder not found.")
+            print("  Generate a report using option 1 from this menu.")
+
+    input("\n  Press Enter to continue...")
+
+
+def view_readable_trade_log():
+    """View the readable trade log."""
+    from pathlib import Path
+
+    print("\n" + "-" * 50)
+    print("  READABLE TRADE LOG")
+    print("-" * 50)
+
+    trade_log = Path(__file__).parent / "trade_logs" / "trades_readable.txt"
+
+    if trade_log.exists():
+        print(f"\n  File: {trade_log.name}")
+        print("=" * 60)
+        try:
+            # Try UTF-8 first, then fallback to other encodings
+            content = None
+            for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+                try:
+                    content = trade_log.read_text(encoding=encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if not content:
+                content = trade_log.read_bytes().decode('utf-8', errors='replace')
+            
+            # If content is very long, show paginated
+            lines = content.split('\n')
+            if len(lines) > 50:
+                print(f"  (Showing first 50 of {len(lines)} lines)")
+                print("=" * 60)
+                print('\n'.join(lines[:50]))
+                print("\n  ... (truncated)")
+                print(f"\n  Full file: {trade_log}")
+            else:
+                print(content)
+        except Exception as e:
+            print(f"  Error reading file: {e}")
+    else:
+        print("\n  Readable trade log not found.")
+        print("  Generate one using option 2 from this menu.")
+
+    input("\n  Press Enter to continue...")
+
+
+def view_recent_log():
+    """View the most recent bot log file."""
+    from pathlib import Path
+
+    print("\n" + "-" * 50)
+    print("  RECENT BOT LOG")
+    print("-" * 50)
+
+    logs_dir = Path(__file__).parent / "logs"
+    
+    # Find log files
+    log_files = sorted(logs_dir.glob("trading_bot*.log"), reverse=True)
+
+    if log_files:
+        print("\n  Available log files:")
+        for i, log_file in enumerate(log_files[:5], 1):
+            size_kb = log_file.stat().st_size / 1024
+            print(f"    {i}. {log_file.name} ({size_kb:.1f} KB)")
+
+        print("\n  Enter number to view (or 0 to go back):")
+        choice = input("  Choice: ").strip()
+
+        try:
+            idx = int(choice)
+            if idx == 0:
+                return
+            if 1 <= idx <= len(log_files[:5]):
+                log_file = log_files[idx - 1]
+                print(f"\n  Viewing: {log_file.name}")
+                print("=" * 60)
+
+                # Read last 100 lines with encoding fallback
+                try:
+                    content = None
+                    for encoding in ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']:
+                        try:
+                            content = log_file.read_text(encoding=encoding)
+                            break
+                        except UnicodeDecodeError:
+                            continue
+                    
+                    if not content:
+                        content = log_file.read_bytes().decode('utf-8', errors='replace')
+                    
+                    lines = content.split('\n')
+                    if len(lines) > 100:
+                        print(f"  (Showing last 100 of {len(lines)} lines)")
+                        print("=" * 60)
+                        print('\n'.join(lines[-100:]))
+                    else:
+                        print('\n'.join(lines))
+                except Exception as e:
+                    print(f"  Error reading file: {e}")
+            else:
+                print("  Invalid choice.")
+        except ValueError:
+            print("  Invalid input.")
+    else:
+        print("\n  No log files found.")
+
+    input("\n  Press Enter to continue...")
+
+
 def main():
     """Main dashboard loop."""
     while True:
@@ -1317,6 +1824,8 @@ def main():
             view_watchdog_status()
         elif choice == "10":
             auto_paper_trading_menu()
+        elif choice == "11":
+            reports_menu()
         else:
             print("  Invalid choice. Try again.")
             input("\n  Press Enter to continue...")

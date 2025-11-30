@@ -22,14 +22,85 @@ class ReadableTradeLog:
     def __init__(self):
         self.db = Database()
 
-    def get_all_trades(self) -> pd.DataFrame:
-        """Get all trades from database."""
+    def get_all_trades(self, filter_type: str = 'all', date_filter: str = None, 
+                       date_from: str = None, date_to: str = None) -> pd.DataFrame:
+        """
+        Get trades from database with optional filtering.
+        
+        Args:
+            filter_type: 'all', 'backtest', 'live', 'paper', 'live_paper'
+            date_filter: 'today', 'week', 'month', 'custom', or None for all time
+            date_from: Start date for custom range (YYYY-MM-DD)
+            date_to: End date for custom range (YYYY-MM-DD)
+        
+        Returns:
+            DataFrame of filtered trades
+        """
+        # Build WHERE clause based on filter
+        conditions = []
+        
+        # Filter by trade type
+        if filter_type == 'backtest':
+            conditions.append("mode = 'backtest'")
+        elif filter_type == 'live':
+            conditions.append("mode = 'live'")
+        elif filter_type == 'paper':
+            conditions.append("mode = 'paper'")
+        elif filter_type == 'live_paper':
+            conditions.append("(mode = 'live' OR mode = 'paper')")
+        # 'all' = no filter
+        
+        # Filter by date
+        if date_filter == 'today':
+            conditions.append("DATE(timestamp) = DATE('now')")
+        elif date_filter == 'week':
+            conditions.append("timestamp >= DATE('now', '-7 days')")
+        elif date_filter == 'month':
+            conditions.append("timestamp >= DATE('now', '-30 days')")
+        elif date_filter == 'custom':
+            if date_from:
+                conditions.append(f"DATE(timestamp) >= '{date_from}'")
+            if date_to:
+                conditions.append(f"DATE(timestamp) <= '{date_to}'")
+        
+        # Build query
+        query = "SELECT * FROM trade_log"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY timestamp ASC"
+        
         with self.db.get_connection() as conn:
-            df = pd.read_sql_query(
-                "SELECT * FROM trade_log ORDER BY timestamp ASC",
-                conn
-            )
+            df = pd.read_sql_query(query, conn)
         return df
+
+    def get_trade_counts(self) -> dict:
+        """Get counts of trades by type for display."""
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            counts = {
+                'total': 0,
+                'backtest': 0,
+                'live': 0,
+                'paper': 0,
+                'today': 0
+            }
+            
+            # Total
+            cursor.execute("SELECT COUNT(*) FROM trade_log")
+            counts['total'] = cursor.fetchone()[0]
+            
+            # By mode
+            cursor.execute("SELECT mode, COUNT(*) FROM trade_log GROUP BY mode")
+            for row in cursor.fetchall():
+                if row[0] in counts:
+                    counts[row[0]] = row[1]
+            
+            # Today
+            cursor.execute("SELECT COUNT(*) FROM trade_log WHERE DATE(timestamp) = DATE('now')")
+            counts['today'] = cursor.fetchone()[0]
+            
+        return counts
 
     def explain_strategy(self, strategy_name: str) -> str:
         """Get plain English description of a strategy."""
@@ -37,12 +108,21 @@ class ReadableTradeLog:
             'momentum_strategy': 'Momentum - Buys stocks that are going up, sells when they stop',
             'momentum': 'Momentum - Buys stocks that are going up, sells when they stop',
             'mean_reversion_strategy': 'Mean Reversion - Buys when stock drops too far, expecting a bounce back',
+            'mean_reversion': 'Mean Reversion - Buys when stock drops too far, expecting a bounce back',
             'trend_following_strategy': 'Trend Following - Follows the overall direction of the market',
+            'trend_following': 'Trend Following - Follows the overall direction of the market',
             'breakout_strategy': 'Breakout - Buys when price breaks above recent highs',
+            'breakout': 'Breakout - Buys when price breaks above recent highs',
             'rsi_strategy': 'RSI - Buys oversold stocks, sells overbought stocks',
+            'rsi': 'RSI - Buys oversold stocks, sells overbought stocks',
             'macd_strategy': 'MACD - Uses moving average crossovers to find buy/sell signals',
+            'macd': 'MACD - Uses moving average crossovers to find buy/sell signals',
             'pairs_trading_strategy': 'Pairs Trading - Trades based on statistical relationships',
-            'ml_hybrid_strategy': 'AI Hybrid - Uses multiple signals combined with machine learning'
+            'pairs_trading': 'Pairs Trading - Trades based on statistical relationships',
+            'ml_hybrid_strategy': 'AI Hybrid - Uses multiple signals combined with machine learning',
+            'ml_hybrid': 'AI Hybrid - Uses multiple signals combined with machine learning',
+            'ai_prediction': 'AI Prediction - Uses confidence-weighted technical analysis',
+            'ai_prediction_strategy': 'AI Prediction - Uses confidence-weighted technical analysis'
         }
         return strategies.get(strategy_name, strategy_name)
 
@@ -142,23 +222,41 @@ class ReadableTradeLog:
         lines.append("")
         return "\n".join(lines)
 
-    def generate_readable_report(self, output_path: str = None) -> str:
-        """Generate a complete readable trade report."""
+    def generate_readable_report(self, output_path: str = None, filter_type: str = 'all', 
+                                   date_filter: str = None, date_from: str = None, date_to: str = None) -> str:
+        """
+        Generate a complete readable trade report.
+        
+        Args:
+            output_path: Where to save the report
+            filter_type: 'all', 'backtest', 'live', 'paper', 'live_paper'
+            date_filter: 'today', 'week', 'month', 'custom', or None
+            date_from: Start date for custom range (YYYY-MM-DD)
+            date_to: End date for custom range (YYYY-MM-DD)
+        """
 
         if output_path is None:
             output_path = "trade_logs/trades_readable.txt"
 
-        df = self.get_all_trades()
+        df = self.get_all_trades(filter_type=filter_type, date_filter=date_filter, 
+                                  date_from=date_from, date_to=date_to)
 
         if df.empty:
-            return "No trades found in the database."
+            filter_desc = self._get_filter_description(filter_type, date_filter, date_from, date_to)
+            return f"No trades found matching filter: {filter_desc}"
+
+        # Build title based on filter
+        filter_desc = self._get_filter_description(filter_type, date_filter, date_from, date_to)
 
         lines = []
         lines.append("=" * 78)
         lines.append("              TRADING BOT - TRADE LOG (EASY TO READ)")
         lines.append("=" * 78)
         lines.append("")
-        lines.append("This report shows all trades made by your trading bot in plain English.")
+        lines.append(f"Filter: {filter_desc}")
+        lines.append(f"Total trades in this report: {len(df)}")
+        lines.append("")
+        lines.append("This report shows trades made by your trading bot in plain English.")
         lines.append("")
         lines.append("QUICK GUIDE:")
         lines.append("  - BOUGHT = Bot purchased shares (expecting price to go up)")
@@ -167,7 +265,7 @@ class ReadableTradeLog:
         lines.append("  - LOSS = Trade lost money")
         lines.append("")
         lines.append("=" * 78)
-        lines.append("                         ALL TRADES")
+        lines.append(f"                         TRADES ({filter_desc.upper()})")
         lines.append("=" * 78)
         lines.append("")
 
@@ -227,13 +325,56 @@ class ReadableTradeLog:
         logger.info(f"Readable trade log saved to: {output_path}")
         return report
 
-    def generate_simple_csv(self, output_path: str = None) -> str:
-        """Generate a simplified CSV with plain English columns."""
+    def _get_filter_description(self, filter_type: str, date_filter: str, 
+                                 date_from: str = None, date_to: str = None) -> str:
+        """Get human-readable description of the filter."""
+        parts = []
+        
+        # Trade type
+        type_desc = {
+            'all': 'All trades',
+            'backtest': 'Backtest trades only',
+            'live': 'Live trades only',
+            'paper': 'Paper trades only',
+            'live_paper': 'Live & Paper trades'
+        }
+        parts.append(type_desc.get(filter_type, filter_type))
+        
+        # Date filter
+        if date_filter == 'today':
+            parts.append('from today')
+        elif date_filter == 'week':
+            parts.append('from last 7 days')
+        elif date_filter == 'month':
+            parts.append('from last 30 days')
+        elif date_filter == 'custom':
+            if date_from and date_to:
+                parts.append(f'from {date_from} to {date_to}')
+            elif date_from:
+                parts.append(f'from {date_from} onwards')
+            elif date_to:
+                parts.append(f'up to {date_to}')
+        
+        return ' '.join(parts)
+
+    def generate_simple_csv(self, output_path: str = None, filter_type: str = 'all', 
+                            date_filter: str = None, date_from: str = None, date_to: str = None) -> str:
+        """
+        Generate a simplified CSV with plain English columns.
+        
+        Args:
+            output_path: Where to save the CSV
+            filter_type: 'all', 'backtest', 'live', 'paper', 'live_paper'
+            date_filter: 'today', 'week', 'month', 'custom', or None
+            date_from: Start date for custom range (YYYY-MM-DD)
+            date_to: End date for custom range (YYYY-MM-DD)
+        """
 
         if output_path is None:
             output_path = "trade_logs/trades_simple.csv"
 
-        df = self.get_all_trades()
+        df = self.get_all_trades(filter_type=filter_type, date_filter=date_filter,
+                                  date_from=date_from, date_to=date_to)
 
         if df.empty:
             return "No trades found."
@@ -243,6 +384,15 @@ class ReadableTradeLog:
             ts = pd.to_datetime(trade['timestamp'])
 
             action = "Bought" if trade['action'] == 'BUY' else "Sold"
+            
+            # Get trade type from mode
+            trade_type = trade.get('mode', 'unknown')
+            if trade_type == 'backtest':
+                trade_type = 'Backtest'
+            elif trade_type == 'paper':
+                trade_type = 'Paper'
+            elif trade_type == 'live':
+                trade_type = 'LIVE'
 
             # Determine result
             result = ""
@@ -256,6 +406,7 @@ class ReadableTradeLog:
             simple_rows.append({
                 'Date': ts.strftime("%m/%d/%Y"),
                 'Time': ts.strftime("%I:%M %p"),
+                'Type': trade_type,
                 'Stock': trade['symbol'],
                 'What Happened': f"{action} {trade['quantity']:.0f} shares",
                 'Price Per Share': f"${trade['price']:.2f}",

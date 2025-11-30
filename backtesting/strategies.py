@@ -161,12 +161,23 @@ def mean_reversion_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) 
 
 
 def trend_following_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Dict]:
-    """Trend following using moving average crossovers."""
+    """
+    Trend following using moving average state (not just crossovers).
+    
+    This strategy uses STATE-BASED logic:
+    - BUY when short MA > long MA (uptrend) AND we don't have a position
+    - SELL when short MA < long MA (downtrend) AND we have a position
+    
+    For backtesting, set use_crossover_only=True in params to use event-based logic.
+    For live trading, state-based logic ensures we don't miss opportunities.
+    """
 
     signals = []
 
     short_period = params.get('short_period', 20)
     long_period = params.get('long_period', 50)
+    use_crossover_only = params.get('use_crossover_only', False)  # False = state-based (live), True = event-based (backtest)
+    min_trend_strength = params.get('min_trend_strength', 0.5)  # Minimum % difference between MAs
 
     if len(data) < long_period:
         return signals
@@ -187,57 +198,123 @@ def trend_following_strategy(data: pd.DataFrame, engine, params: Dict[str, Any])
 
     symbol = data.get('symbol', ['DEFAULT']).iloc[-1] if 'symbol' in data.columns else 'DEFAULT'
 
-    # Bullish crossover
-    if prev_short <= prev_long and current_short > current_long:
-        if symbol not in engine.open_positions:
-            position_size = engine.capital * params.get('position_size', 0.1)
-            quantity = position_size / current_price
+    # Detect crossover events (for logging)
+    bullish_crossover = prev_short <= prev_long and current_short > current_long
+    bearish_crossover = prev_short >= prev_long and current_short < current_long
 
-            signals.append({
-                'action': 'buy',
-                'symbol': symbol,
-                'price': current_price,
-                'quantity': quantity,
-                'reason': {
-                    'primary_signal': 'ma_crossover_bullish',
-                    'signal_value': ma_diff,
-                    'threshold': 0,
-                    'direction': 'above',
-                    'supporting_indicators': {
-                        f'sma_{short_period}': current_short,
-                        f'sma_{long_period}': current_long,
-                        'prev_short_ma': prev_short,
-                        'prev_long_ma': prev_long,
-                        'ma_spread_pct': ma_diff_pct
-                    },
-                    'explanation': f"BUY: Golden Cross detected. {short_period}-day SMA (${current_short:.2f}) "
-                                  f"crossed above {long_period}-day SMA (${current_long:.2f}). Bullish trend confirmed."
-                }
-            })
+    # STATE-BASED LOGIC (for live trading)
+    if not use_crossover_only:
+        # BUY: We're in an uptrend (short MA > long MA) with sufficient strength
+        if current_short > current_long and ma_diff_pct >= min_trend_strength:
+            if symbol not in engine.open_positions:
+                position_size = engine.capital * params.get('position_size', 0.1)
+                quantity = position_size / current_price
 
-    # Bearish crossover
-    elif prev_short >= prev_long and current_short < current_long:
-        if symbol in engine.open_positions:
-            signals.append({
-                'action': 'sell',
-                'symbol': symbol,
-                'price': current_price,
-                'reason': {
-                    'primary_signal': 'ma_crossover_bearish',
-                    'signal_value': ma_diff,
-                    'threshold': 0,
-                    'direction': 'below',
-                    'supporting_indicators': {
-                        f'sma_{short_period}': current_short,
-                        f'sma_{long_period}': current_long,
-                        'prev_short_ma': prev_short,
-                        'prev_long_ma': prev_long,
-                        'ma_spread_pct': ma_diff_pct
-                    },
-                    'explanation': f"SELL: Death Cross detected. {short_period}-day SMA (${current_short:.2f}) "
-                                  f"crossed below {long_period}-day SMA (${current_long:.2f}). Bearish trend confirmed."
-                }
-            })
+                signal_type = 'ma_crossover_bullish' if bullish_crossover else 'uptrend_state'
+                explanation = (f"BUY: Golden Cross detected. " if bullish_crossover else f"BUY: Uptrend confirmed. ")
+                explanation += (f"{short_period}-day SMA (${current_short:.2f}) is above "
+                               f"{long_period}-day SMA (${current_long:.2f}) by {ma_diff_pct:.2f}%.")
+
+                signals.append({
+                    'action': 'buy',
+                    'symbol': symbol,
+                    'price': current_price,
+                    'quantity': quantity,
+                    'reason': {
+                        'primary_signal': signal_type,
+                        'signal_value': ma_diff_pct,
+                        'threshold': min_trend_strength,
+                        'direction': 'above',
+                        'supporting_indicators': {
+                            f'sma_{short_period}': current_short,
+                            f'sma_{long_period}': current_long,
+                            'ma_spread_pct': ma_diff_pct,
+                            'is_crossover': bullish_crossover
+                        },
+                        'explanation': explanation
+                    }
+                })
+
+        # SELL: We're in a downtrend (short MA < long MA)
+        elif current_short < current_long:
+            if symbol in engine.open_positions:
+                signal_type = 'ma_crossover_bearish' if bearish_crossover else 'downtrend_state'
+                explanation = (f"SELL: Death Cross detected. " if bearish_crossover else f"SELL: Downtrend detected. ")
+                explanation += (f"{short_period}-day SMA (${current_short:.2f}) is below "
+                               f"{long_period}-day SMA (${current_long:.2f}) by {abs(ma_diff_pct):.2f}%.")
+
+                signals.append({
+                    'action': 'sell',
+                    'symbol': symbol,
+                    'price': current_price,
+                    'reason': {
+                        'primary_signal': signal_type,
+                        'signal_value': ma_diff_pct,
+                        'threshold': 0,
+                        'direction': 'below',
+                        'supporting_indicators': {
+                            f'sma_{short_period}': current_short,
+                            f'sma_{long_period}': current_long,
+                            'ma_spread_pct': ma_diff_pct,
+                            'is_crossover': bearish_crossover
+                        },
+                        'explanation': explanation
+                    }
+                })
+
+    # EVENT-BASED LOGIC (for backtesting - original behavior)
+    else:
+        # Bullish crossover
+        if bullish_crossover:
+            if symbol not in engine.open_positions:
+                position_size = engine.capital * params.get('position_size', 0.1)
+                quantity = position_size / current_price
+
+                signals.append({
+                    'action': 'buy',
+                    'symbol': symbol,
+                    'price': current_price,
+                    'quantity': quantity,
+                    'reason': {
+                        'primary_signal': 'ma_crossover_bullish',
+                        'signal_value': ma_diff,
+                        'threshold': 0,
+                        'direction': 'above',
+                        'supporting_indicators': {
+                            f'sma_{short_period}': current_short,
+                            f'sma_{long_period}': current_long,
+                            'prev_short_ma': prev_short,
+                            'prev_long_ma': prev_long,
+                            'ma_spread_pct': ma_diff_pct
+                        },
+                        'explanation': f"BUY: Golden Cross detected. {short_period}-day SMA (${current_short:.2f}) "
+                                      f"crossed above {long_period}-day SMA (${current_long:.2f}). Bullish trend confirmed."
+                    }
+                })
+
+        # Bearish crossover
+        elif bearish_crossover:
+            if symbol in engine.open_positions:
+                signals.append({
+                    'action': 'sell',
+                    'symbol': symbol,
+                    'price': current_price,
+                    'reason': {
+                        'primary_signal': 'ma_crossover_bearish',
+                        'signal_value': ma_diff,
+                        'threshold': 0,
+                        'direction': 'below',
+                        'supporting_indicators': {
+                            f'sma_{short_period}': current_short,
+                            f'sma_{long_period}': current_long,
+                            'prev_short_ma': prev_short,
+                            'prev_long_ma': prev_long,
+                            'ma_spread_pct': ma_diff_pct
+                        },
+                        'explanation': f"SELL: Death Cross detected. {short_period}-day SMA (${current_short:.2f}) "
+                                      f"crossed below {long_period}-day SMA (${current_long:.2f}). Bearish trend confirmed."
+                    }
+                })
 
     return signals
 
@@ -705,6 +782,171 @@ def ml_hybrid_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Li
     return signals
 
 
+def ai_prediction_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Dict]:
+    """
+    AI-based trading strategy using MarketMonitor predictions.
+    
+    This strategy generates signals based on the AI Learning System's predictions
+    and technical indicator analysis. It uses a confidence threshold to filter
+    high-quality signals.
+    
+    For live trading, this integrates with the MarketMonitor's prediction system.
+    For backtesting, it calculates its own signals using similar logic.
+    """
+    
+    signals = []
+    
+    min_confidence = params.get('min_confidence', 70)  # Minimum confidence to trade
+    position_size_pct = params.get('position_size', 0.1)
+    
+    if len(data) < 50:
+        return signals
+    
+    current_price = data['close'].iloc[-1]
+    symbol = data.get('symbol', ['DEFAULT']).iloc[-1] if 'symbol' in data.columns else 'DEFAULT'
+    
+    # Calculate technical indicators for scoring
+    score = 0
+    reasons = []
+    
+    # 1. Momentum (20-day)
+    momentum = (data['close'].iloc[-1] / data['close'].iloc[-20] - 1) * 100
+    if momentum > 2:
+        score += 20
+        reasons.append(f"Strong momentum: {momentum:.1f}%")
+    elif momentum > 0:
+        score += 10
+        reasons.append(f"Positive momentum: {momentum:.1f}%")
+    elif momentum < -2:
+        score -= 20
+        reasons.append(f"Weak momentum: {momentum:.1f}%")
+    else:
+        score -= 10
+        reasons.append(f"Negative momentum: {momentum:.1f}%")
+    
+    # 2. RSI
+    delta = data['close'].diff()
+    gain = delta.where(delta > 0, 0).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    rs = gain / loss
+    rsi = (100 - (100 / (1 + rs))).iloc[-1]
+    
+    if rsi < 30:
+        score += 25  # Oversold = bullish
+        reasons.append(f"RSI oversold: {rsi:.1f}")
+    elif rsi < 45:
+        score += 10
+        reasons.append(f"RSI low: {rsi:.1f}")
+    elif rsi > 70:
+        score -= 25  # Overbought = bearish
+        reasons.append(f"RSI overbought: {rsi:.1f}")
+    elif rsi > 55:
+        score -= 10
+        reasons.append(f"RSI high: {rsi:.1f}")
+    
+    # 3. MACD
+    ema12 = data['close'].ewm(span=12).mean()
+    ema26 = data['close'].ewm(span=26).mean()
+    macd = ema12 - ema26
+    macd_signal = macd.ewm(span=9).mean()
+    macd_hist = macd - macd_signal
+    
+    if macd_hist.iloc[-1] > 0 and macd_hist.iloc[-2] <= 0:
+        score += 20  # Bullish crossover
+        reasons.append("MACD bullish crossover")
+    elif macd_hist.iloc[-1] > 0:
+        score += 10
+        reasons.append("MACD positive")
+    elif macd_hist.iloc[-1] < 0 and macd_hist.iloc[-2] >= 0:
+        score -= 20  # Bearish crossover
+        reasons.append("MACD bearish crossover")
+    elif macd_hist.iloc[-1] < 0:
+        score -= 10
+        reasons.append("MACD negative")
+    
+    # 4. Trend (SMA 20 vs SMA 50)
+    sma20 = data['close'].rolling(20).mean().iloc[-1]
+    sma50 = data['close'].rolling(50).mean().iloc[-1]
+    trend_strength = ((sma20 - sma50) / sma50) * 100
+    
+    if sma20 > sma50:
+        score += 15
+        reasons.append(f"Uptrend: SMA20 {trend_strength:.1f}% above SMA50")
+    else:
+        score -= 15
+        reasons.append(f"Downtrend: SMA20 {abs(trend_strength):.1f}% below SMA50")
+    
+    # 5. Volume confirmation
+    vol_avg = data['volume'].rolling(20).mean().iloc[-1]
+    vol_ratio = data['volume'].iloc[-1] / vol_avg if vol_avg > 0 else 1
+    if vol_ratio > 1.5:
+        score += 10
+        reasons.append(f"High volume: {vol_ratio:.1f}x average")
+    
+    # Convert score to confidence (0-100)
+    # Max possible score is around 90, min is around -90
+    confidence = min(100, max(0, (score + 90) / 1.8))
+    
+    # Determine direction
+    direction = 'up' if score > 0 else 'down'
+    
+    # Generate signals based on confidence threshold
+    if confidence >= min_confidence and direction == 'up':
+        if symbol not in engine.open_positions:
+            position_size = engine.capital * position_size_pct
+            quantity = position_size / current_price
+            
+            signals.append({
+                'action': 'buy',
+                'symbol': symbol,
+                'price': current_price,
+                'quantity': quantity,
+                'reason': {
+                    'primary_signal': 'ai_prediction_bullish',
+                    'signal_value': confidence,
+                    'threshold': min_confidence,
+                    'direction': 'above',
+                    'supporting_indicators': {
+                        'ai_score': score,
+                        'confidence': confidence,
+                        'momentum': momentum,
+                        'rsi': rsi,
+                        'macd_histogram': macd_hist.iloc[-1],
+                        'trend_strength': trend_strength,
+                        'volume_ratio': vol_ratio
+                    },
+                    'explanation': f"BUY: AI prediction confidence {confidence:.1f}% (threshold: {min_confidence}%). "
+                                  f"Signals: {'; '.join(reasons)}."
+                }
+            })
+    
+    elif confidence >= min_confidence and direction == 'down':
+        if symbol in engine.open_positions:
+            signals.append({
+                'action': 'sell',
+                'symbol': symbol,
+                'price': current_price,
+                'reason': {
+                    'primary_signal': 'ai_prediction_bearish',
+                    'signal_value': confidence,
+                    'threshold': min_confidence,
+                    'direction': 'below',
+                    'supporting_indicators': {
+                        'ai_score': score,
+                        'confidence': confidence,
+                        'momentum': momentum,
+                        'rsi': rsi,
+                        'macd_histogram': macd_hist.iloc[-1],
+                        'trend_strength': trend_strength
+                    },
+                    'explanation': f"SELL: AI prediction bearish with {confidence:.1f}% confidence. "
+                                  f"Signals: {'; '.join(reasons)}."
+                }
+            })
+    
+    return signals
+
+
 # Strategy registry
 STRATEGY_REGISTRY = {
     'momentum': momentum_strategy,
@@ -714,7 +956,8 @@ STRATEGY_REGISTRY = {
     'rsi': rsi_strategy,
     'macd': macd_strategy,
     'pairs_trading': pairs_trading_strategy,
-    'ml_hybrid': ml_hybrid_strategy
+    'ml_hybrid': ml_hybrid_strategy,
+    'ai_prediction': ai_prediction_strategy
 }
 
 
@@ -735,7 +978,9 @@ DEFAULT_PARAMS = {
     'trend_following': {
         'short_period': 20,
         'long_period': 50,
-        'position_size': 0.9
+        'position_size': 0.9,
+        'use_crossover_only': False,  # State-based for live trading
+        'min_trend_strength': 0.5     # Minimum 0.5% spread between MAs
     },
     'breakout': {
         'lookback': 20,
@@ -762,5 +1007,9 @@ DEFAULT_PARAMS = {
     'ml_hybrid': {
         'min_confirmations': 3,
         'position_size': 0.9
+    },
+    'ai_prediction': {
+        'min_confidence': 70,
+        'position_size': 0.1  # More conservative for AI strategy
     }
 }

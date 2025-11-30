@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"powershell -Command \"\"Get-NetFirewallRule | Where-Object {$_DisplayName -like ''*git*''} | Select-Object DisplayName, Enabled, Direction, Action\"\"\")",
+      "Bash(cmd /c \"netsh advfirewall firewall show rule name=all\")",
+      "Bash(ssh:*)",
+      "Bash(tracert:*)",
+      "Bash(cmd /c \"ipconfig\")",
+      "Bash(gh:*)",
+      "Bash(cmd /c \"netsh advfirewall show currentprofile\")",
+      "Bash(cmd /c \"netsh advfirewall set allprofiles state off\")",
+      "Bash(cmd /c \"netsh advfirewall set allprofiles state on\")",
+      "Bash(echo:*)",
+      "Bash(git --version:*)",
+      "Bash(getent:*)",
+      "Bash(cmd //c \"cd \"\"C:\\Users\\joshu\\OneDrive\\AI Bot\\Improved\"\" && git push origin master\")",
+      "Bash(cmd /c \"cd /d C:\\Users\\joshu\\OneDrive\\AI Bot\\Improved && git push origin master\")",
+      "Bash(cmd /c \"echo 140.82.113.4 github.com >> C:\\Windows\\System32\\drivers\\etc\\hosts\")",
+      "Bash(tasklist:*)",
+      "Bash(netsh wfp show:*)",
+      "Bash(netsh interface ipv4 show excludedportrange tcp:*)",
+      "Bash(env)",
+      "Bash(cmd /c \"netsh winsock reset\")",
+      "Bash(cmd /c \"netsh int ip reset\")",
+      "Bash(cmd /c \"ipconfig /release\")",
+      "Bash(cmd /c \"ipconfig /renew\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

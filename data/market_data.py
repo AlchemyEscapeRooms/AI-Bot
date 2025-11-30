@@ -184,14 +184,33 @@ class MarketDataCollector:
 
         logger.info(f"Fetching data for {symbol} from {start_date} to {end_date}")
 
-        sources = ['alpaca', 'yfinance', 'alpaca']  # Try alpaca, yfinance, then alpaca again
+        # Smart source selection: skip Alpaca if it's been failing
+        if not hasattr(self, '_alpaca_fail_count'):
+            self._alpaca_fail_count = 0
+            self._alpaca_disabled_until = None
+        
+        # Re-enable Alpaca after 5 minutes
+        if self._alpaca_disabled_until and datetime.now() > self._alpaca_disabled_until:
+            self._alpaca_fail_count = 0
+            self._alpaca_disabled_until = None
+            logger.info("Re-enabling Alpaca after timeout")
+        
+        # If Alpaca has failed 3+ times, skip it temporarily
+        skip_alpaca = self._alpaca_fail_count >= 3
+        
+        if skip_alpaca:
+            sources = ['yfinance']
+        else:
+            sources = ['alpaca', 'yfinance', 'alpaca']  # Try alpaca, yfinance, then alpaca again
+            
         last_error = None
 
         for attempt, source in enumerate(sources):
             try:
-                if source == 'alpaca' and self.alpaca_client:
+                if source == 'alpaca' and self.alpaca_client and not skip_alpaca:
                     df = self._fetch_from_alpaca(symbol, start_date, end_date, interval)
                     if not df.empty:
+                        self._alpaca_fail_count = 0  # Reset on success
                         return df
                 elif source == 'yfinance':
                     df = self._fetch_from_yfinance(symbol, start_date, end_date, interval)
@@ -204,6 +223,13 @@ class MarketDataCollector:
             except Exception as e:
                 last_error = e
                 logger.warning(f"Attempt {attempt + 1} ({source}) failed for {symbol}: {e}")
+                
+                # Track Alpaca failures
+                if source == 'alpaca':
+                    self._alpaca_fail_count += 1
+                    if self._alpaca_fail_count >= 3:
+                        self._alpaca_disabled_until = datetime.now() + timedelta(minutes=5)
+                        logger.warning(f"Alpaca disabled for 5 minutes after {self._alpaca_fail_count} failures")
 
                 if attempt < len(sources) - 1:
                     time.sleep(self.retry_delay)

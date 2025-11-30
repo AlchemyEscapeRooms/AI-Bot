@@ -369,13 +369,26 @@ class DailySummaryGenerator:
                     WHERE goal_id = ?
                 """, (actual_value, 1 if achieved else 0, notes, goal_id))
 
-    def generate_summary(self, target_date: date = None) -> DailySummary:
-        """Generate a comprehensive daily summary."""
+    def generate_summary(self, target_date: date = None, date_from: date = None, date_to: date = None) -> DailySummary:
+        """
+        Generate a comprehensive daily summary.
+        
+        Args:
+            target_date: Single date for summary (legacy support)
+            date_from: Start of date range
+            date_to: End of date range
+        """
         if target_date is None:
             target_date = date.today()
+        
+        # Support date range
+        if date_from is None:
+            date_from = target_date
+        if date_to is None:
+            date_to = target_date
 
-        # Get trades for the day
-        trades_df = self._get_days_trades(target_date)
+        # Get trades for the date range
+        trades_df = self._get_trades_in_range(date_from, date_to)
 
         # Get account balances
         starting_cash, starting_portfolio = self._get_start_of_day_balance(target_date)
@@ -503,6 +516,21 @@ class DailySummaryGenerator:
                 return df
         except Exception as e:
             logger.warning(f"Could not get day's trades: {e}")
+            return pd.DataFrame()
+
+    def _get_trades_in_range(self, date_from: date, date_to: date) -> pd.DataFrame:
+        """Get all trades within a date range."""
+        try:
+            with self.db.get_connection() as conn:
+                query = """
+                    SELECT * FROM trade_log
+                    WHERE DATE(timestamp) >= ? AND DATE(timestamp) <= ?
+                    ORDER BY timestamp ASC
+                """
+                df = pd.read_sql_query(query, conn, params=(date_from.isoformat(), date_to.isoformat()))
+                return df
+        except Exception as e:
+            logger.warning(f"Could not get trades in range: {e}")
             return pd.DataFrame()
 
     def _get_start_of_day_balance(self, target_date: date) -> Tuple[float, float]:

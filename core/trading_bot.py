@@ -379,7 +379,7 @@ class TradingBot:
         # Get the current strategy
         from backtesting.strategies import (
             momentum_strategy, mean_reversion_strategy, trend_following_strategy,
-            breakout_strategy, rsi_strategy, macd_strategy,
+            breakout_strategy, rsi_strategy, macd_strategy, ai_prediction_strategy,
             DEFAULT_PARAMS
         )
 
@@ -390,10 +390,15 @@ class TradingBot:
             'breakout': breakout_strategy,
             'rsi': rsi_strategy,
             'macd': macd_strategy,
+            'ai_prediction': ai_prediction_strategy,
         }
 
         strategy_func = strategy_map.get(self.current_strategy, trend_following_strategy)
-        strategy_params = DEFAULT_PARAMS.get(self.current_strategy, {})
+        strategy_params = DEFAULT_PARAMS.get(self.current_strategy, {}).copy()
+        
+        # For live trading, ensure state-based logic is used for trend_following
+        if self.current_strategy == 'trend_following':
+            strategy_params['use_crossover_only'] = False
 
         # Get watchlist
         symbols = self._get_watchlist()
@@ -401,6 +406,7 @@ class TradingBot:
             symbols = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'AAPL', 'MSFT', 'TSLA'])
 
         trades_this_cycle = 0
+        symbols_analyzed = 0
 
         for symbol in symbols[:10]:  # Limit to 10 symbols per cycle
             try:
@@ -410,8 +416,15 @@ class TradingBot:
 
                 # Get historical data for strategy
                 df = self.market_data.get_historical_data(symbol)
-                if df.empty or len(df) < 50:
+                if df.empty:
+                    logger.debug(f"No data for {symbol}")
                     continue
+                    
+                if len(df) < 50:
+                    logger.debug(f"Insufficient data for {symbol}: {len(df)} bars (need 50+)")
+                    continue
+                
+                symbols_analyzed += 1
 
                 # Create a mock engine for position checking
                 class MockEngine:
@@ -422,28 +435,54 @@ class TradingBot:
                 positions = self.portfolio.position_tracker.get_all_positions()
                 mock_engine = MockEngine(positions, self.portfolio.cash)
 
-                # Generate signals
+                # Generate signals from primary strategy
                 signals = strategy_func(df, mock_engine, strategy_params)
+                
+                # Also try AI prediction strategy if not already using it
+                if self.current_strategy != 'ai_prediction':
+                    ai_params = DEFAULT_PARAMS.get('ai_prediction', {'min_confidence': 70, 'position_size': 0.1})
+                    ai_signals = ai_prediction_strategy(df, mock_engine, ai_params)
+                    
+                    # Add high-confidence AI signals
+                    for sig in ai_signals:
+                        if sig.get('reason', {}).get('signal_value', 0) >= 80:  # Only 80%+ confidence
+                            signals.append(sig)
+                            logger.info(f"AI signal added for {symbol}: {sig.get('action')} "
+                                       f"(confidence: {sig.get('reason', {}).get('signal_value', 0):.1f}%)")
 
+                # Log signal generation
+                if signals:
+                    logger.info(f"Generated {len(signals)} signal(s) for {symbol}")
+                
                 # Process signals
                 for signal in signals:
                     if signal.get('symbol') == symbol or signal.get('symbol') == 'DEFAULT':
                         signal['symbol'] = symbol
+                        
+                        # Log before attempting trade
+                        action = signal.get('action', 'unknown')
+                        reason = signal.get('reason', {})
+                        logger.info(f"Processing signal: {action.upper()} {symbol} - "
+                                   f"{reason.get('primary_signal', 'unknown')} "
+                                   f"(value: {reason.get('signal_value', 'N/A')})")
+                        
                         result = self.process_trading_signal(symbol, signal)
 
                         if result and result.success:
                             trades_this_cycle += 1
                             logger.info(f"Trade executed for {symbol}: {signal.get('action')} "
                                        f"(Strategy: {self.current_strategy})")
+                        elif result:
+                            logger.warning(f"Trade failed for {symbol}: {result.error_message}")
 
             except Exception as e:
                 logger.error(f"Error in trading cycle for {symbol}: {e}")
                 continue
 
         if trades_this_cycle > 0:
-            logger.info(f"Trading cycle complete: {trades_this_cycle} trades executed")
+            logger.info(f"Trading cycle complete: {trades_this_cycle} trades executed from {symbols_analyzed} symbols analyzed")
         else:
-            logger.debug("Trading cycle complete: no signals triggered")
+            logger.info(f"Trading cycle complete: no trades executed ({symbols_analyzed} symbols analyzed)")
 
     def mid_day_review(self):
         """Mid-day performance review."""
