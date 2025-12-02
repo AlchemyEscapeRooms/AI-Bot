@@ -171,7 +171,7 @@ class TradingBot:
 
         logger.info("Startup sequence complete")
 
-    def _select_best_strategy(self, lookback_days: int = 60) -> str:
+    def _select_best_strategy(self, lookback_days: int = 90) -> str:
         """
         Select the best strategy from personality's preferred strategies.
 
@@ -201,8 +201,8 @@ class TradingBot:
             start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
             df = self.market_data.get_historical_data(test_symbol, start_date=start_date, end_date=end_date)
 
-            if df.empty or len(df) < 50:
-                logger.warning(f"Insufficient data for strategy evaluation, using first preferred: {preferred[0]}")
+            if df.empty or len(df) < 30:
+                logger.warning(f"Insufficient data ({len(df)} bars) for strategy evaluation, using first preferred: {preferred[0]}")
                 return preferred[0]
 
             # Import strategy functions
