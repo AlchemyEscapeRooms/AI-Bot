@@ -196,7 +196,10 @@ class TradingBot:
         test_symbol = config.get('data.universe.initial_stocks', ['SPY'])[0]
 
         try:
-            df = self.market_data.get_historical_data(test_symbol, period=f'{lookback_days}d')
+            from datetime import datetime, timedelta
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
+            df = self.market_data.get_historical_data(test_symbol, start_date=start_date, end_date=end_date)
 
             if df.empty or len(df) < 50:
                 logger.warning(f"Insufficient data for strategy evaluation, using first preferred: {preferred[0]}")
