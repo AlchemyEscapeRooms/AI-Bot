@@ -158,124 +158,59 @@ class TradingBot:
                 self.model_trainer.train_prediction_models(df)
                 break
 
-        # Evaluate strategies
+        # Evaluate strategies and select best from personality's preferred
         logger.info("Evaluating trading strategies...")
         if symbols:
             df = self.market_data.get_historical_data(symbols[0])
             if not df.empty:
-                self.strategy_evaluator.evaluate_all_strategies(df)
-
-        # Select best strategy from personality's preferred strategies
-        self.current_strategy = self._select_best_strategy()
+                results_df = self.strategy_evaluator.evaluate_all_strategies(df)
+                self.current_strategy = self._select_best_from_results(results_df)
+            else:
+                self.current_strategy = self.personality.preferred_strategies[0]
+        else:
+            self.current_strategy = self.personality.preferred_strategies[0]
         logger.info(f"Selected initial strategy: {self.current_strategy}")
 
         logger.info("Startup sequence complete")
 
-    def _select_best_strategy(self, lookback_days: int = 90) -> str:
+    def _select_best_from_results(self, results_df) -> str:
         """
-        Select the best strategy from personality's preferred strategies.
-
-        Runs a quick backtest on recent data to determine which strategy
-        is performing best in current market conditions.
+        Select the best strategy from evaluation results, filtered by personality preferences.
 
         Args:
-            lookback_days: Number of days of historical data to test
+            results_df: DataFrame with strategy evaluation results from evaluate_all_strategies()
 
         Returns:
-            Name of the best performing strategy
+            Name of the best performing strategy from preferred list
         """
         preferred = self.personality.preferred_strategies
 
-        if len(preferred) == 1:
-            logger.info(f"Only one preferred strategy: {preferred[0]}")
+        if results_df is None or results_df.empty:
+            logger.warning("No evaluation results, using first preferred strategy")
             return preferred[0]
 
-        logger.info(f"Evaluating {len(preferred)} preferred strategies: {preferred}")
+        # Filter to only preferred strategies
+        preferred_results = results_df[results_df['strategy_name'].isin(preferred)]
 
-        # Get recent market data for evaluation
-        test_symbol = config.get('data.universe.initial_stocks', ['SPY'])[0]
-
-        try:
-            from datetime import datetime, timedelta
-            end_date = datetime.now().strftime('%Y-%m-%d')
-            start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
-            df = self.market_data.get_historical_data(test_symbol, start_date=start_date, end_date=end_date)
-
-            if df.empty or len(df) < 30:
-                logger.warning(f"Insufficient data ({len(df)} bars) for strategy evaluation, using first preferred: {preferred[0]}")
-                return preferred[0]
-
-            # Import strategy functions
-            from backtesting.strategies import STRATEGY_REGISTRY, DEFAULT_PARAMS
-
-            best_strategy = preferred[0]
-            best_score = float('-inf')
-
-            results_summary = []
-
-            for strategy_name in preferred:
-                if strategy_name not in STRATEGY_REGISTRY:
-                    logger.warning(f"Strategy '{strategy_name}' not found in registry, skipping")
-                    continue
-
-                try:
-                    # Create a fresh backtest engine for each test
-                    test_engine = BacktestEngine(
-                        initial_capital=self.initial_capital,
-                        commission=0.001,
-                        slippage=0.0005,
-                        enable_trade_logging=False,
-                        max_position_size=self.portfolio.risk_manager.max_position_size
-                    )
-
-                    strategy_func = STRATEGY_REGISTRY[strategy_name]
-                    params = DEFAULT_PARAMS.get(strategy_name, {}).copy()
-
-                    # Run backtest
-                    result = test_engine.run_backtest(df, strategy_func, params, strategy_name)
-
-                    # Calculate composite score (same as strategy_evaluator)
-                    sharpe = result.get('sharpe_ratio', 0)
-                    total_return = result.get('total_return', 0)
-                    win_rate = result.get('win_rate', 0)
-                    max_dd = abs(result.get('max_drawdown', 0))
-
-                    # Composite score: weight sharpe heavily, penalize drawdown
-                    score = (sharpe * 0.4) + (total_return * 0.3) + (win_rate * 0.2) - (max_dd * 0.1)
-
-                    results_summary.append({
-                        'strategy': strategy_name,
-                        'return': total_return,
-                        'sharpe': sharpe,
-                        'win_rate': win_rate,
-                        'max_dd': -max_dd,
-                        'score': score
-                    })
-
-                    if score > best_score:
-                        best_score = score
-                        best_strategy = strategy_name
-
-                except Exception as e:
-                    logger.warning(f"Error evaluating {strategy_name}: {e}")
-                    continue
-
-            # Log results summary
-            if results_summary:
-                logger.info("\n=== Strategy Evaluation Results ===")
-                header = f"{'Strategy':<20} {'Return %':>10} {'Sharpe':>10} {'Win Rate':>10} {'Score':>10}"
-                logger.info(header)
-                logger.info("-" * len(header))
-                for r in sorted(results_summary, key=lambda x: x['score'], reverse=True):
-                    logger.info(f"{r['strategy']:<20} {r['return']:>10.2f} {r['sharpe']:>10.2f} {r['win_rate']:>10.2f} {r['score']:>10.2f}")
-                logger.info(f"\nBest strategy: {best_strategy} (score: {best_score:.2f})")
-
-            return best_strategy
-
-        except Exception as e:
-            logger.error(f"Strategy evaluation failed: {e}")
-            logger.info(f"Falling back to first preferred strategy: {preferred[0]}")
+        if preferred_results.empty:
+            logger.warning(f"None of preferred strategies {preferred} found in results, using first")
             return preferred[0]
+
+        # Use the composite_score already calculated by strategy_evaluator
+        if 'composite_score' in preferred_results.columns:
+            best_row = preferred_results.loc[preferred_results['composite_score'].idxmax()]
+        else:
+            # Fallback: use sharpe ratio
+            best_row = preferred_results.loc[preferred_results['sharpe_ratio'].idxmax()]
+
+        best_strategy = best_row['strategy_name']
+
+        logger.info(f"\n=== Strategy Selection (from {len(preferred)} preferred) ===")
+        for _, row in preferred_results.sort_values('composite_score' if 'composite_score' in preferred_results.columns else 'sharpe_ratio', ascending=False).iterrows():
+            marker = " <-- SELECTED" if row['strategy_name'] == best_strategy else ""
+            logger.info(f"  {row['strategy_name']}: {row['total_return']:.2f}% return, {row['sharpe_ratio']:.2f} Sharpe{marker}")
+
+        return best_strategy
 
     def pre_market_analysis(self):
         """Pre-market analysis and planning."""
