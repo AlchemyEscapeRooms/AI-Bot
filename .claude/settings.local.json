@@ -23,7 +23,10 @@
       "Bash(cmd /c \"netsh winsock reset\")",
       "Bash(cmd /c \"netsh int ip reset\")",
       "Bash(cmd /c \"ipconfig /release\")",
-      "Bash(cmd /c \"ipconfig /renew\")"
+      "Bash(cmd /c \"ipconfig /renew\")",
+      "Bash(git worktree:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

@@ -31,8 +31,9 @@ def momentum_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Lis
 
     # Generate signals
     if momentum > threshold and symbol not in engine.open_positions:
-        # Buy signal
-        position_size = engine.capital * params.get('position_size', 0.1)
+        # Buy signal - use risk manager limits if available
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
 
         signals.append({
@@ -109,7 +110,8 @@ def mean_reversion_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) 
 
     # Buy when price touches lower band
     if current_price <= current_lower and symbol not in engine.open_positions:
-        position_size = engine.capital * params.get('position_size', 0.1)
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
 
         signals.append({
@@ -207,7 +209,8 @@ def trend_following_strategy(data: pd.DataFrame, engine, params: Dict[str, Any])
         # BUY: We're in an uptrend (short MA > long MA) with sufficient strength
         if current_short > current_long and ma_diff_pct >= min_trend_strength:
             if symbol not in engine.open_positions:
-                position_size = engine.capital * params.get('position_size', 0.1)
+                max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+                position_size = engine.capital * max_position_pct
                 quantity = position_size / current_price
 
                 signal_type = 'ma_crossover_bullish' if bullish_crossover else 'uptrend_state'
@@ -267,7 +270,8 @@ def trend_following_strategy(data: pd.DataFrame, engine, params: Dict[str, Any])
         # Bullish crossover
         if bullish_crossover:
             if symbol not in engine.open_positions:
-                position_size = engine.capital * params.get('position_size', 0.1)
+                max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+                position_size = engine.capital * max_position_pct
                 quantity = position_size / current_price
 
                 signals.append({
@@ -343,7 +347,8 @@ def breakout_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Lis
 
     # Breakout above resistance
     if current_price > current_high_channel and symbol not in engine.open_positions:
-        position_size = engine.capital * params.get('position_size', 0.1)
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
         breakout_strength = ((current_price - current_high_channel) / current_high_channel) * 100
 
@@ -420,7 +425,8 @@ def rsi_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Dic
 
     # Buy when oversold
     if current_rsi < oversold and symbol not in engine.open_positions:
-        position_size = engine.capital * params.get('position_size', 0.1)
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
 
         signals.append({
@@ -502,7 +508,8 @@ def macd_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Di
     # Bullish crossover
     if prev_macd <= prev_signal and current_macd > current_signal:
         if symbol not in engine.open_positions:
-            position_size = engine.capital * params.get('position_size', 0.1)
+            max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+            position_size = engine.capital * max_position_pct
             quantity = position_size / current_price
 
             signals.append({
@@ -590,7 +597,8 @@ def pairs_trading_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -
 
     # Buy when significantly below mean
     if current_z < -entry_z and symbol not in engine.open_positions:
-        position_size = engine.capital * params.get('position_size', 0.1)
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
 
         signals.append({
@@ -724,7 +732,8 @@ def ml_hybrid_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Li
 
     # Buy signal
     if confirmations >= target_confirmations and symbol not in engine.open_positions:
-        position_size = engine.capital * params.get('position_size', 0.1)
+        max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+        position_size = engine.capital * max_position_pct
         quantity = position_size / current_price
 
         signals.append({
@@ -893,7 +902,8 @@ def ai_prediction_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -
     # Generate signals based on confidence threshold
     if confidence >= min_confidence and direction == 'up':
         if symbol not in engine.open_positions:
-            position_size = engine.capital * position_size_pct
+            max_position_pct = getattr(engine, 'max_position_size', position_size_pct)
+            position_size = engine.capital * max_position_pct
             quantity = position_size / current_price
             
             signals.append({
@@ -962,54 +972,80 @@ STRATEGY_REGISTRY = {
 
 
 # Default parameters for each strategy
-# position_size: 0.9 = 90% of capital per trade (aggressive but allows multiple positions)
-# For single-asset backtests, this captures most of the market movement
+# position_size: Fraction of capital per trade
+# NOTE: For live trading, strategies should use engine.max_position_size from the risk manager
+# For backtesting without risk manager, position_size param is used as fallback
 DEFAULT_PARAMS = {
     'momentum': {
         'lookback': 20,
         'threshold': 0.02,
-        'position_size': 0.9
+        'position_size': 0.1  # 10% - matches risk manager default
     },
     'mean_reversion': {
         'period': 20,
         'std_dev': 2,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'trend_following': {
         'short_period': 20,
         'long_period': 50,
-        'position_size': 0.9,
+        'position_size': 0.1,
         'use_crossover_only': False,  # State-based for live trading
         'min_trend_strength': 0.5     # Minimum 0.5% spread between MAs
     },
     'breakout': {
         'lookback': 20,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'rsi': {
         'period': 14,
         'oversold': 30,
         'overbought': 70,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'macd': {
         'fast': 12,
         'slow': 26,
         'signal': 9,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'pairs_trading': {
         'lookback': 20,
         'entry_z': 2.0,
         'exit_z': 0.5,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'ml_hybrid': {
         'min_confirmations': 3,
-        'position_size': 0.9
+        'position_size': 0.1
     },
     'ai_prediction': {
         'min_confidence': 70,
-        'position_size': 0.1  # More conservative for AI strategy
+        'position_size': 0.1
     }
 }
+
+
+def get_position_size(engine, params: Dict[str, Any], current_price: float) -> tuple:
+    """
+    Helper function to get the correct position size respecting risk limits.
+
+    Strategies should use this instead of calculating position size directly.
+    This ensures consistency between strategy position sizing and risk manager limits.
+
+    Args:
+        engine: The trading engine (mock or real) with capital and max_position_size
+        params: Strategy parameters (may contain position_size as fallback)
+        current_price: Current price of the asset
+
+    Returns:
+        tuple: (position_value, quantity)
+    """
+    # Use engine's max_position_size if available (from risk manager)
+    # Otherwise fall back to params, then default of 0.1 (10%)
+    max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+
+    position_value = engine.capital * max_position_pct
+    quantity = position_value / current_price if current_price > 0 else 0
+
+    return position_value, quantity

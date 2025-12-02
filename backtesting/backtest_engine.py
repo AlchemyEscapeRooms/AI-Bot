@@ -69,12 +69,15 @@ class BacktestEngine:
         initial_capital: float = 100000.0,
         commission: float = 0.001,
         slippage: float = 0.0005,
-        enable_trade_logging: bool = True
+        enable_trade_logging: bool = True,
+        max_position_size: float = None
     ):
         self.initial_capital = initial_capital
         self.capital = initial_capital
         self.commission = commission
         self.slippage = slippage
+        # Max position size - defaults to config value (10%) if not specified
+        self.max_position_size = max_position_size or config.get('trading.max_position_size', 0.1)
 
         self.positions: List[Position] = []
         self.open_positions: Dict[str, Position] = {}
@@ -744,7 +747,12 @@ class BacktestEngine:
         comparison_df = comparison_df.sort_values('overall_rank')
 
         logger.info("Strategy comparison complete")
-        logger.info(f"\nTop 3 strategies:\n{comparison_df[['strategy_name', 'total_return', 'sharpe_ratio', 'max_drawdown']].head(3)}")
+        logger.info("\nTop 3 strategies:")
+        header = f"{'Strategy':<20} {'Return %':>10} {'Sharpe':>10} {'Max DD %':>10}"
+        logger.info(header)
+        logger.info("-" * len(header))
+        for _, row in comparison_df.head(3).iterrows():
+            logger.info(f"{row['strategy_name']:<20} {row['total_return']:>10.2f} {row['sharpe_ratio']:>10.2f} {row['max_drawdown']:>10.2f}")
 
         return comparison_df
 

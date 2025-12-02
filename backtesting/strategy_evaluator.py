@@ -76,7 +76,12 @@ class StrategyEvaluator:
             results_df = self._rank_strategies(results_df)
 
             logger.info("\n=== Strategy Performance Summary ===")
-            logger.info(results_df[['strategy_name', 'total_return', 'sharpe_ratio', 'win_rate', 'max_drawdown']].to_string())
+            # Format with proper column alignment
+            header = f"{'Strategy':<20} {'Return %':>10} {'Sharpe':>10} {'Win Rate %':>12} {'Max DD %':>10}"
+            logger.info(header)
+            logger.info("-" * len(header))
+            for _, row in results_df.iterrows():
+                logger.info(f"{row['strategy_name']:<20} {row['total_return']:>10.2f} {row['sharpe_ratio']:>10.2f} {row['win_rate']:>12.2f} {row['max_drawdown']:>10.2f}")
 
             self.strategy_performance = results_df.to_dict('records')
 

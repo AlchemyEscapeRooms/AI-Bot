@@ -287,3 +287,97 @@ class RiskManager:
         adjusted_confidence = max(0.1, min(1.0, adjusted_confidence))
 
         return adjusted_confidence
+
+    def can_trade(self, trade_value: float, direction: str = 'long') -> bool:
+        """
+        Check if a trade can be executed based on risk limits.
+
+        Args:
+            trade_value: Dollar value of the proposed trade
+            direction: 'long' or 'short'
+
+        Returns:
+            True if trade is allowed, False otherwise
+        """
+        # Check daily loss limit
+        if not self.check_daily_loss_limit():
+            logger.warning("Trade blocked: Daily loss limit reached")
+            return False
+
+        # Check if trade value exceeds max position size
+        max_allowed = self.daily_start_capital * self.max_position_size
+        if trade_value > max_allowed:
+            logger.warning(f"Trade blocked: Value ${trade_value:.2f} exceeds max position ${max_allowed:.2f} "
+                          f"({self.max_position_size*100:.0f}% of ${self.daily_start_capital:.2f})")
+            return False
+
+        # Check portfolio risk (trade shouldn't risk more than max_portfolio_risk of capital)
+        max_risk = self.daily_start_capital * self.max_portfolio_risk
+        potential_loss = trade_value * 0.02  # Assume 2% stop loss
+        if potential_loss > max_risk:
+            logger.warning(f"Trade blocked: Potential risk ${potential_loss:.2f} exceeds max ${max_risk:.2f}")
+            return False
+
+        return True
+
+    def record_trade_result(self, profit_loss: float):
+        """
+        Record a trade result and update daily P&L.
+
+        Args:
+            profit_loss: The profit (positive) or loss (negative) from the trade
+        """
+        self.update_daily_pl(profit_loss)
+
+        if profit_loss >= 0:
+            logger.debug(f"Recorded trade profit: ${profit_loss:.2f}")
+        else:
+            logger.debug(f"Recorded trade loss: ${profit_loss:.2f}")
+
+        # Log warning if approaching daily loss limit
+        daily_loss_pct = abs(self.daily_pl / self.daily_start_capital) if self.daily_start_capital > 0 else 0
+        if self.daily_pl < 0 and daily_loss_pct >= self.max_daily_loss * 0.8:
+            logger.warning(f"Approaching daily loss limit: {daily_loss_pct*100:.1f}% (limit: {self.max_daily_loss*100:.0f}%)")
+
+    def get_max_trade_value(self, capital: float = None) -> float:
+        """
+        Get the maximum allowed trade value based on risk limits.
+
+        This should be called by strategies to determine appropriate position sizing.
+
+        Args:
+            capital: Current capital (uses daily_start_capital if not provided)
+
+        Returns:
+            Maximum dollar value allowed for a single trade
+        """
+        if capital is None:
+            capital = self.daily_start_capital
+
+        return capital * self.max_position_size
+
+    def get_max_quantity(self, capital: float, price: float, confidence: float = 1.0) -> float:
+        """
+        Get the maximum quantity of shares allowed for a trade.
+
+        This is the primary method strategies should use for position sizing.
+
+        Args:
+            capital: Current available capital
+            price: Current price per share
+            confidence: Signal confidence (0-1), reduces size if < 1
+
+        Returns:
+            Maximum number of shares to trade
+        """
+        max_value = self.get_max_trade_value(capital)
+
+        # Adjust for confidence
+        adjusted_value = max_value * confidence
+
+        # Convert to shares
+        quantity = adjusted_value / price if price > 0 else 0
+
+        logger.debug(f"Max quantity: {quantity:.2f} shares (${adjusted_value:.2f} at ${price:.2f}/share)")
+
+        return quantity

@@ -26,7 +26,7 @@ from enum import Enum
 import warnings
 warnings.filterwarnings('ignore')
 
-from backtesting.strategies_ml import (
+from strategies_ml import (
     UnifiedTradingEngine,
     ml_driven_strategy,
     adaptive_momentum_strategy,
@@ -267,12 +267,14 @@ class UnifiedBacktester:
             self._update_positions(current_price, current_high, current_low, current_date)
             
             # Create engine mock for strategy (same interface as live trading)
+            # Includes max_position_size so strategies use correct limits
             class EngineState:
-                def __init__(self, positions, capital, ml_engine):
+                def __init__(self, positions, capital, ml_engine, max_position_size=0.1):
                     self.open_positions = {k: {'entry_price': v.entry_price} for k, v in positions.items()}
                     self.capital = capital
                     self.ml_engine = ml_engine
-            
+                    self.max_position_size = max_position_size  # 10% default, matches config
+
             engine_state = EngineState(self.open_positions, self.capital, self.ml_engine)
             
             # Generate signals using the EXACT same strategy function as live

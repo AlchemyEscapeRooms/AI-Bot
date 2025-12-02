@@ -60,7 +60,11 @@ def run_backtest(args):
     print("\n" + "=" * 80)
     print("BACKTEST RESULTS")
     print("=" * 80)
-    print(results[['strategy_name', 'total_return', 'sharpe_ratio', 'win_rate', 'max_drawdown']].to_string())
+    header = f"{'Strategy':<20} {'Return %':>10} {'Sharpe':>10} {'Win Rate %':>12} {'Max DD %':>10}"
+    print(header)
+    print("-" * len(header))
+    for _, row in results.iterrows():
+        print(f"{row['strategy_name']:<20} {row['total_return']:>10.2f} {row['sharpe_ratio']:>10.2f} {row['win_rate']:>12.2f} {row['max_drawdown']:>10.2f}")
     print("=" * 80)
 
     # Save results

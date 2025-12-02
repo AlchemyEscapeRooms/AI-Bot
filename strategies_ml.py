@@ -623,8 +623,9 @@ def _fallback_technical_strategy(data: pd.DataFrame, engine, params: Dict[str, A
             sell_score += 1
             reasoning.append(f"High volume confirmation ({volume_ratio:.1f}x)")
     
-    # Position sizing
-    position_size = engine.capital * params.get('position_size', 0.1)
+    # Position sizing - use risk manager limits if available
+    max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+    position_size = engine.capital * max_position_pct
     quantity = position_size / current_price if current_price > 0 else 0
     
     # Generate signals with threshold
@@ -863,9 +864,11 @@ def mean_reversion_ml_strategy(data: pd.DataFrame, engine, params: Dict[str, Any
     upper, middle, lower = ta.BBANDS(close, timeperiod=20)
     bb_position = (current_price - lower[-1]) / (upper[-1] - lower[-1]) if (upper[-1] - lower[-1]) > 0 else 0.5
     
-    position_size = engine.capital * params.get('position_size', 0.1)
+    # Position sizing - use risk manager limits if available
+    max_position_pct = getattr(engine, 'max_position_size', params.get('position_size', 0.1))
+    position_size = engine.capital * max_position_pct
     quantity = position_size / current_price if current_price > 0 else 0
-    
+
     entry_zscore = params.get('entry_zscore', 2.0)
     exit_zscore = params.get('exit_zscore', 0.5)
     
