@@ -40,6 +40,7 @@ def print_main_menu():
     print("  9. Bot Watchdog Status")
     print("  10. Auto Paper Trading (AI Adaptive)")
     print("  11. Reports & Logs")
+    print("  12. AI Brain Status (Signal Weights)")
     print("  0. Exit")
     print()
 
@@ -1078,28 +1079,101 @@ def view_signal_performance():
 
 
 def view_learned_weights():
-    """View the current learned signal weights."""
+    """View the current learned signal weights with enhanced visualization."""
     try:
-        from core.market_monitor import MarketMonitor
+        from core.market_monitor import MarketMonitor, get_market_monitor
 
-        monitor = MarketMonitor()
+        monitor = get_market_monitor()
 
-        print("\n" + "=" * 60)
-        print("  LEARNED SIGNAL WEIGHTS")
-        print("=" * 60)
-        print("\n  These weights are adjusted based on prediction accuracy.")
-        print("  Higher weight = more influence on predictions.")
-        print()
-        print(f"  {'Signal':<30} {'Weight':<10}")
-        print("-" * 45)
+        print("\n" + "=" * 70)
+        print("              AI BRAIN - SIGNAL WEIGHT LEARNING")
+        print("=" * 70)
+
+        # Get prediction stats for context
+        stats = monitor.prediction_tracker.get_accuracy_stats(days=30)
+        signal_perf = monitor.prediction_tracker.get_signal_performance(days=30)
+
+        # Header info
+        print(f"\n  Total Predictions (30 days): {stats['total_predictions']}")
+        print(f"  Overall Accuracy: {stats['accuracy']:.1f}%")
+        print(f"  Correct: {stats['correct']} | Wrong: {stats['wrong']}")
+
+        print("\n" + "-" * 70)
+        print("  HOW THE BOT LEARNS:")
+        print("  The bot tracks which signals lead to correct predictions.")
+        print("  Signals that perform well get MORE weight (influence).")
+        print("  Signals that perform poorly get LESS weight.")
+        print("-" * 70)
+
+        print("\n  CURRENT SIGNAL WEIGHTS")
+        print("  " + "-" * 66)
+
+        # Signal explanations for user-friendly display
+        signal_explanations = {
+            'momentum_20d': ('20-Day Momentum', 'Measures price change over 20 days'),
+            'rsi': ('RSI (Relative Strength)', 'Overbought/oversold indicator'),
+            'macd_signal': ('MACD Signal', 'Trend & momentum crossover'),
+            'volume_ratio': ('Volume Ratio', 'Compares current vs avg volume'),
+            'price_vs_sma20': ('Price vs 20-SMA', 'Price relative to moving avg'),
+            'bollinger_position': ('Bollinger Position', 'Price within Bollinger Bands')
+        }
+
+        # Calculate max weight for scaling the visual bar
+        max_weight = max(monitor.signal_weights.values()) if monitor.signal_weights else 1.0
+        min_weight = min(monitor.signal_weights.values()) if monitor.signal_weights else 1.0
 
         for signal, weight in sorted(monitor.signal_weights.items(), key=lambda x: x[1], reverse=True):
-            bar = "█" * int(weight * 10)
-            print(f"  {signal:<30} {weight:.3f}  {bar}")
+            # Get friendly name and description
+            friendly_name, description = signal_explanations.get(signal, (signal, ''))
 
-        print("\n" + "=" * 60)
-        print("\n  Weights start at 1.0 and adjust based on accuracy.")
-        print("  Signals that lead to correct predictions gain weight.")
+            # Create visual bar (scale to max 20 chars)
+            bar_length = int((weight / max_weight) * 20) if max_weight > 0 else 10
+            bar = "█" * bar_length
+
+            # Determine status indicator
+            if weight > 1.1:
+                status = "▲ STRONG"  # Performing well
+                status_color = "+"
+            elif weight < 0.9:
+                status = "▼ WEAK"    # Performing poorly
+                status_color = "-"
+            else:
+                status = "● NORMAL"  # Baseline
+                status_color = "="
+
+            # Get signal-specific accuracy if available
+            signal_accuracy = ""
+            if not signal_perf.empty:
+                sig_row = signal_perf[signal_perf['signal'] == signal]
+                if not sig_row.empty:
+                    acc = sig_row.iloc[0]['accuracy']
+                    uses = sig_row.iloc[0]['uses']
+                    signal_accuracy = f" ({acc:.0f}% acc, {uses} uses)"
+
+            print(f"\n  {friendly_name}")
+            print(f"    {description}")
+            print(f"    Weight: {weight:.3f} {bar} {status}{signal_accuracy}")
+
+        print("\n" + "-" * 70)
+        print("  WEIGHT GUIDE:")
+        print("    1.0 = Baseline (starting point)")
+        print("    >1.0 = Signal is outperforming (trusted more)")
+        print("    <1.0 = Signal is underperforming (trusted less)")
+        print("    Range: 0.5 (min) to 2.0 (max)")
+        print("-" * 70)
+
+        # Show learning activity
+        print("\n  LEARNING STATUS:")
+        if stats['total_predictions'] < 10:
+            print("    Still gathering data. Need more predictions to learn effectively.")
+        elif stats['accuracy'] > 60:
+            print("    Good accuracy! Bot is learning what works.")
+        elif stats['accuracy'] < 40:
+            print("    Low accuracy. Bot is adjusting weights to improve.")
+        else:
+            print("    Moderate accuracy. Bot continues to refine its approach.")
+
+        print("\n" + "=" * 70)
 
     except Exception as e:
         print(f"\n  Error: {e}")
@@ -1826,6 +1900,8 @@ def main():
             auto_paper_trading_menu()
         elif choice == "11":
             reports_menu()
+        elif choice == "12":
+            view_learned_weights()
         else:
             print("  Invalid choice. Try again.")
             input("\n  Press Enter to continue...")
