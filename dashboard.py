@@ -1173,6 +1173,60 @@ def view_learned_weights():
         else:
             print("    Moderate accuracy. Bot continues to refine its approach.")
 
+        # Show per-stock weights if available
+        stock_weights_df = monitor.prediction_tracker.get_all_stock_weights()
+        if not stock_weights_df.empty:
+            print("\n" + "=" * 70)
+            print("              PER-STOCK SIGNAL ADJUSTMENTS")
+            print("=" * 70)
+            print("\n  The bot learns which signals work best for EACH stock.")
+            print("  Stocks with enough data get personalized signal weights.\n")
+
+            # Group by symbol
+            symbols = stock_weights_df['symbol'].unique()
+
+            for symbol in symbols[:5]:  # Show top 5 stocks
+                symbol_data = stock_weights_df[stock_weights_df['symbol'] == symbol]
+                total_samples = symbol_data['sample_size'].sum()
+
+                if total_samples < 10:
+                    continue  # Skip stocks with little data
+
+                print(f"  {symbol} ({total_samples} predictions)")
+                print("  " + "-" * 40)
+
+                for _, row in symbol_data.iterrows():
+                    signal = row['signal_name']
+                    weight = row['weight']
+                    acc = row['accuracy']
+                    samples = row['sample_size']
+
+                    # Get friendly signal name
+                    friendly_names = {
+                        'momentum_20d': 'Momentum',
+                        'rsi': 'RSI',
+                        'macd_signal': 'MACD',
+                        'volume_ratio': 'Volume',
+                        'price_vs_sma20': 'SMA',
+                        'bollinger_position': 'Bollinger'
+                    }
+                    friendly = friendly_names.get(signal, signal)
+
+                    # Status indicator
+                    if weight > 1.1:
+                        indicator = "▲"
+                    elif weight < 0.9:
+                        indicator = "▼"
+                    else:
+                        indicator = "●"
+
+                    print(f"    {friendly:<12} {indicator} {weight:.2f} ({acc:.0f}% acc, {samples} uses)")
+
+                print()
+
+            if len(symbols) > 5:
+                print(f"  ... and {len(symbols) - 5} more stocks with learned weights")
+
         print("\n" + "=" * 70)
 
     except Exception as e:

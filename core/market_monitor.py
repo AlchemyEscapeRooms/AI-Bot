@@ -117,6 +117,20 @@ class PredictionTracker:
                 )
             """)
 
+            # Per-stock signal weights table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS stock_signal_weights (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT NOT NULL,
+                    signal_name TEXT NOT NULL,
+                    weight REAL NOT NULL DEFAULT 1.0,
+                    accuracy REAL,
+                    sample_size INTEGER DEFAULT 0,
+                    last_updated DATETIME,
+                    UNIQUE(symbol, signal_name)
+                )
+            """)
+
             # Create indexes (safe to run multiple times)
             try:
                 cursor.execute("""
@@ -298,7 +312,57 @@ class PredictionTracker:
                         signal_stats[signal_name] = {'correct': 0, 'total': 0, 'values': []}
 
                     signal_stats[signal_name]['total'] += 1
-                    signal_stats[signal_name]['values'].append(signal_value)
+                    # Only append numeric values for averaging
+                    if isinstance(signal_value, (int, float)) and not isinstance(signal_value, bool):
+                        signal_stats[signal_name]['values'].append(float(signal_value))
+                    if was_correct:
+                        signal_stats[signal_name]['correct'] += 1
+            except:
+                continue
+
+        # Convert to DataFrame
+        results = []
+        for signal_name, stats in signal_stats.items():
+            # Safely calculate mean only on numeric values
+            numeric_values = [v for v in stats['values'] if isinstance(v, (int, float))]
+            avg_value = float(np.mean(numeric_values)) if numeric_values else 0.0
+            
+            results.append({
+                'signal': signal_name,
+                'accuracy': (stats['correct'] / stats['total'] * 100) if stats['total'] > 0 else 0,
+                'uses': stats['total'],
+                'avg_value': avg_value
+            })
+
+        return pd.DataFrame(results).sort_values('accuracy', ascending=False)
+
+    def get_signal_performance_by_stock(self, symbol: str, days: int = 30) -> pd.DataFrame:
+        """Analyze signal accuracy for a specific stock."""
+        with self.db.get_connection() as conn:
+            df = pd.read_sql_query("""
+                SELECT prediction_id, signals, was_correct
+                FROM ai_predictions
+                WHERE resolved = 1
+                AND symbol = ?
+                AND timestamp >= datetime('now', ?)
+            """, conn, params=[symbol, f'-{days} days'])
+
+        if df.empty:
+            return pd.DataFrame()
+
+        # Parse signals and analyze
+        signal_stats = {}
+
+        for _, row in df.iterrows():
+            try:
+                signals = json.loads(row['signals']) if row['signals'] else {}
+                was_correct = row['was_correct']
+
+                for signal_name, signal_value in signals.items():
+                    if signal_name not in signal_stats:
+                        signal_stats[signal_name] = {'correct': 0, 'total': 0}
+
+                    signal_stats[signal_name]['total'] += 1
                     if was_correct:
                         signal_stats[signal_name]['correct'] += 1
             except:
@@ -310,11 +374,52 @@ class PredictionTracker:
             results.append({
                 'signal': signal_name,
                 'accuracy': (stats['correct'] / stats['total'] * 100) if stats['total'] > 0 else 0,
-                'uses': stats['total'],
-                'avg_value': np.mean(stats['values']) if stats['values'] else 0
+                'uses': stats['total']
             })
 
         return pd.DataFrame(results).sort_values('accuracy', ascending=False)
+
+    def get_stock_signal_weights(self, symbol: str) -> Dict[str, float]:
+        """Get per-stock signal weights from database."""
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT signal_name, weight, sample_size
+                FROM stock_signal_weights
+                WHERE symbol = ?
+            """, (symbol,))
+            rows = cursor.fetchall()
+
+        weights = {}
+        for row in rows:
+            weights[row[0]] = {'weight': row[1], 'sample_size': row[2]}
+        return weights
+
+    def update_stock_signal_weight(self, symbol: str, signal_name: str, weight: float,
+                                    accuracy: float, sample_size: int):
+        """Update or insert a per-stock signal weight."""
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO stock_signal_weights (symbol, signal_name, weight, accuracy, sample_size, last_updated)
+                VALUES (?, ?, ?, ?, ?, datetime('now'))
+                ON CONFLICT(symbol, signal_name) DO UPDATE SET
+                    weight = ?,
+                    accuracy = ?,
+                    sample_size = ?,
+                    last_updated = datetime('now')
+            """, (symbol, signal_name, weight, accuracy, sample_size, weight, accuracy, sample_size))
+            conn.commit()
+
+    def get_all_stock_weights(self) -> pd.DataFrame:
+        """Get all per-stock weights for dashboard display."""
+        with self.db.get_connection() as conn:
+            df = pd.read_sql_query("""
+                SELECT symbol, signal_name, weight, accuracy, sample_size, last_updated
+                FROM stock_signal_weights
+                ORDER BY symbol, signal_name
+            """, conn)
+        return df
 
 
 class MarketMonitor:
@@ -340,7 +445,7 @@ class MarketMonitor:
         self.price_history: Dict[str, List[Dict]] = {s: [] for s in self.symbols}
         self.last_predictions: Dict[str, Prediction] = {}
 
-        # Learning parameters (adjusted based on performance)
+        # Global signal weights (baseline, adjusted based on overall performance)
         self.signal_weights = {
             'momentum_20d': 1.0,
             'rsi': 1.0,
@@ -349,6 +454,12 @@ class MarketMonitor:
             'price_vs_sma20': 1.0,
             'bollinger_position': 1.0
         }
+
+        # Per-stock weights cache (loaded from database)
+        self.stock_signal_weights: Dict[str, Dict[str, float]] = {}
+
+        # Minimum predictions needed before using per-stock weights
+        self.min_stock_predictions = 10
 
         logger.info(f"MarketMonitor initialized for: {', '.join(self.symbols)}")
 
@@ -368,6 +479,42 @@ class MarketMonitor:
         if self.monitor_thread:
             self.monitor_thread.join(timeout=5)
         logger.info("Market monitor stopped")
+
+    def get_weights_for_symbol(self, symbol: str) -> Dict[str, float]:
+        """
+        Get hybrid signal weights for a specific symbol.
+
+        Uses per-stock weights if enough data exists, otherwise falls back to global weights.
+        Blends per-stock and global weights based on sample size.
+        """
+        # Get per-stock weights from database
+        stock_weights = self.prediction_tracker.get_stock_signal_weights(symbol)
+
+        # Start with global weights as baseline
+        hybrid_weights = self.signal_weights.copy()
+
+        if not stock_weights:
+            return hybrid_weights
+
+        # Blend per-stock weights with global weights based on confidence
+        for signal_name, data in stock_weights.items():
+            if signal_name in hybrid_weights:
+                stock_weight = data['weight']
+                sample_size = data['sample_size']
+
+                if sample_size >= self.min_stock_predictions:
+                    # Enough data: blend based on sample size
+                    # More samples = more trust in per-stock weight
+                    # At 10 samples: 50% stock, 50% global
+                    # At 50 samples: 83% stock, 17% global
+                    # At 100+ samples: 91%+ stock
+                    blend_factor = sample_size / (sample_size + 10)
+                    hybrid_weights[signal_name] = (
+                        blend_factor * stock_weight +
+                        (1 - blend_factor) * self.signal_weights[signal_name]
+                    )
+
+        return hybrid_weights
 
     def _monitor_loop(self):
         """Main monitoring loop."""
@@ -632,25 +779,72 @@ class MarketMonitor:
         return prediction
 
     def _learn_from_history(self):
-        """Analyze prediction history and adjust signal weights."""
-        # Get signal performance
+        """Analyze prediction history and adjust signal weights (both global and per-stock)."""
+        # 1. Update GLOBAL weights based on overall performance
         signal_perf = self.prediction_tracker.get_signal_performance(days=7)
 
-        if signal_perf.empty:
-            return
+        if not signal_perf.empty:
+            for _, row in signal_perf.iterrows():
+                signal_name = row['signal']
+                accuracy = row['accuracy']
+                uses = row['uses']
 
-        # Adjust weights based on accuracy
-        for _, row in signal_perf.iterrows():
-            signal_name = row['signal']
-            accuracy = row['accuracy']
-            uses = row['uses']
+                if signal_name in self.signal_weights and uses >= 5:
+                    # Adjust weight: increase for accurate signals, decrease for inaccurate
+                    if accuracy > 60:
+                        self.signal_weights[signal_name] = min(2.0, self.signal_weights[signal_name] * 1.05)
+                    elif accuracy < 40:
+                        self.signal_weights[signal_name] = max(0.5, self.signal_weights[signal_name] * 0.95)
 
-            if signal_name in self.signal_weights and uses >= 5:
-                # Adjust weight: increase for accurate signals, decrease for inaccurate
-                if accuracy > 60:
-                    self.signal_weights[signal_name] = min(2.0, self.signal_weights[signal_name] * 1.05)
-                elif accuracy < 40:
-                    self.signal_weights[signal_name] = max(0.5, self.signal_weights[signal_name] * 0.95)
+        # 2. Update PER-STOCK weights
+        self._learn_per_stock_weights()
+
+    def _learn_per_stock_weights(self):
+        """Learn and update signal weights for each individual stock."""
+        # Get all symbols that have predictions
+        with self.prediction_tracker.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT DISTINCT symbol FROM ai_predictions
+                WHERE resolved = 1
+                AND timestamp >= datetime('now', '-30 days')
+            """)
+            symbols = [row[0] for row in cursor.fetchall()]
+
+        for symbol in symbols:
+            # Get signal performance for this specific stock
+            stock_perf = self.prediction_tracker.get_signal_performance_by_stock(symbol, days=30)
+
+            if stock_perf.empty:
+                continue
+
+            for _, row in stock_perf.iterrows():
+                signal_name = row['signal']
+                accuracy = row['accuracy']
+                uses = row['uses']
+
+                if signal_name not in self.signal_weights:
+                    continue
+
+                # Need at least 5 predictions to start learning per-stock
+                if uses >= 5:
+                    # Calculate new weight based on accuracy
+                    # Baseline is 1.0, adjust up/down based on performance
+                    if accuracy > 60:
+                        new_weight = min(2.0, 1.0 + ((accuracy - 50) / 100))  # e.g., 70% acc = 1.2 weight
+                    elif accuracy < 40:
+                        new_weight = max(0.5, 1.0 - ((50 - accuracy) / 100))  # e.g., 30% acc = 0.8 weight
+                    else:
+                        new_weight = 1.0  # Neutral
+
+                    # Save to database
+                    self.prediction_tracker.update_stock_signal_weight(
+                        symbol=symbol,
+                        signal_name=signal_name,
+                        weight=new_weight,
+                        accuracy=accuracy,
+                        sample_size=uses
+                    )
 
     def get_current_status(self) -> Dict[str, Any]:
         """Get current monitor status."""
