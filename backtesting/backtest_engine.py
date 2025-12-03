@@ -101,6 +101,11 @@ class BacktestEngine:
         self.market_monitor = get_market_monitor()
         self.backtest_predictions: Dict[str, Prediction] = {}  # Track predictions by symbol
 
+        # Walk-forward learning settings
+        self.resolved_predictions_count = 0
+        self.learn_every_n_trades = 10  # Trigger learning every N resolved trades
+        self.enable_walkforward_learning = True  # Enable incremental learning during backtest
+
     def reset(self):
         """Reset the backtest state."""
         self.capital = self.initial_capital
@@ -110,6 +115,7 @@ class BacktestEngine:
         self.trades = []
         self.entry_trade_ids = {}
         self.backtest_predictions = {}
+        self.resolved_predictions_count = 0
 
     def enter_position(
         self,
@@ -541,11 +547,32 @@ class BacktestEngine:
             # Remove from our tracking
             del self.backtest_predictions[symbol]
 
+            # Increment counter and trigger walk-forward learning if enabled
+            self.resolved_predictions_count += 1
+            if self.enable_walkforward_learning and self.resolved_predictions_count % self.learn_every_n_trades == 0:
+                self._run_incremental_learning()
+
             logger.debug(f"Resolved prediction for {symbol}: {'correct' if was_correct else 'wrong'} "
                         f"({actual_change_pct:+.2f}%)")
 
         except Exception as e:
             logger.warning(f"Error resolving prediction: {e}")
+
+    def _run_incremental_learning(self):
+        """Run incremental learning during backtest (walk-forward style)."""
+        try:
+            # Get recent accuracy stats (use shorter window for incremental learning)
+            stats = self.market_monitor.prediction_tracker.get_accuracy_stats(days=30)
+
+            if stats['total_predictions'] >= 5:  # Need minimum predictions
+                # Run learning to adjust weights based on recent performance
+                self.market_monitor._learn_from_history()
+
+                logger.debug(f"Walk-forward learning: {self.resolved_predictions_count} trades, "
+                           f"{stats['accuracy']:.1f}% accuracy, weights updated")
+
+        except Exception as e:
+            logger.debug(f"Incremental learning skipped: {e}")
 
     def _run_post_backtest_learning(self):
         """Run AI Learning System after backtest to update signal weights."""
@@ -554,16 +581,18 @@ class BacktestEngine:
             stats = self.market_monitor.prediction_tracker.get_accuracy_stats(days=365)
 
             if stats['total_predictions'] > 0:
+                # Report walk-forward learning stats
+                learning_cycles = self.resolved_predictions_count // self.learn_every_n_trades
+                if self.enable_walkforward_learning and learning_cycles > 0:
+                    logger.info(f"AI Learning: Walk-forward mode - {learning_cycles} incremental updates during backtest")
+
                 logger.info(f"AI Learning: {stats['total_predictions']} predictions tracked, "
                            f"{stats['accuracy']:.1f}% accuracy")
 
-                # Run learning to adjust weights
+                # Final learning pass to ensure weights are current
                 self.market_monitor._learn_from_history()
 
-                logger.info("AI Learning: Signal weights updated based on backtest results")
-
-                # Log updated weights
-                logger.info("Updated signal weights:")
+                logger.info("AI Learning: Final signal weights after walk-forward backtest:")
                 for signal, weight in sorted(self.market_monitor.signal_weights.items(),
                                             key=lambda x: x[1], reverse=True)[:5]:
                     logger.info(f"  {signal}: {weight:.3f}")
