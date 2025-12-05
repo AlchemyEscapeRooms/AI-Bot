@@ -476,7 +476,7 @@ def view_trades_by_strategy():
                 view_trades_by_filter(strategy=strategies[idx])
                 return
         except ValueError:
-            pass
+            logger.debug(f"Invalid strategy selection input: {choice}")
 
         print("  Invalid selection.")
 
@@ -564,11 +564,12 @@ def view_trades_by_mode():
                 input("\n  Press Enter to continue...")
                 return
         except ValueError:
-            pass
+            logger.debug(f"Invalid mode selection input: {choice}")
 
         print("  Invalid selection.")
 
     except Exception as e:
+        logger.error(f"Error viewing trades by mode: {e}")
         print(f"\n  Error: {e}")
 
     input("\n  Press Enter to continue...")

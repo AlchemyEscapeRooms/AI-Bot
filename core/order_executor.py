@@ -73,9 +73,9 @@ class OrderExecutor:
         self.paper_orders: Dict[str, Dict] = {}
         self.paper_order_id = 0
 
-        # Alpaca client for live trading
+        # Alpaca client for trading (both paper and live modes)
         self.alpaca_client = None
-        if mode == "live" and ALPACA_TRADING_AVAILABLE:
+        if ALPACA_TRADING_AVAILABLE:
             self._init_alpaca_client()
 
         logger.info(f"OrderExecutor initialized in {mode} mode")
@@ -387,8 +387,6 @@ class OrderExecutor:
                 reason=reason,
                 mode="live" if self.mode == "live" else "paper",
                 side="long" if result.side.lower() == "buy" else "short",
-                order_id=result.order_id,
-                order_type="market",  # Could be passed in
                 portfolio_value_before=portfolio_value,
                 market_snapshot=market_snapshot,
                 timestamp=result.timestamp
@@ -462,17 +460,12 @@ class OrderExecutor:
         return []
 
     def get_account_info(self) -> Optional[Dict]:
-        """Get account information."""
-        if self.mode == "paper":
-            return {
-                'mode': 'paper',
-                'orders_count': len(self.paper_orders)
-            }
-        elif self.alpaca_client:
+        """Get account information from Alpaca (paper or live)."""
+        if self.alpaca_client:
             try:
                 account = self.alpaca_client.get_account()
                 return {
-                    'mode': 'live',
+                    'mode': self.mode,
                     'buying_power': float(account.buying_power),
                     'cash': float(account.cash),
                     'portfolio_value': float(account.portfolio_value),
@@ -481,4 +474,61 @@ class OrderExecutor:
             except Exception as e:
                 logger.error(f"Failed to get account info: {e}")
                 return None
-        return None
+        return {'mode': self.mode, 'error': 'Alpaca client not initialized'}
+
+    def get_positions(self) -> List[Dict]:
+        """Get all positions from Alpaca paper/live account."""
+        if self.alpaca_client:
+            try:
+                positions = self.alpaca_client.get_all_positions()
+                return [{
+                    'symbol': pos.symbol,
+                    'qty': float(pos.qty),
+                    'avg_entry_price': float(pos.avg_entry_price),
+                    'current_price': float(pos.current_price),
+                    'market_value': float(pos.market_value),
+                    'unrealized_pl': float(pos.unrealized_pl),
+                    'unrealized_plpc': float(pos.unrealized_plpc) * 100,  # Convert to percentage
+                    'side': str(pos.side)
+                } for pos in positions]
+            except Exception as e:
+                logger.error(f"Failed to get positions: {e}")
+                return []
+        return []
+
+    def get_portfolio_history(self, days: int = 30) -> List[Dict]:
+        """Get portfolio equity history from Alpaca for sparkline chart."""
+        if self.alpaca_client:
+            try:
+                from alpaca.trading.requests import GetPortfolioHistoryRequest
+                from datetime import datetime
+
+                # Get history for specified period
+                period = '1M' if days <= 30 else '3M'
+                history = self.alpaca_client.get_portfolio_history(
+                    GetPortfolioHistoryRequest(period=period, timeframe='1D')
+                )
+
+                if not history.timestamp:
+                    return []
+
+                result = []
+                initial_equity = history.equity[0] if history.equity else 100000
+                cumulative = 0
+
+                for i, ts in enumerate(history.timestamp):
+                    daily_pnl = history.profit_loss[i] if history.profit_loss else 0
+                    cumulative += daily_pnl
+                    date_str = datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+                    result.append({
+                        'date': date_str,
+                        'daily_pnl': float(daily_pnl),
+                        'cumulative': float(cumulative),
+                        'equity': float(history.equity[i]) if history.equity else 0
+                    })
+
+                return result
+            except Exception as e:
+                logger.error(f"Failed to get portfolio history: {e}")
+                return []
+        return []

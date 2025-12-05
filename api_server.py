@@ -1,6 +1,6 @@
 """
-Trading Bot API Server
-=======================
+Trading Bot API Server (PRIMARY)
+=================================
 
 FastAPI backend that:
 - Serves the dashboard
@@ -12,6 +12,31 @@ Run with: uvicorn api_server:app --reload --port 8000
 
 Author: Claude AI
 Date: November 29, 2025
+
+==============================================================================
+API CONSOLIDATION NOTE
+==============================================================================
+There are TWO API servers in this project:
+
+1. api_server.py (THIS FILE) - PRIMARY
+   - Port: 8000
+   - Features: Full BackgroundTradingService integration, stock management,
+               backtest API, learning profiles, trade signals
+   - Endpoints: /api/service/*, /api/portfolio, /api/predictions/*,
+                /api/learning/*, /api/stocks/*, /api/backtest/*, /api/signals
+
+2. web_api.py - ALTERNATIVE (Dashboard-focused)
+   - Port: 8000 (CONFLICT - cannot run simultaneously!)
+   - Features: Simpler API focused on alchemy_dashboard.html
+   - Endpoints: /api/status, /api/brain, /api/pnl, /api/trades, /api/bot/control
+
+RECOMMENDATION:
+- Use api_server.py as the primary API server
+- web_api.py endpoints could be merged into this file if needed
+- Do NOT run both servers at the same time (port conflict)
+
+TODO: Consider merging web_api.py endpoints into this file for consolidation.
+==============================================================================
 """
 
 import asyncio
@@ -28,14 +53,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Import our trading bot components
-from core.background_service import (
+from background_service import (
     BackgroundTradingService,
     ServiceConfig,
     ServiceState,
     TradingMode
 )
-from core.learning_trader import PredictionDatabase, StockLearningProfile
-from core.historical_trainer import HistoricalTrainer
+from learning_trader import PredictionDatabase, StockLearningProfile
+from historical_trainer import HistoricalTrainer
 from utils.logger import get_logger
 from config import config
 
@@ -93,15 +118,17 @@ data_dir = Path("data")
 def get_service() -> BackgroundTradingService:
     """Get or create the trading service."""
     global trading_service
-    
+
     if trading_service is None:
-        # Default configuration
+        # Configuration - trading_mode now loaded from config.yaml automatically
         service_config = ServiceConfig(
             symbols=["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD", "SPY", "QQQ"],
-            trading_mode=TradingMode.LEARNING_ONLY,
+            # trading_mode is now set from config.yaml via ServiceConfig default
             prediction_interval_minutes=60,
             verification_interval_minutes=5,
         )
+
+        logger.info(f"Trading mode from config: {service_config.trading_mode.value}")
         
         trading_service = BackgroundTradingService(
             config=service_config,
@@ -317,13 +344,17 @@ async def get_stock_learning_profiles():
     db = PredictionDatabase(str(data_dir / "predictions.db"))
     
     profiles = []
+    # Get thresholds from config
+    min_predictions = config.get('learning.min_predictions_to_trade', 100)
+    min_accuracy = config.get('learning.min_accuracy_to_trade', 0.55)
+
     for symbol in service.config.symbols:
         profile = db.get_stock_profile(symbol)
-        
+
         if profile:
             ready = (
-                profile.total_predictions >= 100 and
-                profile.overall_accuracy >= 0.55
+                profile.total_predictions >= min_predictions and
+                profile.overall_accuracy >= min_accuracy
             )
             
             profiles.append({
@@ -555,18 +586,23 @@ async def get_trade_signals():
     """Get current trade signals/suggestions."""
     service = get_service()
     db = PredictionDatabase(str(data_dir / "predictions.db"))
-    
+
+    # Get thresholds from config
+    min_confidence = config.get('learning.min_confidence_to_trade', 0.65)
+    min_predictions = config.get('learning.min_predictions_to_trade', 100)
+    min_accuracy = config.get('learning.min_accuracy_to_trade', 0.55)
+
     signals = []
-    
+
     # Get recent high-confidence predictions
     pending = db.get_pending_predictions()
-    
+
     for pred in pending:
-        if pred['confidence'] >= 0.65:
+        if pred['confidence'] >= min_confidence:
             profile = db.get_stock_profile(pred['symbol'])
-            
+
             # Only include if stock is ready
-            if profile and profile.total_predictions >= 100 and profile.overall_accuracy >= 0.55:
+            if profile and profile.total_predictions >= min_predictions and profile.overall_accuracy >= min_accuracy:
                 signals.append({
                     "symbol": pred['symbol'],
                     "action": "buy" if pred['predicted_direction'] == 'up' else "sell",
@@ -583,6 +619,483 @@ async def get_trade_signals():
         "signals": signals[:10],  # Top 10
         "tradingMode": service.config.trading_mode.value
     }
+
+# ============================================================================
+# AI BRAIN STATUS ENDPOINTS (merged from web_api.py)
+# ============================================================================
+
+@app.get("/api/brain")
+async def get_brain_status():
+    """Get AI brain status - global and per-stock weights."""
+    try:
+        from core.market_monitor import get_market_monitor
+        monitor = get_market_monitor()
+
+        # Get prediction stats
+        stats = monitor.prediction_tracker.get_accuracy_stats(days=30)
+        signal_perf = monitor.prediction_tracker.get_signal_performance(days=30)
+
+        # Format global weights
+        global_weights = []
+        signal_names = {
+            'momentum_20d': {'name': '20-Day Momentum', 'desc': 'Measures price change over 20 days'},
+            'rsi': {'name': 'RSI', 'desc': 'Overbought/oversold indicator'},
+            'macd_signal': {'name': 'MACD Signal', 'desc': 'Trend & momentum crossover'},
+            'volume_ratio': {'name': 'Volume Ratio', 'desc': 'Current vs average volume'},
+            'price_vs_sma20': {'name': 'Price vs SMA', 'desc': 'Price relative to 20-day moving average'},
+            'bollinger_position': {'name': 'Bollinger Position', 'desc': 'Price within Bollinger Bands'}
+        }
+
+        for signal, weight in sorted(monitor.signal_weights.items(), key=lambda x: x[1], reverse=True):
+            info = signal_names.get(signal, {'name': signal, 'desc': ''})
+
+            # Get accuracy for this signal
+            accuracy = 0
+            uses = 0
+            if not signal_perf.empty:
+                sig_row = signal_perf[signal_perf['signal'] == signal]
+                if not sig_row.empty:
+                    accuracy = float(sig_row.iloc[0]['accuracy'])
+                    uses = int(sig_row.iloc[0]['uses'])
+
+            global_weights.append({
+                'signal': signal,
+                'name': info['name'],
+                'description': info['desc'],
+                'weight': float(weight),
+                'accuracy': accuracy,
+                'uses': uses,
+                'status': 'strong' if weight > 1.1 else ('weak' if weight < 0.9 else 'normal')
+            })
+
+        # Get per-stock weights
+        stock_weights_df = monitor.prediction_tracker.get_all_stock_weights()
+        per_stock = {}
+
+        if not stock_weights_df.empty:
+            for symbol in stock_weights_df['symbol'].unique():
+                symbol_data = stock_weights_df[stock_weights_df['symbol'] == symbol]
+                per_stock[symbol] = []
+
+                for _, row in symbol_data.iterrows():
+                    info = signal_names.get(row['signal_name'], {'name': row['signal_name'], 'desc': ''})
+                    per_stock[symbol].append({
+                        'signal': row['signal_name'],
+                        'name': info['name'],
+                        'weight': float(row['weight']),
+                        'accuracy': float(row['accuracy']) if row['accuracy'] else 0,
+                        'uses': int(row['sample_size']) if row['sample_size'] else 0
+                    })
+
+        return {
+            'overall_accuracy': stats.get('accuracy', 0),
+            'total_predictions': stats.get('total_predictions', 0),
+            'correct': stats.get('correct', 0),
+            'wrong': stats.get('wrong', 0),
+            'global_weights': global_weights,
+            'per_stock_weights': per_stock,
+            'learning_status': 'active'
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting brain status: {e}")
+        return {
+            'overall_accuracy': 0,
+            'total_predictions': 0,
+            'global_weights': [],
+            'per_stock_weights': {},
+            'error': str(e)
+        }
+
+@app.get("/api/brain/details")
+async def get_brain_details():
+    """Get detailed brain information for the Brain tab."""
+    try:
+        from core.market_monitor import get_market_monitor
+        monitor = get_market_monitor()
+
+        # Get all the brain data
+        stats = monitor.prediction_tracker.get_accuracy_stats(days=30)
+        signal_perf = monitor.prediction_tracker.get_signal_performance(days=30)
+        stock_weights_df = monitor.prediction_tracker.get_all_stock_weights()
+
+        # Signal explanations
+        signal_info = {
+            'momentum_20d': {
+                'name': '20-Day Momentum',
+                'description': 'Measures the rate of price change over 20 trading days. Positive momentum suggests upward trend continuation.',
+                'interpretation': 'Higher weight = bot trusts momentum signals more for predictions'
+            },
+            'rsi': {
+                'name': 'RSI (Relative Strength Index)',
+                'description': 'Oscillator measuring speed and magnitude of price changes. Values above 70 suggest overbought, below 30 oversold.',
+                'interpretation': 'Higher weight = bot relies more on overbought/oversold signals'
+            },
+            'macd_signal': {
+                'name': 'MACD Signal Line',
+                'description': 'Trend-following momentum indicator showing relationship between two moving averages.',
+                'interpretation': 'Higher weight = bot trusts MACD crossovers for entry/exit timing'
+            },
+            'volume_ratio': {
+                'name': 'Volume Ratio',
+                'description': 'Compares current volume to average volume. High ratios suggest significant market interest.',
+                'interpretation': 'Higher weight = bot values volume confirmation for trades'
+            },
+            'price_vs_sma20': {
+                'name': 'Price vs 20-SMA',
+                'description': 'Relationship between current price and 20-day simple moving average.',
+                'interpretation': 'Higher weight = bot uses moving average crossovers more heavily'
+            },
+            'bollinger_position': {
+                'name': 'Bollinger Band Position',
+                'description': 'Where price sits within Bollinger Bands (volatility measure).',
+                'interpretation': 'Higher weight = bot trusts mean-reversion signals from bands'
+            }
+        }
+
+        # Format detailed weights with full info
+        detailed_weights = []
+        for signal, weight in monitor.signal_weights.items():
+            info = signal_info.get(signal, {})
+
+            # Get accuracy
+            acc = 0
+            uses = 0
+            if not signal_perf.empty:
+                sig_row = signal_perf[signal_perf['signal'] == signal]
+                if not sig_row.empty:
+                    acc = float(sig_row.iloc[0]['accuracy'])
+                    uses = int(sig_row.iloc[0]['uses'])
+
+            detailed_weights.append({
+                'signal': signal,
+                'name': info.get('name', signal),
+                'description': info.get('description', ''),
+                'interpretation': info.get('interpretation', ''),
+                'weight': float(weight),
+                'accuracy': acc,
+                'uses': uses,
+                'status': 'strong' if weight > 1.1 else ('weak' if weight < 0.9 else 'normal')
+            })
+
+        # Format per-stock data
+        stock_profiles = []
+        if not stock_weights_df.empty:
+            for symbol in stock_weights_df['symbol'].unique():
+                symbol_data = stock_weights_df[stock_weights_df['symbol'] == symbol]
+                total_samples = int(symbol_data['sample_size'].sum())
+
+                signals = []
+                for _, row in symbol_data.iterrows():
+                    signals.append({
+                        'signal': row['signal_name'],
+                        'name': signal_info.get(row['signal_name'], {}).get('name', row['signal_name']),
+                        'weight': float(row['weight']),
+                        'accuracy': float(row['accuracy']) if row['accuracy'] else 0,
+                        'uses': int(row['sample_size']) if row['sample_size'] else 0
+                    })
+
+                stock_profiles.append({
+                    'symbol': symbol,
+                    'total_predictions': total_samples,
+                    'signals': sorted(signals, key=lambda x: x['weight'], reverse=True)
+                })
+
+        return {
+            'summary': {
+                'total_predictions': stats.get('total_predictions', 0),
+                'overall_accuracy': stats.get('accuracy', 0),
+                'correct': stats.get('correct', 0),
+                'wrong': stats.get('wrong', 0)
+            },
+            'global_weights': sorted(detailed_weights, key=lambda x: x['weight'], reverse=True),
+            'stock_profiles': sorted(stock_profiles, key=lambda x: x['total_predictions'], reverse=True),
+            'learning_explanation': {
+                'how_it_works': 'The bot tracks which signals lead to correct predictions. Signals that perform well get MORE weight (trusted more). Signals that perform poorly get LESS weight.',
+                'weight_range': 'Weights range from 0.5 (minimum, rarely trusted) to 2.0 (maximum, highly trusted). Starting value is 1.0.',
+                'per_stock_learning': 'Each stock develops its own signal preferences over time. MACD might work great for AAPL but poorly for TSLA - the bot learns this.'
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting brain details: {e}")
+        return {'error': str(e)}
+
+# ============================================================================
+# P&L AND TRADES ENDPOINTS (merged from web_api.py)
+# ============================================================================
+
+@app.get("/api/pnl")
+async def get_pnl():
+    """Get P&L data for dashboard."""
+    try:
+        import pandas as pd
+        from utils.trade_logger import get_trade_logger
+
+        trade_logger = get_trade_logger()
+
+        # Get all-time stats
+        summary = trade_logger.get_trade_summary()
+
+        # Get today's stats
+        df = trade_logger.get_trades()
+        today_pnl = 0
+
+        if not df.empty:
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            cutoff = datetime.now() - timedelta(days=1)
+            today_df = df[df['timestamp'] >= cutoff]
+            if not today_df.empty and 'realized_pnl' in today_df.columns:
+                today_pnl = float(today_df['realized_pnl'].sum()) if today_df['realized_pnl'].notna().any() else 0
+
+        # Get historical P&L for sparkline (last 30 days)
+        sparkline = []
+
+        if not df.empty:
+            df = df[df['realized_pnl'].notna()]
+
+            # Group by date and sum P&L
+            if not df.empty:
+                df['date'] = df['timestamp'].dt.date
+                daily = df.groupby('date')['realized_pnl'].sum().tail(30)
+
+                # Calculate cumulative
+                cumulative = 0
+                for date, pnl in daily.items():
+                    cumulative += pnl
+                    sparkline.append({
+                        'date': str(date),
+                        'daily_pnl': float(pnl),
+                        'cumulative': float(cumulative)
+                    })
+
+        initial_capital = config.get('trading.initial_capital', 100000)
+        total_pnl = summary.get('total_realized_pnl', 0)
+        current_value = initial_capital + total_pnl
+
+        return {
+            'today_pnl': today_pnl,
+            'today_pnl_pct': (today_pnl / initial_capital * 100) if initial_capital > 0 else 0,
+            'total_pnl': total_pnl,
+            'total_pnl_pct': (total_pnl / initial_capital * 100) if initial_capital > 0 else 0,
+            'initial_capital': initial_capital,
+            'current_value': current_value,
+            'sparkline': sparkline
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting P&L: {e}")
+        return {
+            'today_pnl': 0,
+            'today_pnl_pct': 0,
+            'total_pnl': 0,
+            'initial_capital': 100000,
+            'current_value': 100000,
+            'sparkline': []
+        }
+
+@app.get("/api/trades")
+async def get_trades(limit: int = 50):
+    """Get recent trades."""
+    try:
+        from utils.trade_logger import get_trade_logger
+
+        trade_logger = get_trade_logger()
+        df = trade_logger.get_trades()
+
+        if df.empty:
+            return {'trades': []}
+
+        trades = []
+        for _, row in df.head(limit).iterrows():
+            trades.append({
+                'id': row['trade_id'],
+                'timestamp': str(row['timestamp']),
+                'symbol': row['symbol'],
+                'action': row['action'],
+                'quantity': float(row['quantity']),
+                'price': float(row['price']),
+                'pnl': float(row['realized_pnl']) if row['realized_pnl'] else None,
+                'strategy': row.get('strategy_name', ''),
+                'reason': row.get('primary_signal', '')
+            })
+
+        return {'trades': trades}
+
+    except Exception as e:
+        logger.error(f"Error getting trades: {e}")
+        return {'trades': []}
+
+@app.get("/api/yesterday")
+async def get_yesterday_summary():
+    """Get yesterday's trading summary."""
+    try:
+        import pandas as pd
+        from utils.trade_logger import get_trade_logger
+
+        trade_logger = get_trade_logger()
+        df = trade_logger.get_trades()
+
+        if df.empty:
+            return {
+                'pnl': 0,
+                'trades': 0,
+                'wins': 0,
+                'losses': 0,
+                'win_rate': 0,
+                'best_trade': None,
+                'worst_trade': None
+            }
+
+        # Filter by date
+        cutoff = datetime.now() - timedelta(days=1)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df = df[df['timestamp'] >= cutoff]
+
+        # Calculate stats
+        sells = df[df['realized_pnl'].notna()]
+
+        if sells.empty:
+            return {
+                'pnl': 0,
+                'trades': len(df),
+                'wins': 0,
+                'losses': 0,
+                'win_rate': 0,
+                'best_trade': None,
+                'worst_trade': None
+            }
+
+        wins = sells[sells['realized_pnl'] > 0]
+        losses = sells[sells['realized_pnl'] < 0]
+
+        best = sells.loc[sells['realized_pnl'].idxmax()] if not sells.empty else None
+        worst = sells.loc[sells['realized_pnl'].idxmin()] if not sells.empty else None
+
+        return {
+            'pnl': float(sells['realized_pnl'].sum()),
+            'trades': len(sells),
+            'wins': len(wins),
+            'losses': len(losses),
+            'win_rate': (len(wins) / len(sells) * 100) if len(sells) > 0 else 0,
+            'best_trade': {
+                'symbol': best['symbol'],
+                'pnl': float(best['realized_pnl'])
+            } if best is not None else None,
+            'worst_trade': {
+                'symbol': worst['symbol'],
+                'pnl': float(worst['realized_pnl'])
+            } if worst is not None else None
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting yesterday summary: {e}")
+        return {'pnl': 0, 'trades': 0, 'wins': 0, 'losses': 0}
+
+# ============================================================================
+# TRENDING AND PREDICTIONS ENDPOINTS (merged from web_api.py)
+# ============================================================================
+
+@app.get("/api/trending")
+async def get_trending():
+    """Get stocks trending upward with bot confidence."""
+    try:
+        import pandas as pd
+        from core.market_monitor import get_market_monitor
+
+        monitor = get_market_monitor()
+        trending = []
+
+        # Get recent predictions
+        with monitor.prediction_tracker.db.get_connection() as conn:
+            df = pd.read_sql_query("""
+                SELECT symbol, predicted_direction, confidence, timestamp
+                FROM ai_predictions
+                WHERE timestamp >= datetime('now', '-1 day')
+                ORDER BY timestamp DESC
+            """, conn)
+
+        if not df.empty:
+            # Get latest prediction per symbol where direction is 'up'
+            up_predictions = df[df['predicted_direction'] == 'up']
+
+            for symbol in up_predictions['symbol'].unique():
+                symbol_preds = up_predictions[up_predictions['symbol'] == symbol]
+                latest = symbol_preds.iloc[0]
+
+                # Get the hybrid weight confidence for this symbol
+                weights = monitor.get_weights_for_symbol(symbol)
+                avg_weight = sum(weights.values()) / len(weights) if weights else 1.0
+
+                trending.append({
+                    'symbol': symbol,
+                    'direction': 'up',
+                    'confidence': float(latest['confidence']),
+                    'brain_confidence': min(100, float(latest['confidence']) * avg_weight),
+                    'change_pct': 0  # Would need real-time data
+                })
+
+        # Sort by confidence
+        trending.sort(key=lambda x: x['confidence'], reverse=True)
+
+        return {'trending': trending[:5]}
+
+    except Exception as e:
+        logger.error(f"Error getting trending: {e}")
+        return {'trending': []}
+
+@app.get("/api/predicted-profit")
+async def get_predicted_profit():
+    """Get predicted profit based on open signals."""
+    try:
+        import pandas as pd
+        from core.market_monitor import get_market_monitor
+
+        monitor = get_market_monitor()
+
+        # Get active high-confidence predictions
+        with monitor.prediction_tracker.db.get_connection() as conn:
+            df = pd.read_sql_query("""
+                SELECT symbol, predicted_direction, confidence, predicted_change_pct
+                FROM ai_predictions
+                WHERE resolved = 0
+                AND confidence >= 60
+                ORDER BY confidence DESC
+            """, conn)
+
+        if df.empty:
+            return {
+                'predicted_low': 0,
+                'predicted_high': 0,
+                'open_signals': 0,
+                'avg_confidence': 0
+            }
+
+        # Calculate predicted profit range
+        avg_conf = float(df['confidence'].mean())
+        num_signals = len(df)
+
+        # Estimate based on confidence and typical trade size
+        initial_capital = config.get('trading.initial_capital', 100000)
+        position_size = config.get('trading.max_position_size', 0.1)
+        typical_position = initial_capital * position_size
+
+        # Conservative and optimistic estimates
+        avg_predicted_change = float(df['predicted_change_pct'].mean()) if 'predicted_change_pct' in df.columns else 2.0
+
+        predicted_low = num_signals * typical_position * (avg_predicted_change * 0.5) / 100
+        predicted_high = num_signals * typical_position * (avg_predicted_change * 1.5) / 100
+
+        return {
+            'predicted_low': round(predicted_low, 2),
+            'predicted_high': round(predicted_high, 2),
+            'open_signals': num_signals,
+            'avg_confidence': round(avg_conf, 1)
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting predicted profit: {e}")
+        return {'predicted_low': 0, 'predicted_high': 0, 'open_signals': 0}
 
 # ============================================================================
 # WEBSOCKET FOR REAL-TIME UPDATES

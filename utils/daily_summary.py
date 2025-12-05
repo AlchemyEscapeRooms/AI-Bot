@@ -550,8 +550,8 @@ class DailySummaryGenerator:
 
                 if row:
                     return row[0], row[1]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not get previous day values: {e}")
 
         # Fallback to current balance (for first day or missing data)
         return self.get_account_balance()
@@ -650,8 +650,8 @@ class DailySummaryGenerator:
                     vol_level = "Low"
 
                 return conditions, vol_level
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not assess market conditions: {e}")
 
         return "Unknown - Could not assess market", "Unknown"
 

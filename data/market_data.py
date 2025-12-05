@@ -342,7 +342,10 @@ class MarketDataCollector:
         min_market_cap: float = 1e9
     ) -> List[str]:
         """Screen for stocks meeting criteria."""
-        logger.info("Screening stocks...")
+        logger.info("=" * 60)
+        logger.info("STOCK SCREENING - Checking which stocks meet trading criteria")
+        logger.info("=" * 60)
+        logger.info(f"Criteria: Price >= ${min_price}, Volume >= {min_volume:,}, Market Cap >= ${min_market_cap/1e9:.1f}B")
 
         # Common liquid stocks
         candidates = [
@@ -356,22 +359,54 @@ class MarketDataCollector:
         ]
 
         filtered = []
+        failed_reasons = []
 
         for symbol in candidates:
             try:
                 quote = self.get_real_time_quote(symbol)
                 fundamentals = self.get_fundamentals(symbol)
 
-                if (quote.get('price', 0) >= min_price and
-                    quote.get('volume', 0) >= min_volume and
-                    fundamentals.get('market_cap', 0) >= min_market_cap):
+                price = quote.get('price', 0)
+                volume = quote.get('volume', 0)
+                market_cap = fundamentals.get('market_cap', 0)
+
+                # Check each criterion and explain failures
+                reasons = []
+                passed = True
+
+                if price < min_price:
+                    reasons.append(f"Price ${price:.2f} < ${min_price} minimum")
+                    passed = False
+                if volume < min_volume:
+                    reasons.append(f"Volume {volume:,} < {min_volume:,} minimum")
+                    passed = False
+                if market_cap < min_market_cap:
+                    cap_str = f"${market_cap/1e9:.2f}B" if market_cap > 0 else "Unknown"
+                    reasons.append(f"Market Cap {cap_str} < ${min_market_cap/1e9:.1f}B minimum")
+                    passed = False
+
+                if passed:
                     filtered.append(symbol)
+                    logger.info(f"  PASSED: {symbol} - Price: ${price:.2f}, Volume: {volume:,}, Cap: ${market_cap/1e9:.1f}B")
+                else:
+                    failed_reasons.append((symbol, reasons))
+                    logger.debug(f"  FAILED: {symbol} - {'; '.join(reasons)}")
 
             except Exception as e:
-                logger.warning(f"Error screening {symbol}: {e}")
+                failed_reasons.append((symbol, [f"Error: {str(e)}"]))
+                logger.warning(f"  ERROR: {symbol} - {e}")
                 continue
 
-        logger.info(f"Found {len(filtered)} stocks meeting criteria")
+        # Summary
+        logger.info("-" * 60)
+        logger.info(f"SCREENING RESULTS: {len(filtered)} of {len(candidates)} stocks passed")
+
+        if len(filtered) == 0 and failed_reasons:
+            logger.warning("No stocks passed screening! Here's why stocks failed:")
+            for symbol, reasons in failed_reasons[:10]:  # Show first 10 failures
+                logger.warning(f"  {symbol}: {'; '.join(reasons)}")
+
+        logger.info("=" * 60)
         return filtered
 
     def calculate_correlations(self, symbols: List[str], period: int = 60) -> pd.DataFrame:

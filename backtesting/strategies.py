@@ -3,7 +3,39 @@
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any
-import talib as ta
+
+# Try talib first, fall back to ta (pure Python) if not available
+try:
+    import talib as talib_lib
+    USE_TALIB = True
+except ImportError:
+    USE_TALIB = False
+    import ta as ta_lib
+
+from utils.logger import get_logger
+from config import config
+
+logger = get_logger(__name__)
+
+
+# Helper functions to provide talib-like interface
+def _rsi(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.RSI(series.values if hasattr(series, 'values') else series, timeperiod=timeperiod)
+    result = ta_lib.momentum.RSIIndicator(series, window=timeperiod).rsi()
+    return result.values if hasattr(result, 'values') else result
+
+def _macd(series, fastperiod=12, slowperiod=26, signalperiod=9):
+    if USE_TALIB:
+        return talib_lib.MACD(series.values if hasattr(series, 'values') else series,
+                              fastperiod=fastperiod, slowperiod=slowperiod, signalperiod=signalperiod)
+    macd_ind = ta_lib.trend.MACD(series, window_fast=fastperiod, window_slow=slowperiod, window_sign=signalperiod)
+    macd_line = macd_ind.macd()
+    signal_line = macd_ind.macd_signal()
+    histogram = macd_ind.macd_diff()
+    return (macd_line.values if hasattr(macd_line, 'values') else macd_line,
+            signal_line.values if hasattr(signal_line, 'values') else signal_line,
+            histogram.values if hasattr(histogram, 'values') else histogram)
 
 
 def momentum_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Dict]:
@@ -12,6 +44,7 @@ def momentum_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Lis
     signals = []
 
     if len(data) < params.get('lookback', 20):
+        logger.debug(f"Momentum: Insufficient data ({len(data)} bars, need {params.get('lookback', 20)})")
         return signals
 
     # Get parameters
@@ -28,6 +61,8 @@ def momentum_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Lis
     # Calculate additional indicators for context
     sma_20 = data['close'].rolling(window=20).mean().iloc[-1] if len(data) >= 20 else current_price
     volatility = data['close'].pct_change().tail(20).std() if len(data) >= 20 else 0
+
+    logger.debug(f"Momentum [{symbol}]: momentum={momentum:.2%}, threshold={threshold:.2%}, price=${current_price:.2f}")
 
     # Generate signals
     if momentum > threshold and symbol not in engine.open_positions:
@@ -415,7 +450,7 @@ def rsi_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Dic
         return signals
 
     # Calculate RSI
-    rsi = ta.RSI(data['close'].values, timeperiod=period)
+    rsi = _rsi(data['close'], timeperiod=period)
 
     current_rsi = rsi[-1]
     prev_rsi = rsi[-2] if len(rsi) > 1 else current_rsi
@@ -488,8 +523,8 @@ def macd_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> List[Di
         return signals
 
     # Calculate MACD
-    macd, macd_signal, macd_hist = ta.MACD(
-        data['close'].values,
+    macd, macd_signal, macd_hist = _macd(
+        data['close'],
         fastperiod=fast,
         slowperiod=slow,
         signalperiod=signal_period
@@ -691,7 +726,7 @@ def ml_hybrid_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Li
     current_volume = data['volume'].iloc[-1]
 
     # RSI confirmation
-    rsi = ta.RSI(data['close'].values, timeperiod=14)
+    rsi = _rsi(data['close'], timeperiod=14)
     current_rsi = rsi[-1]
     if current_rsi < 30:
         confirmations += 1
@@ -701,7 +736,7 @@ def ml_hybrid_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -> Li
         confirmation_details.append(f"RSI overbought ({current_rsi:.1f})")
 
     # MACD confirmation
-    macd, macd_signal, hist = ta.MACD(data['close'].values)
+    macd, macd_signal, hist = _macd(data['close'])
     current_macd = macd[-1]
     current_macd_signal = macd_signal[-1]
     if macd[-1] > macd_signal[-1] and macd[-2] <= macd_signal[-2]:
@@ -798,40 +833,55 @@ def ai_prediction_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -
     This strategy generates signals based on the AI Learning System's predictions
     and technical indicator analysis. It uses a confidence threshold to filter
     high-quality signals.
-    
+
     For live trading, this integrates with the MarketMonitor's prediction system.
     For backtesting, it calculates its own signals using similar logic.
     """
-    
+
     signals = []
-    
-    min_confidence = params.get('min_confidence', 70)  # Minimum confidence to trade
+
+    min_confidence = params.get('min_confidence', 45)  # Lowered: Minimum confidence to trade
     position_size_pct = params.get('position_size', 0.1)
-    
+
     if len(data) < 50:
+        logger.debug(f"AI Adaptive: Insufficient data ({len(data)} bars, need 50)")
         return signals
-    
+
     current_price = data['close'].iloc[-1]
     symbol = data.get('symbol', ['DEFAULT']).iloc[-1] if 'symbol' in data.columns else 'DEFAULT'
-    
+
+    # Load scoring weights from config (with fallbacks)
+    score_weights = {
+        'trend_strong': config.get('strategy_scoring.trend_strong_bullish', 20),
+        'trend_mild': config.get('strategy_scoring.trend_mild_bullish', 10),
+        'rsi_oversold': config.get('strategy_scoring.rsi_oversold', 25),
+        'rsi_low': config.get('strategy_scoring.rsi_low', 10),
+        'rsi_overbought': config.get('strategy_scoring.rsi_overbought', -25),
+        'rsi_high': config.get('strategy_scoring.rsi_high', -10),
+        'macd_bullish_cross': config.get('strategy_scoring.macd_bullish_cross', 20),
+        'macd_bullish': config.get('strategy_scoring.macd_bullish', 10),
+        'volume_high': config.get('strategy_scoring.volume_high', 15),
+        'volume_confirm': config.get('strategy_scoring.volume_confirmation', 10),
+    }
+
     # Calculate technical indicators for scoring
     score = 0
     reasons = []
-    
-    # 1. Momentum (20-day)
+
+    # 1. Momentum (20-day) - Lowered thresholds
     momentum = (data['close'].iloc[-1] / data['close'].iloc[-20] - 1) * 100
-    if momentum > 2:
-        score += 20
+    if momentum > 0.5:  # Lowered from 2%
+        score += score_weights['trend_strong']
         reasons.append(f"Strong momentum: {momentum:.1f}%")
-    elif momentum > 0:
-        score += 10
+    elif momentum > -1:  # Lowered from 0%
+        score += score_weights['trend_mild']
         reasons.append(f"Positive momentum: {momentum:.1f}%")
-    elif momentum < -2:
-        score -= 20
+    elif momentum < -3:  # Lowered from -2%
+        score -= score_weights['trend_strong']
         reasons.append(f"Weak momentum: {momentum:.1f}%")
     else:
-        score -= 10
-        reasons.append(f"Negative momentum: {momentum:.1f}%")
+        score -= score_weights['trend_mild'] // 2  # Reduced penalty
+        reasons.append(f"Slightly negative momentum: {momentum:.1f}%")
     
     # 2. RSI
     delta = data['close'].diff()
@@ -839,69 +889,77 @@ def ai_prediction_strategy(data: pd.DataFrame, engine, params: Dict[str, Any]) -
     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
     rs = gain / loss
     rsi = (100 - (100 / (1 + rs))).iloc[-1]
-    
-    if rsi < 30:
-        score += 25  # Oversold = bullish
+
+    # RSI thresholds lowered for more signals
+    if rsi < 40:  # Raised from 30
+        score += score_weights['rsi_oversold']
         reasons.append(f"RSI oversold: {rsi:.1f}")
-    elif rsi < 45:
-        score += 10
-        reasons.append(f"RSI low: {rsi:.1f}")
-    elif rsi > 70:
-        score -= 25  # Overbought = bearish
+    elif rsi < 55:  # Raised from 45
+        score += score_weights['rsi_low']
+        reasons.append(f"RSI neutral-low: {rsi:.1f}")
+    elif rsi > 75:  # Raised from 70
+        score += score_weights['rsi_overbought']  # Negative value
         reasons.append(f"RSI overbought: {rsi:.1f}")
-    elif rsi > 55:
-        score -= 10
-        reasons.append(f"RSI high: {rsi:.1f}")
-    
+    elif rsi > 65:  # Raised from 55
+        score += score_weights['rsi_high'] // 2  # Reduced penalty
+        reasons.append(f"RSI slightly high: {rsi:.1f}")
+
     # 3. MACD
     ema12 = data['close'].ewm(span=12).mean()
     ema26 = data['close'].ewm(span=26).mean()
     macd = ema12 - ema26
     macd_signal = macd.ewm(span=9).mean()
     macd_hist = macd - macd_signal
-    
+
     if macd_hist.iloc[-1] > 0 and macd_hist.iloc[-2] <= 0:
-        score += 20  # Bullish crossover
+        score += score_weights['macd_bullish_cross']
         reasons.append("MACD bullish crossover")
     elif macd_hist.iloc[-1] > 0:
-        score += 10
+        score += score_weights['macd_bullish']
         reasons.append("MACD positive")
     elif macd_hist.iloc[-1] < 0 and macd_hist.iloc[-2] >= 0:
-        score -= 20  # Bearish crossover
+        score -= score_weights['macd_bullish_cross']  # Use negative of bullish
         reasons.append("MACD bearish crossover")
     elif macd_hist.iloc[-1] < 0:
-        score -= 10
+        score -= score_weights['macd_bullish']  # Use negative of bullish
         reasons.append("MACD negative")
-    
+
     # 4. Trend (SMA 20 vs SMA 50)
     sma20 = data['close'].rolling(20).mean().iloc[-1]
     sma50 = data['close'].rolling(50).mean().iloc[-1]
     trend_strength = ((sma20 - sma50) / sma50) * 100
-    
+
     if sma20 > sma50:
-        score += 15
+        score += score_weights['volume_high']  # Reusing volume_high as trend weight
         reasons.append(f"Uptrend: SMA20 {trend_strength:.1f}% above SMA50")
     else:
-        score -= 15
+        score -= score_weights['volume_high']
         reasons.append(f"Downtrend: SMA20 {abs(trend_strength):.1f}% below SMA50")
-    
+
     # 5. Volume confirmation
     vol_avg = data['volume'].rolling(20).mean().iloc[-1]
     vol_ratio = data['volume'].iloc[-1] / vol_avg if vol_avg > 0 else 1
     if vol_ratio > 1.5:
-        score += 10
+        score += score_weights['volume_confirm']
         reasons.append(f"High volume: {vol_ratio:.1f}x average")
-    
+
     # Convert score to confidence (0-100)
-    # Max possible score is around 90, min is around -90
-    confidence = min(100, max(0, (score + 90) / 1.8))
-    
-    # Determine direction
-    direction = 'up' if score > 0 else 'down'
-    
+    # Adjusted formula - more generous to generate signals
+    # Score of 0 = 50% confidence, any positive score gets above 50%
+    confidence = min(100, max(0, 50 + score))
+
+    # Determine direction - lowered threshold
+    direction = 'up' if score > -10 else 'down'  # Allow slightly negative scores to still be "up"
+
+    # Log the analysis
+    logger.debug(f"AI Adaptive [{symbol}]: score={score}, confidence={confidence:.1f}%, "
+                 f"direction={direction}, reasons={len(reasons)}")
+
     # Generate signals based on confidence threshold
     if confidence >= min_confidence and direction == 'up':
         if symbol not in engine.open_positions:
+            logger.info(f"AI Adaptive BUY signal for {symbol}: confidence={confidence:.1f}%, "
+                       f"price=${current_price:.2f}, reasons: {', '.join(reasons[:3])}")
             max_position_pct = getattr(engine, 'max_position_size', position_size_pct)
             position_size = engine.capital * max_position_pct
             quantity = position_size / current_price

@@ -261,6 +261,7 @@ class RiskManager:
         """Update daily P&L tracker."""
         self.daily_pl += trade_pl
 
+
     def get_risk_adjusted_confidence(
         self,
         base_confidence: float,

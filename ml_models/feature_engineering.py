@@ -3,11 +3,99 @@
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Any
-import talib as ta
+
+# Try talib first, fall back to ta (pure Python) if not available
+try:
+    import talib as talib_lib
+    USE_TALIB = True
+except ImportError:
+    USE_TALIB = False
+    import ta as ta_lib
 
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+# Helper functions to provide talib-like interface using 'ta' library
+def _sma(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.SMA(series, timeperiod=timeperiod)
+    return series.rolling(window=timeperiod).mean()
+
+def _ema(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.EMA(series, timeperiod=timeperiod)
+    return series.ewm(span=timeperiod, adjust=False).mean()
+
+def _rsi(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.RSI(series, timeperiod=timeperiod)
+    return ta_lib.momentum.RSIIndicator(series, window=timeperiod).rsi()
+
+def _macd(series):
+    if USE_TALIB:
+        return talib_lib.MACD(series)
+    macd_ind = ta_lib.trend.MACD(series)
+    return macd_ind.macd(), macd_ind.macd_signal(), macd_ind.macd_diff()
+
+def _bbands(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.BBANDS(series, timeperiod=timeperiod)
+    bb = ta_lib.volatility.BollingerBands(series, window=timeperiod)
+    return bb.bollinger_hband(), bb.bollinger_mavg(), bb.bollinger_lband()
+
+def _atr(high, low, close, timeperiod):
+    if USE_TALIB:
+        return talib_lib.ATR(high, low, close, timeperiod=timeperiod)
+    return ta_lib.volatility.AverageTrueRange(high, low, close, window=timeperiod).average_true_range()
+
+def _adx(high, low, close, timeperiod):
+    if USE_TALIB:
+        return talib_lib.ADX(high, low, close, timeperiod=timeperiod)
+    return ta_lib.trend.ADXIndicator(high, low, close, window=timeperiod).adx()
+
+def _obv(close, volume):
+    if USE_TALIB:
+        return talib_lib.OBV(close, volume)
+    return ta_lib.volume.OnBalanceVolumeIndicator(close, volume).on_balance_volume()
+
+def _stoch(high, low, close):
+    if USE_TALIB:
+        return talib_lib.STOCH(high, low, close)
+    stoch = ta_lib.momentum.StochasticOscillator(high, low, close)
+    return stoch.stoch(), stoch.stoch_signal()
+
+def _cci(high, low, close, timeperiod):
+    if USE_TALIB:
+        return talib_lib.CCI(high, low, close, timeperiod=timeperiod)
+    return ta_lib.trend.CCIIndicator(high, low, close, window=timeperiod).cci()
+
+def _willr(high, low, close, timeperiod):
+    if USE_TALIB:
+        return talib_lib.WILLR(high, low, close, timeperiod=timeperiod)
+    return ta_lib.momentum.WilliamsRIndicator(high, low, close, lbp=timeperiod).williams_r()
+
+def _roc(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.ROC(series, timeperiod=timeperiod)
+    return ta_lib.momentum.ROCIndicator(series, window=timeperiod).roc()
+
+def _mom(series, timeperiod):
+    if USE_TALIB:
+        return talib_lib.MOM(series, timeperiod=timeperiod)
+    # MOM is just the difference between current and N periods ago
+    return series.diff(timeperiod)
+
+def _trange(high, low, close):
+    if USE_TALIB:
+        return talib_lib.TRANGE(high, low, close)
+    # True range calculation
+    prev_close = close.shift(1)
+    tr1 = high - low
+    tr2 = abs(high - prev_close)
+    tr3 = abs(low - prev_close)
+    return pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
 
 
 class FeatureEngineer:
@@ -60,31 +148,31 @@ class FeatureEngineer:
 
         # Moving Averages
         if 'SMA_20' in self.technical_indicators:
-            df['SMA_20'] = ta.SMA(df['close'], timeperiod=20)
+            df['SMA_20'] = _sma(df['close'], timeperiod=20)
         if 'SMA_50' in self.technical_indicators:
-            df['SMA_50'] = ta.SMA(df['close'], timeperiod=50)
+            df['SMA_50'] = _sma(df['close'], timeperiod=50)
         if 'SMA_200' in self.technical_indicators:
-            df['SMA_200'] = ta.SMA(df['close'], timeperiod=200)
+            df['SMA_200'] = _sma(df['close'], timeperiod=200)
 
         if 'EMA_12' in self.technical_indicators:
-            df['EMA_12'] = ta.EMA(df['close'], timeperiod=12)
+            df['EMA_12'] = _ema(df['close'], timeperiod=12)
         if 'EMA_26' in self.technical_indicators:
-            df['EMA_26'] = ta.EMA(df['close'], timeperiod=26)
+            df['EMA_26'] = _ema(df['close'], timeperiod=26)
 
         # RSI
         if 'RSI_14' in self.technical_indicators:
-            df['RSI_14'] = ta.RSI(df['close'], timeperiod=14)
+            df['RSI_14'] = _rsi(df['close'], timeperiod=14)
 
         # MACD
         if 'MACD' in self.technical_indicators:
-            macd, signal, hist = ta.MACD(df['close'])
+            macd, signal, hist = _macd(df['close'])
             df['MACD'] = macd
             df['MACD_signal'] = signal
             df['MACD_hist'] = hist
 
         # Bollinger Bands
         if 'BB_20' in self.technical_indicators:
-            upper, middle, lower = ta.BBANDS(df['close'], timeperiod=20)
+            upper, middle, lower = _bbands(df['close'], timeperiod=20)
             df['BB_upper'] = upper
             df['BB_middle'] = middle
             df['BB_lower'] = lower
@@ -92,28 +180,28 @@ class FeatureEngineer:
 
         # ATR
         if 'ATR_14' in self.technical_indicators:
-            df['ATR_14'] = ta.ATR(df['high'], df['low'], df['close'], timeperiod=14)
+            df['ATR_14'] = _atr(df['high'], df['low'], df['close'], timeperiod=14)
 
         # ADX
         if 'ADX_14' in self.technical_indicators:
-            df['ADX_14'] = ta.ADX(df['high'], df['low'], df['close'], timeperiod=14)
+            df['ADX_14'] = _adx(df['high'], df['low'], df['close'], timeperiod=14)
 
         # OBV
         if 'OBV' in self.technical_indicators:
-            df['OBV'] = ta.OBV(df['close'], df['volume'])
+            df['OBV'] = _obv(df['close'], df['volume'])
 
         # VWAP
         if 'VWAP' in self.technical_indicators:
             df['VWAP'] = (df['volume'] * (df['high'] + df['low'] + df['close']) / 3).cumsum() / df['volume'].cumsum()
 
         # Stochastic
-        df['STOCH_k'], df['STOCH_d'] = ta.STOCH(df['high'], df['low'], df['close'])
+        df['STOCH_k'], df['STOCH_d'] = _stoch(df['high'], df['low'], df['close'])
 
         # CCI
-        df['CCI'] = ta.CCI(df['high'], df['low'], df['close'], timeperiod=14)
+        df['CCI'] = _cci(df['high'], df['low'], df['close'], timeperiod=14)
 
         # Williams %R
-        df['WILLR'] = ta.WILLR(df['high'], df['low'], df['close'], timeperiod=14)
+        df['WILLR'] = _willr(df['high'], df['low'], df['close'], timeperiod=14)
 
         return df
 
@@ -165,12 +253,12 @@ class FeatureEngineer:
         """Add momentum features."""
 
         # Rate of Change
-        df['ROC_5'] = ta.ROC(df['close'], timeperiod=5)
-        df['ROC_10'] = ta.ROC(df['close'], timeperiod=10)
+        df['ROC_5'] = _roc(df['close'], timeperiod=5)
+        df['ROC_10'] = _roc(df['close'], timeperiod=10)
 
         # Momentum
-        df['MOM_5'] = ta.MOM(df['close'], timeperiod=5)
-        df['MOM_10'] = ta.MOM(df['close'], timeperiod=10)
+        df['MOM_5'] = _mom(df['close'], timeperiod=5)
+        df['MOM_10'] = _mom(df['close'], timeperiod=10)
 
         # Moving Average crossovers
         df['MA_cross_5_20'] = np.where(
@@ -191,7 +279,7 @@ class FeatureEngineer:
         df['volatility_ratio'] = df['volatility_5d'] / (df['volatility_20d'] + 1e-10)
 
         # True Range
-        df['true_range'] = ta.TRANGE(df['high'], df['low'], df['close'])
+        df['true_range'] = _trange(df['high'], df['low'], df['close'])
         df['tr_ratio'] = df['true_range'] / df['close']
 
         return df

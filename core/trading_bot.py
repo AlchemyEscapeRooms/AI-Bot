@@ -93,6 +93,9 @@ class TradingBot:
         # Schedule daily tasks
         self._schedule_tasks()
 
+        # Start the live market monitor for continuous predictions
+        self._start_market_monitor()
+
         # Main trading loop
         self.is_trading = True
 
@@ -110,6 +113,12 @@ class TradingBot:
     def stop(self):
         """Stop the trading bot."""
         self.is_trading = False
+
+        # Stop the market monitor
+        if self.market_monitor and self.market_monitor.is_running:
+            self.market_monitor.stop()
+            logger.info("Market monitor stopped")
+
         logger.info("Trading Bot stopped")
 
     def _schedule_tasks(self):
@@ -137,6 +146,28 @@ class TradingBot:
 
         # Weekly review
         schedule.every().sunday.at("10:00").do(self.weekly_review)
+
+    def _start_market_monitor(self):
+        """Start the live market monitor for continuous predictions."""
+        try:
+            # Get symbols from watchlist/universe
+            symbols = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'AAPL', 'MSFT', 'TSLA'])
+
+            # Add watchlist symbols
+            watchlist = self.db.get_watchlist()
+            if watchlist:
+                symbols = list(set(symbols + watchlist))
+
+            # Update the market monitor's symbols
+            self.market_monitor.symbols = symbols[:20]  # Limit to 20 for performance
+
+            # Start the monitor (runs in background thread)
+            self.market_monitor.start()
+            logger.info(f"Live Market Monitor started - tracking {len(self.market_monitor.symbols)} symbols")
+            logger.info(f"Symbols: {', '.join(self.market_monitor.symbols[:10])}{'...' if len(self.market_monitor.symbols) > 10 else ''}")
+
+        except Exception as e:
+            logger.warning(f"Could not start market monitor: {e}")
 
     def _run_startup_sequence(self):
         """Run initial startup sequence."""
@@ -339,16 +370,98 @@ class TradingBot:
         return predictions
 
     def _get_watchlist(self) -> List[str]:
-        """Get list of symbols to watch."""
-        # Current positions
-        symbols = list(self.portfolio.position_tracker.get_all_positions().keys())
+        """
+        Get the combined list of stocks to analyze.
 
-        # Add screened stocks
-        screened = self.market_data.screen_stocks()
-        symbols.extend(screened[:30])
+        This combines TWO distinct lists:
+        1. PORTFOLIO = Stocks you currently OWN (always monitored for sell signals)
+        2. WATCHLIST = Stocks you're WATCHING for buy opportunities
 
-        # Remove duplicates
-        return list(set(symbols))
+        Portfolio stocks are ALWAYS included - we never want to miss an exit signal.
+        Watchlist stocks are checked for entry opportunities.
+        """
+        # PORTFOLIO: Stocks we currently own (ALWAYS included)
+        portfolio_stocks = list(self.portfolio.position_tracker.get_all_positions().keys())
+
+        # WATCHLIST: Stocks we're watching for buy opportunities
+        if hasattr(self, '_custom_watchlist') and self._custom_watchlist:
+            watchlist_stocks = list(self._custom_watchlist)
+        else:
+            # Default watchlist from config
+            watchlist_stocks = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'IWM'])
+
+        # Log what we're working with
+        if portfolio_stocks:
+            logger.info(f"PORTFOLIO ({len(portfolio_stocks)} stocks you own): {', '.join(portfolio_stocks)}")
+        else:
+            logger.info("PORTFOLIO: Empty (no current positions)")
+
+        logger.info(f"WATCHLIST ({len(watchlist_stocks)} stocks watching): {', '.join(watchlist_stocks[:10])}{'...' if len(watchlist_stocks) > 10 else ''}")
+
+        # Combine: Portfolio first (priority), then watchlist
+        all_symbols = []
+        seen = set()
+
+        # Portfolio stocks first (we own these - highest priority)
+        for s in portfolio_stocks:
+            if s not in seen:
+                seen.add(s)
+                all_symbols.append(s)
+
+        # Then watchlist stocks
+        for s in watchlist_stocks:
+            if s not in seen:
+                seen.add(s)
+                all_symbols.append(s)
+
+        return all_symbols
+
+    def add_to_watchlist(self, symbols: List[str]) -> List[str]:
+        """
+        Add symbols to the watchlist.
+        Can be called by user or by the bot when it finds opportunities.
+        """
+        if not hasattr(self, '_custom_watchlist') or self._custom_watchlist is None:
+            self._custom_watchlist = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'IWM'])
+
+        added = []
+        for symbol in symbols:
+            symbol = symbol.strip().upper()
+            if symbol and symbol not in self._custom_watchlist:
+                self._custom_watchlist.append(symbol)
+                added.append(symbol)
+                logger.info(f"Added {symbol} to watchlist")
+
+        return added
+
+    def remove_from_watchlist(self, symbols: List[str]) -> List[str]:
+        """Remove symbols from the watchlist."""
+        if not hasattr(self, '_custom_watchlist') or self._custom_watchlist is None:
+            return []
+
+        removed = []
+        for symbol in symbols:
+            symbol = symbol.strip().upper()
+            if symbol in self._custom_watchlist:
+                self._custom_watchlist.remove(symbol)
+                removed.append(symbol)
+                logger.info(f"Removed {symbol} from watchlist")
+
+        return removed
+
+    def get_portfolio_and_watchlist(self) -> dict:
+        """Get current portfolio and watchlist for display."""
+        portfolio = list(self.portfolio.position_tracker.get_all_positions().keys())
+
+        if hasattr(self, '_custom_watchlist') and self._custom_watchlist:
+            watchlist = list(self._custom_watchlist)
+        else:
+            watchlist = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'IWM'])
+
+        return {
+            'portfolio': portfolio,
+            'watchlist': watchlist
+        }
 
     def _generate_morning_report(
         self,
@@ -409,10 +522,13 @@ class TradingBot:
 
         # Skip weekends
         if now.weekday() >= 5:
+            logger.info(f"Trading cycle skipped: Weekend (day {now.weekday()})")
             return
 
         # Skip outside market hours
         if now < market_start or now > market_end:
+            logger.info(f"Trading cycle skipped: Outside market hours ({now.strftime('%H:%M')}). "
+                       f"Market open: 9:30 AM - 4:00 PM")
             return
 
         # Ensure market_open flag is set
@@ -421,10 +537,15 @@ class TradingBot:
 
         # Check daily trade limit
         if self.daily_trades_count >= self.personality.max_daily_trades:
-            logger.debug(f"Daily trade limit reached ({self.daily_trades_count}/{self.personality.max_daily_trades})")
+            logger.info(f"Trading cycle skipped: Daily trade limit reached "
+                       f"({self.daily_trades_count}/{self.personality.max_daily_trades})")
             return
 
-        logger.info(f"Running trading cycle at {now.strftime('%H:%M:%S')}...")
+        logger.info("=" * 70)
+        logger.info(f"TRADING CYCLE - {now.strftime('%H:%M:%S')}")
+        logger.info("=" * 70)
+        logger.info(f"Strategy: {self.current_strategy}")
+        logger.info(f"Trades today: {self.daily_trades_count}/{self.personality.max_daily_trades}")
 
         # Get the current strategy
         from backtesting.strategies import (
@@ -454,9 +575,13 @@ class TradingBot:
         symbols = self._get_watchlist()
         if not symbols:
             symbols = config.get('data.universe.initial_stocks', ['SPY', 'QQQ', 'AAPL', 'MSFT', 'TSLA'])
+            logger.info(f"Using default watchlist: {symbols}")
+        else:
+            logger.info(f"Watchlist has {len(symbols)} symbols, analyzing top 10")
 
         trades_this_cycle = 0
         symbols_analyzed = 0
+        symbols_no_signal = []
 
         for symbol in symbols[:10]:  # Limit to 10 symbols per cycle
             try:
@@ -467,14 +592,15 @@ class TradingBot:
                 # Get historical data for strategy
                 df = self.market_data.get_historical_data(symbol)
                 if df.empty:
-                    logger.debug(f"No data for {symbol}")
+                    logger.info(f"  {symbol}: SKIPPED - No price data available")
                     continue
-                    
+
                 if len(df) < 50:
-                    logger.debug(f"Insufficient data for {symbol}: {len(df)} bars (need 50+)")
+                    logger.info(f"  {symbol}: SKIPPED - Not enough history ({len(df)} days, need 50+)")
                     continue
-                
+
                 symbols_analyzed += 1
+                current_price = df['close'].iloc[-1]
 
                 # Create a mock engine for position checking
                 # Includes max_position_size from risk manager so strategies use correct limits
@@ -488,52 +614,63 @@ class TradingBot:
                 max_pos_size = self.portfolio.risk_manager.max_position_size
                 mock_engine = MockEngine(positions, self.portfolio.cash, max_pos_size)
 
+                # Check if we already own this stock
+                has_position = symbol in positions
+
                 # Generate signals from primary strategy
                 signals = strategy_func(df, mock_engine, strategy_params)
-                
+
                 # Also try AI prediction strategy if not already using it
                 if self.current_strategy != 'ai_prediction':
                     ai_params = DEFAULT_PARAMS.get('ai_prediction', {'min_confidence': 70, 'position_size': 0.1})
                     ai_signals = ai_prediction_strategy(df, mock_engine, ai_params)
-                    
+
                     # Add high-confidence AI signals
                     for sig in ai_signals:
                         if sig.get('reason', {}).get('signal_value', 0) >= 80:  # Only 80%+ confidence
                             signals.append(sig)
-                            logger.info(f"AI signal added for {symbol}: {sig.get('action')} "
-                                       f"(confidence: {sig.get('reason', {}).get('signal_value', 0):.1f}%)")
+                            logger.info(f"  {symbol}: AI signal added ({sig.get('action').upper()}) "
+                                       f"- Confidence: {sig.get('reason', {}).get('signal_value', 0):.1f}%")
 
-                # Log signal generation
+                # Log what we found for this symbol
                 if signals:
-                    logger.info(f"Generated {len(signals)} signal(s) for {symbol}")
-                
+                    logger.info(f"  {symbol}: {len(signals)} SIGNAL(S) FOUND at ${current_price:.2f}")
+                else:
+                    # Explain why no signal was generated
+                    reason = self._explain_no_signal(symbol, df, strategy_params, has_position)
+                    symbols_no_signal.append((symbol, reason))
+                    logger.info(f"  {symbol}: No signal - {reason}")
+
                 # Process signals
                 for signal in signals:
                     if signal.get('symbol') == symbol or signal.get('symbol') == 'DEFAULT':
                         signal['symbol'] = symbol
-                        
+
                         # Log before attempting trade
                         action = signal.get('action', 'unknown')
                         reason = signal.get('reason', {})
-                        logger.info(f"Processing signal: {action.upper()} {symbol} - "
-                                   f"{reason.get('primary_signal', 'unknown')} "
-                                   f"(value: {reason.get('signal_value', 'N/A')})")
-                        
+                        logger.info(f"    -> Processing: {action.upper()} {symbol}")
+                        logger.info(f"       Signal: {reason.get('primary_signal', 'unknown')}")
+                        logger.info(f"       Value: {reason.get('signal_value', 'N/A')}")
+                        if reason.get('explanation'):
+                            logger.info(f"       Reason: {reason.get('explanation')}")
+
                         result = self.process_trading_signal(symbol, signal)
 
                         if result and result.success:
                             trades_this_cycle += 1
-                            logger.info(f"Trade executed for {symbol}: {signal.get('action')} "
-                                       f"(Strategy: {self.current_strategy})")
+                            logger.info(f"    -> TRADE EXECUTED: {action.upper()} {symbol}")
                         elif result:
-                            logger.warning(f"Trade failed for {symbol}: {result.error_message}")
+                            logger.warning(f"    -> TRADE REJECTED: {result.error_message}")
 
             except Exception as e:
-                logger.error(f"Error in trading cycle for {symbol}: {e}")
+                logger.error(f"  {symbol}: ERROR - {e}")
                 continue
 
+        # Summary
+        logger.info("-" * 70)
         if trades_this_cycle > 0:
-            logger.info(f"Trading cycle complete: {trades_this_cycle} trades executed from {symbols_analyzed} symbols analyzed")
+            logger.info(f"CYCLE COMPLETE: {trades_this_cycle} trade(s) executed")
         else:
             logger.info(f"Trading cycle complete: no trades executed ({symbols_analyzed} symbols analyzed)")
 
@@ -756,6 +893,88 @@ class TradingBot:
             quote = self.market_data.get_real_time_quote(symbol)
             prices[symbol] = quote.get('price', 0)
         return prices
+
+    def _explain_no_signal(self, symbol: str, df: pd.DataFrame, params: Dict, has_position: bool) -> str:
+        """
+        Explain in plain English why no trading signal was generated for a stock.
+        This helps users understand what the bot is looking for.
+        """
+        if df.empty or len(df) < 20:
+            return "Not enough price history to analyze"
+
+        current_price = df['close'].iloc[-1]
+
+        # Calculate key indicators
+        # Momentum
+        lookback = params.get('lookback', 20)
+        if len(df) >= lookback:
+            past_price = df['close'].iloc[-lookback]
+            momentum = (current_price - past_price) / past_price
+            momentum_threshold = params.get('threshold', 0.02)
+        else:
+            momentum = 0
+            momentum_threshold = 0.02
+
+        # RSI
+        delta = df['close'].diff()
+        gain = delta.where(delta > 0, 0).rolling(14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
+        rs = gain / loss.replace(0, 0.0001)
+        rsi = 100 - (100 / (1 + rs))
+        current_rsi = rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50
+
+        # Moving averages
+        sma_20 = df['close'].rolling(20).mean().iloc[-1] if len(df) >= 20 else current_price
+        sma_50 = df['close'].rolling(50).mean().iloc[-1] if len(df) >= 50 else current_price
+
+        # Build explanation based on current strategy
+        explanations = []
+
+        if self.current_strategy == 'momentum':
+            if has_position:
+                if momentum > -momentum_threshold:
+                    explanations.append(f"Holding - momentum ({momentum:.1%}) hasn't dropped below sell threshold ({-momentum_threshold:.1%})")
+            else:
+                if momentum < momentum_threshold:
+                    explanations.append(f"Momentum too weak ({momentum:.1%}) - need >{momentum_threshold:.1%} to buy")
+                if momentum > 0:
+                    explanations.append(f"Price is up {momentum:.1%} over {lookback} days, but not enough for a buy signal")
+
+        elif self.current_strategy == 'trend_following':
+            if current_price > sma_20 and not has_position:
+                explanations.append(f"Price ${current_price:.2f} is above 20-day avg ${sma_20:.2f}, but waiting for better entry")
+            elif current_price < sma_20 and has_position:
+                explanations.append(f"Price ${current_price:.2f} is below 20-day avg ${sma_20:.2f}, considering exit")
+            else:
+                if not has_position:
+                    explanations.append(f"Price ${current_price:.2f} is below 20-day avg ${sma_20:.2f} - not a buy")
+                else:
+                    explanations.append(f"Price ${current_price:.2f} is above 20-day avg ${sma_20:.2f} - holding")
+
+        elif self.current_strategy == 'rsi':
+            if current_rsi > 30 and current_rsi < 70:
+                explanations.append(f"RSI is {current_rsi:.0f} (neutral zone 30-70) - no extreme to trade")
+            elif current_rsi <= 30 and has_position:
+                explanations.append(f"RSI is oversold ({current_rsi:.0f}), but already own shares")
+            elif current_rsi >= 70 and not has_position:
+                explanations.append(f"RSI is overbought ({current_rsi:.0f}), but don't own shares to sell")
+
+        elif self.current_strategy == 'mean_reversion':
+            std = df['close'].rolling(20).std().iloc[-1] if len(df) >= 20 else 0
+            upper_band = sma_20 + (std * 2)
+            lower_band = sma_20 - (std * 2)
+
+            if current_price > lower_band and current_price < upper_band:
+                explanations.append(f"Price ${current_price:.2f} is within normal range (${lower_band:.2f}-${upper_band:.2f})")
+
+        # Default explanation
+        if not explanations:
+            if has_position:
+                explanations.append(f"Already own shares, no sell signal triggered (RSI: {current_rsi:.0f})")
+            else:
+                explanations.append(f"Indicators not showing a clear buy opportunity (RSI: {current_rsi:.0f}, Momentum: {momentum:.1%})")
+
+        return "; ".join(explanations)
 
     def execute_trade(
         self,

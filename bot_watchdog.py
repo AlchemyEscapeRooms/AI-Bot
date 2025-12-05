@@ -45,17 +45,26 @@ class BotWatchdog:
         self.max_restarts_per_hour = 5
         self.restart_times = []
         self.status_file = PROJECT_ROOT / "logs" / "bot_status.json"
-        self.check_interval = 30  # seconds
 
-        # Market hours (Eastern Time)
-        self.market_open_hour = 9
-        self.market_open_minute = 30
-        self.market_close_hour = 16
-        self.market_close_minute = 0
-
-        # Extended monitoring (pre-market and after-hours)
-        self.extended_start_hour = 8  # Start monitoring at 8 AM
-        self.extended_end_hour = 18   # End monitoring at 6 PM
+        # Load settings from config
+        try:
+            from config import config
+            self.check_interval = config.get('watchdog.check_interval_seconds', 30)
+            self.market_open_hour = config.get('market_hours.open_hour', 9)
+            self.market_open_minute = config.get('market_hours.open_minute', 30)
+            self.market_close_hour = config.get('market_hours.close_hour', 16)
+            self.market_close_minute = config.get('market_hours.close_minute', 0)
+            self.extended_start_hour = config.get('market_hours.extended_start_hour', 8)
+            self.extended_end_hour = config.get('market_hours.extended_end_hour', 18)
+        except ImportError:
+            # Fallback defaults if config not available
+            self.check_interval = 30
+            self.market_open_hour = 9
+            self.market_open_minute = 30
+            self.market_close_hour = 16
+            self.market_close_minute = 0
+            self.extended_start_hour = 8
+            self.extended_end_hour = 18
 
     def is_market_hours(self) -> bool:
         """Check if we're in market hours (including extended)."""

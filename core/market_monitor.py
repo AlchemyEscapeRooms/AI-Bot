@@ -468,10 +468,15 @@ class MarketMonitor:
         if self.is_running:
             return
 
+        # Ensure price_history has entries for all current symbols
+        for symbol in self.symbols:
+            if symbol not in self.price_history:
+                self.price_history[symbol] = []
+
         self.is_running = True
         self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.monitor_thread.start()
-        logger.info("Market monitor started")
+        logger.info(f"Market monitor started - tracking {len(self.symbols)} symbols")
 
     def stop(self):
         """Stop the market monitor."""
