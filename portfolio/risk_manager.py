@@ -179,6 +179,138 @@ class RiskManager:
 
         return True
 
+    def get_correlation_adjusted_size(
+        self,
+        symbol: str,
+        base_position_value: float,
+        existing_positions: Dict[str, float],
+        correlation_matrix: pd.DataFrame = None
+    ) -> float:
+        """
+        Calculate correlation-adjusted position size.
+
+        Reduces position size when adding correlated assets to maintain
+        portfolio diversification.
+
+        Args:
+            symbol: Symbol to size
+            base_position_value: Unadjusted position value
+            existing_positions: Dict of symbol -> position value
+            correlation_matrix: Correlation matrix between symbols
+
+        Returns:
+            Adjusted position value
+        """
+        if not existing_positions or correlation_matrix is None:
+            return base_position_value
+
+        # Calculate average correlation with existing positions
+        total_corr = 0.0
+        corr_count = 0
+        weighted_corr = 0.0
+        total_weight = 0.0
+
+        for existing_symbol, existing_value in existing_positions.items():
+            if (existing_symbol in correlation_matrix.index and
+                symbol in correlation_matrix.columns and
+                existing_symbol != symbol):
+
+                corr = abs(correlation_matrix.loc[existing_symbol, symbol])
+                total_corr += corr
+                corr_count += 1
+
+                # Weight correlation by position size
+                weighted_corr += corr * existing_value
+                total_weight += existing_value
+
+        if corr_count == 0:
+            return base_position_value
+
+        # Calculate weighted average correlation
+        avg_corr = weighted_corr / total_weight if total_weight > 0 else total_corr / corr_count
+
+        # Reduce position size based on correlation
+        # Higher correlation = smaller position
+        # corr=0 -> no reduction, corr=1 -> 50% reduction
+        reduction_factor = 1.0 - (avg_corr * 0.5)
+        reduction_factor = max(0.25, min(1.0, reduction_factor))  # Cap between 25% and 100%
+
+        adjusted_value = base_position_value * reduction_factor
+
+        if reduction_factor < 1.0:
+            logger.info(f"Correlation adjustment for {symbol}: "
+                       f"avg_corr={avg_corr:.2f}, factor={reduction_factor:.2f}, "
+                       f"${base_position_value:.2f} -> ${adjusted_value:.2f}")
+
+        return adjusted_value
+
+    def calculate_portfolio_correlation_risk(
+        self,
+        positions: Dict[str, float],
+        correlation_matrix: pd.DataFrame
+    ) -> Dict[str, Any]:
+        """
+        Calculate portfolio-level correlation risk metrics.
+
+        Returns:
+            Dict with risk metrics including average correlation,
+            concentration risk, and diversification score
+        """
+        if not positions or correlation_matrix is None or len(positions) < 2:
+            return {
+                'avg_correlation': 0.0,
+                'max_correlation_pair': None,
+                'concentration_risk': 0.0,
+                'diversification_score': 1.0
+            }
+
+        symbols = list(positions.keys())
+        total_value = sum(positions.values())
+
+        # Calculate weighted average correlation
+        total_weighted_corr = 0.0
+        max_corr = 0.0
+        max_corr_pair = None
+        pair_count = 0
+
+        for i, sym1 in enumerate(symbols):
+            for j, sym2 in enumerate(symbols):
+                if i >= j:  # Skip diagonal and lower triangle
+                    continue
+
+                if sym1 in correlation_matrix.index and sym2 in correlation_matrix.columns:
+                    corr = abs(correlation_matrix.loc[sym1, sym2])
+                    weight1 = positions[sym1] / total_value
+                    weight2 = positions[sym2] / total_value
+
+                    # Weight by position sizes
+                    total_weighted_corr += corr * weight1 * weight2
+                    pair_count += 1
+
+                    if corr > max_corr:
+                        max_corr = corr
+                        max_corr_pair = (sym1, sym2, corr)
+
+        # Normalize
+        avg_corr = total_weighted_corr * 2 if pair_count > 0 else 0  # *2 because we only counted upper triangle
+
+        # Concentration risk (HHI - Herfindahl-Hirschman Index)
+        weights = [v / total_value for v in positions.values()]
+        hhi = sum(w ** 2 for w in weights)
+        concentration_risk = hhi  # 1/N for equal weight, 1 for single position
+
+        # Diversification score (inverse of correlation + concentration)
+        # Higher is better, range 0-1
+        diversification_score = max(0, min(1.0, (1 - avg_corr) * (1 - concentration_risk + 1/len(positions))))
+
+        return {
+            'avg_correlation': avg_corr,
+            'max_correlation_pair': max_corr_pair,
+            'concentration_risk': concentration_risk,
+            'diversification_score': diversification_score,
+            'num_positions': len(positions)
+        }
+
     def check_sector_allocation(
         self,
         current_allocations: Dict[str, float],

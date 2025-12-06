@@ -22,6 +22,15 @@ from data import MarketDataCollector
 from ml_models import FeatureEngineer
 from utils.logger import get_logger
 from utils.database import Database
+from config import config
+
+# RL Integration (optional)
+try:
+    from ml.rl_integration import get_rl_integration, RLTradingIntegration
+    RL_AVAILABLE = True
+except ImportError:
+    RL_AVAILABLE = False
+    RLTradingIntegration = None
 
 logger = get_logger(__name__)
 
@@ -206,7 +215,7 @@ class PredictionTracker:
                    f"{prediction.predicted_direction} ({prediction.confidence:.1f}% confidence)")
 
     def resolve_prediction(self, prediction_id: str, exit_price: float):
-        """Resolve a prediction with the actual outcome."""
+        """Resolve a prediction with the actual outcome using magnitude-weighted scoring."""
         if prediction_id not in self.active_predictions:
             return
 
@@ -216,7 +225,7 @@ class PredictionTracker:
         prediction.resolved_at = datetime.now()
         prediction.resolved = True
 
-        # Determine if prediction was correct
+        # Determine if prediction was correct (directional accuracy)
         if prediction.predicted_direction == 'up':
             prediction.was_correct = prediction.actual_change_pct > 0.1  # Small threshold
         elif prediction.predicted_direction == 'down':
@@ -224,14 +233,25 @@ class PredictionTracker:
         else:  # sideways
             prediction.was_correct = abs(prediction.actual_change_pct) < 0.5
 
-        # Update database
+        # Calculate magnitude-weighted reward score (-1 to +1)
+        # This provides richer learning signal than binary correct/wrong
+        reward_score = self._calculate_magnitude_reward(prediction)
+
+        # Update database with reward score
         with self.db.get_connection() as conn:
             cursor = conn.cursor()
+            # Add reward_score column if it doesn't exist (graceful migration)
+            try:
+                cursor.execute("ALTER TABLE ai_predictions ADD COLUMN reward_score REAL DEFAULT 0")
+            except:
+                pass  # Column already exists
+
             cursor.execute("""
                 UPDATE ai_predictions SET
                     exit_price = ?,
                     actual_change_pct = ?,
                     was_correct = ?,
+                    reward_score = ?,
                     resolved = 1,
                     resolved_at = ?
                 WHERE prediction_id = ?
@@ -239,6 +259,7 @@ class PredictionTracker:
                 exit_price,
                 prediction.actual_change_pct,
                 1 if prediction.was_correct else 0,
+                reward_score,
                 prediction.resolved_at.isoformat(),
                 prediction_id
             ))
@@ -248,7 +269,55 @@ class PredictionTracker:
 
         result = "CORRECT" if prediction.was_correct else "WRONG"
         logger.info(f"Prediction resolved: {prediction_id} - {result} "
-                   f"(predicted {prediction.predicted_direction}, actual {prediction.actual_change_pct:.2f}%)")
+                   f"(predicted {prediction.predicted_direction}, actual {prediction.actual_change_pct:.2f}%, "
+                   f"reward: {reward_score:+.3f})")
+
+    def _calculate_magnitude_reward(self, prediction) -> float:
+        """
+        Calculate magnitude-weighted reward for a prediction.
+
+        Returns value between -1 and +1:
+        - Correct direction + large move = high positive reward
+        - Correct direction + small move = small positive reward
+        - Wrong direction = negative reward (magnitude-weighted)
+
+        This provides richer learning signal than binary correct/wrong.
+        """
+        actual_change = prediction.actual_change_pct
+        predicted_direction = prediction.predicted_direction
+
+        # Direction alignment check
+        if predicted_direction == 'up':
+            direction_correct = actual_change > 0
+        elif predicted_direction == 'down':
+            direction_correct = actual_change < 0
+        else:  # sideways
+            direction_correct = abs(actual_change) < 0.5
+
+        # Magnitude component (0 to 1, capped at 5% move)
+        magnitude = min(abs(actual_change) / 5.0, 1.0)
+
+        # Calculate reward
+        if direction_correct:
+            # Correct prediction: positive reward scaled by magnitude
+            # Bigger moves = bigger reward
+            base_reward = 0.5 + (magnitude * 0.5)  # 0.5 to 1.0
+        else:
+            # Wrong prediction: negative reward scaled by magnitude
+            # Being wrong on big moves = bigger penalty
+            base_reward = -(0.3 + (magnitude * 0.7))  # -0.3 to -1.0
+
+        # Confidence adjustment: penalize high confidence wrong predictions more
+        confidence_factor = prediction.confidence / 100.0 if prediction.confidence else 0.5
+
+        if direction_correct:
+            # High confidence correct = bonus
+            reward = base_reward * (0.7 + confidence_factor * 0.3)
+        else:
+            # High confidence wrong = extra penalty
+            reward = base_reward * (0.7 + confidence_factor * 0.6)
+
+        return max(-1.0, min(1.0, reward))
 
     def get_accuracy_stats(self, symbol: str = None, days: int = 30) -> Dict[str, Any]:
         """Get prediction accuracy statistics."""
@@ -461,7 +530,19 @@ class MarketMonitor:
         # Minimum predictions needed before using per-stock weights
         self.min_stock_predictions = 10
 
-        logger.info(f"MarketMonitor initialized for: {', '.join(self.symbols)}")
+        # RL Integration (optional - enhances signal-based decisions with Q-learning)
+        self.use_rl = config.get('rl.enabled', False) and RL_AVAILABLE
+        self.rl_integration = None
+        if self.use_rl:
+            try:
+                self.rl_integration = get_rl_integration(enable=True)
+                logger.info("RL Integration enabled - using hybrid signal + Q-learning")
+            except Exception as e:
+                logger.warning(f"Failed to initialize RL integration: {e}")
+                self.use_rl = False
+
+        logger.info(f"MarketMonitor initialized for: {', '.join(self.symbols)} "
+                   f"(RL: {'enabled' if self.use_rl else 'disabled'})")
 
     def start(self):
         """Start the market monitor."""

@@ -1,39 +1,34 @@
 """
-The Alchemy Effect - Web API (ALTERNATIVE)
-============================================
+The Alchemy Effect - Web API (DEPRECATED - USE api_server.py INSTEAD)
+=====================================================================
 
-FastAPI backend that serves the trading dashboard.
-Connects to the existing trading bot infrastructure.
+DEPRECATION NOTICE:
+This file is deprecated and will be removed in a future version.
+Please use api_server.py instead, which includes all functionality.
 
-Run with: python web_api.py
-Then open: http://localhost:8000
+Run the primary API server with:
+    uvicorn api_server:app --port 8000
+
+This file now runs on port 8001 to avoid conflicts during migration.
+
+==============================================================================
+MIGRATION GUIDE
+==============================================================================
+All endpoints in this file have been consolidated into api_server.py:
+
+Old (web_api.py)          ->  New (api_server.py)
+/api/status               ->  /api/service/status
+/api/brain                ->  /api/brain
+/api/pnl                  ->  /api/pnl
+/api/trades               ->  /api/trades
+/api/bot/control          ->  /api/service/start, /api/service/stop
+/api/portfolio            ->  /api/portfolio
+/api/watchlist            ->  /api/learning/stocks
+
+Use api_server.py for new development.
+==============================================================================
 
 Author: Claude AI
-
-==============================================================================
-API CONSOLIDATION NOTE
-==============================================================================
-There are TWO API servers in this project:
-
-1. api_server.py - PRIMARY (Recommended)
-   - Port: 8000
-   - Features: Full BackgroundTradingService integration, stock management,
-               backtest API, learning profiles, trade signals
-   - More comprehensive API for all bot functionality
-
-2. web_api.py (THIS FILE) - ALTERNATIVE (Dashboard-focused)
-   - Port: 8000 (CONFLICT - cannot run simultaneously with api_server.py!)
-   - Features: Simpler API focused on alchemy_dashboard.html
-   - Endpoints: /api/status, /api/brain, /api/pnl, /api/trades, /api/bot/control
-
-WARNING: Do NOT run both api_server.py and web_api.py at the same time!
-         They both use port 8000.
-
-RECOMMENDATION:
-- For full functionality, use api_server.py instead
-- This file may be deprecated in future versions
-- Consider running: uvicorn api_server:app --port 8000
-==============================================================================
 """
 
 import asyncio
@@ -1527,10 +1522,18 @@ async def websocket_endpoint(websocket: WebSocket):
 import pandas as pd
 
 if __name__ == "__main__":
+    import warnings
+    warnings.warn(
+        "web_api.py is deprecated. Use 'uvicorn api_server:app --port 8000' instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
     print("\n" + "=" * 50)
-    print("  THE ALCHEMY EFFECT")
-    print("  Starting web dashboard...")
+    print("  THE ALCHEMY EFFECT (DEPRECATED)")
+    print("  ⚠️  This server is deprecated!")
+    print("  Use api_server.py instead for full functionality.")
     print("=" * 50)
-    print("\n  Open http://localhost:8000 in your browser\n")
+    print("\n  Running on port 8001 (to avoid conflict with api_server.py)")
+    print("  Open http://localhost:8001 in your browser\n")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)

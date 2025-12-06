@@ -311,3 +311,14 @@ watchdog:
   check_interval_seconds: 30
   restart_delay_seconds: 10
   max_restart_attempts: 3
+
+# Reinforcement Learning Configuration
+rl:
+  enabled: false                    # Set to true to enable Q-Learning
+  learning_rate: 0.001              # How fast the RL agent learns
+  discount_factor: 0.95             # How much to value future rewards
+  exploration_rate: 0.15            # Initial exploration rate (epsilon)
+  min_exploration: 0.05             # Minimum exploration rate
+  rl_weight: 0.3                    # Weight for RL vs signals (0=pure signals, 1=pure RL)
+  model_save_interval: 100          # Save model every N learning episodes
+  experience_replay_batch: 32       # Batch size for experience replay

@@ -41,6 +41,83 @@ class MarketDataCollector:
 
         logger.info(f"MarketDataCollector initialized - Primary: {self.primary_source}, Backup: {self.backup_source}")
 
+    def _validate_and_clean_data(self, df: pd.DataFrame, symbol: str = None) -> pd.DataFrame:
+        """
+        Validate and clean market data, handling NaN values and data quality issues.
+
+        - Forward-fills small gaps (1-2 missing values)
+        - Drops rows with too many missing values
+        - Validates price data (no negative prices, reasonable ranges)
+        - Logs warnings for data quality issues
+        """
+        if df.empty:
+            return df
+
+        original_len = len(df)
+        symbol_str = f" for {symbol}" if symbol else ""
+
+        # Check for NaN values
+        nan_counts = df.isna().sum()
+        total_nans = nan_counts.sum()
+
+        if total_nans > 0:
+            logger.debug(f"Found {total_nans} NaN values{symbol_str}: {nan_counts[nan_counts > 0].to_dict()}")
+
+        # Forward-fill small gaps (common for volume, vwap)
+        df = df.ffill(limit=2)
+
+        # Backward-fill any remaining start-of-series NaNs
+        df = df.bfill(limit=2)
+
+        # Drop rows that still have NaN in critical columns
+        critical_cols = ['open', 'high', 'low', 'close']
+        existing_critical = [c for c in critical_cols if c in df.columns]
+
+        if existing_critical:
+            before_drop = len(df)
+            df = df.dropna(subset=existing_critical)
+            dropped = before_drop - len(df)
+            if dropped > 0:
+                logger.warning(f"Dropped {dropped} rows with NaN in critical columns{symbol_str}")
+
+        # Validate price data (no negative prices)
+        price_cols = ['open', 'high', 'low', 'close']
+        for col in price_cols:
+            if col in df.columns:
+                invalid_count = (df[col] <= 0).sum()
+                if invalid_count > 0:
+                    logger.warning(f"Found {invalid_count} invalid (<=0) {col} values{symbol_str}")
+                    df = df[df[col] > 0]
+
+        # Validate OHLC relationship: high >= low, high >= open/close, low <= open/close
+        if all(c in df.columns for c in ['open', 'high', 'low', 'close']):
+            invalid_ohlc = (
+                (df['high'] < df['low']) |
+                (df['high'] < df['open']) |
+                (df['high'] < df['close']) |
+                (df['low'] > df['open']) |
+                (df['low'] > df['close'])
+            )
+            invalid_count = invalid_ohlc.sum()
+            if invalid_count > 0:
+                logger.warning(f"Found {invalid_count} rows with invalid OHLC relationship{symbol_str}")
+                df = df[~invalid_ohlc]
+
+        # Validate volume (should be non-negative)
+        if 'volume' in df.columns:
+            negative_vol = (df['volume'] < 0).sum()
+            if negative_vol > 0:
+                logger.warning(f"Found {negative_vol} negative volume values{symbol_str}")
+                df.loc[df['volume'] < 0, 'volume'] = 0
+
+        # Log final status
+        final_len = len(df)
+        if final_len < original_len:
+            pct_lost = (original_len - final_len) / original_len * 100
+            logger.info(f"Data cleaning{symbol_str}: {original_len} -> {final_len} rows ({pct_lost:.1f}% removed)")
+
+        return df
+
     def _init_alpaca(self):
         """Initialize Alpaca client with API credentials."""
         if not ALPACA_AVAILABLE:
@@ -211,10 +288,14 @@ class MarketDataCollector:
                     df = self._fetch_from_alpaca(symbol, start_date, end_date, interval)
                     if not df.empty:
                         self._alpaca_fail_count = 0  # Reset on success
+                        # Validate and clean data before returning
+                        df = self._validate_and_clean_data(df, symbol)
                         return df
                 elif source == 'yfinance':
                     df = self._fetch_from_yfinance(symbol, start_date, end_date, interval)
                     if not df.empty:
+                        # Validate and clean data before returning
+                        df = self._validate_and_clean_data(df, symbol)
                         return df
                 elif source == 'alpaca' and not self.alpaca_client:
                     # Skip alpaca if client not available
@@ -223,7 +304,7 @@ class MarketDataCollector:
             except Exception as e:
                 last_error = e
                 logger.warning(f"Attempt {attempt + 1} ({source}) failed for {symbol}: {e}")
-                
+
                 # Track Alpaca failures
                 if source == 'alpaca':
                     self._alpaca_fail_count += 1

@@ -236,9 +236,29 @@ class BacktestEngine:
         data: pd.DataFrame,
         strategy_func,
         strategy_params: Dict[str, Any] = None,
-        strategy_name: str = None
+        strategy_name: str = None,
+        signal_lag: int = 1,
+        warmup_period: int = 50
     ) -> Dict[str, Any]:
-        """Run a backtest with a given strategy."""
+        """
+        Run a backtest with a given strategy.
+
+        Args:
+            data: Historical OHLCV data
+            strategy_func: Strategy function that returns signals
+            strategy_params: Parameters for the strategy
+            strategy_name: Name of the strategy for logging
+            signal_lag: Number of periods to lag signals (prevents look-ahead bias)
+                        Set to 1 to execute signals on the next bar (realistic)
+                        Set to 0 for same-bar execution (may cause look-ahead bias)
+            warmup_period: Minimum periods before allowing trades (for indicator calculation)
+
+        LOOK-AHEAD BIAS PREVENTION:
+        - Strategy receives data only up to and including current period
+        - signal_lag (default=1) delays execution to next bar
+        - warmup_period ensures indicators have enough history
+        - Strategies should use .iloc[-1] for current values, not .iloc[i]
+        """
 
         self.reset()
 
@@ -248,13 +268,20 @@ class BacktestEngine:
 
         logger.info(f"Running backtest from {data.index[0]} to {data.index[-1]}")
         logger.info(f"Initial capital: ${self.initial_capital:.2f}")
+        logger.info(f"Look-ahead prevention: signal_lag={signal_lag}, warmup={warmup_period}")
 
         strategy_params = strategy_params or {}
+
+        # Store pending signals for lagged execution
+        pending_signals = []
 
         # Iterate through each time period
         for i in range(len(data)):
             current_date = data.index[i]
-            current_data = data.iloc[:i+1]
+
+            # LOOK-AHEAD BIAS PREVENTION: Only provide data up to current period
+            # Strategy should ONLY use this data, never access the full dataset
+            current_data = data.iloc[:i+1].copy()
 
             # Get current prices
             current_prices = {
@@ -265,54 +292,102 @@ class BacktestEngine:
             if not current_prices:
                 current_prices = {'DEFAULT': data['close'].iloc[i]}
 
-            # Call strategy function to get signals
-            signals = strategy_func(current_data, self, strategy_params)
+            # Execute pending signals (from previous period if signal_lag > 0)
+            signals_to_execute = []
+            remaining_signals = []
+            for sig_time, signal in pending_signals:
+                # Check if signal is old enough to execute
+                signal_age = i - sig_time
+                if signal_age >= signal_lag:
+                    signals_to_execute.append(signal)
+                else:
+                    remaining_signals.append((sig_time, signal))
+            pending_signals = remaining_signals
 
-            # Process signals
-            if signals:
-                for signal in signals:
-                    # Extract reason from signal if present
+            # Process signals that are ready to execute
+            if signals_to_execute:
+                for signal in signals_to_execute:
                     reason_data = signal.get('reason', {})
 
                     if signal['action'] == 'buy':
                         success = self.enter_position(
                             symbol=signal['symbol'],
                             quantity=signal['quantity'],
-                            price=signal['price'],
+                            price=current_prices.get(signal['symbol'], signal['price']),  # Use current price, not signal price
                             timestamp=current_date,
                             side='long'
                         )
 
-                        # Log the trade with reasoning
                         if success and self.trade_logger and reason_data:
-                            self._log_entry_trade(
-                                signal, current_date, current_data, reason_data
-                            )
+                            self._log_entry_trade(signal, current_date, current_data, reason_data)
 
-                        # Track prediction for AI Learning System
                         if success:
                             self._track_entry_prediction(signal, current_date, current_data, reason_data)
 
                     elif signal['action'] == 'sell':
-                        # Get entry info before exiting
                         entry_trade_id = self.entry_trade_ids.get(signal['symbol'])
                         position = self.open_positions.get(signal['symbol'])
 
                         success = self.exit_position(
                             symbol=signal['symbol'],
-                            price=signal['price'],
+                            price=current_prices.get(signal['symbol'], signal['price']),
                             timestamp=current_date
                         )
 
-                        # Log the exit trade with reasoning
                         if success and self.trade_logger and position:
-                            self._log_exit_trade(
-                                signal, current_date, position, entry_trade_id, reason_data
-                            )
+                            self._log_exit_trade(signal, current_date, position, entry_trade_id, reason_data)
 
-                        # Resolve prediction for AI Learning System
                         if success and position:
                             self._resolve_prediction(signal['symbol'], signal['price'], position)
+
+            # Skip strategy execution during warmup period
+            if i < warmup_period:
+                self.record_equity(current_date, current_prices)
+                continue
+
+            # Call strategy function to get signals
+            signals = strategy_func(current_data, self, strategy_params)
+
+            # Add new signals to pending queue (for lagged execution)
+            if signals:
+                for signal in signals:
+                    if signal_lag > 0:
+                        # Queue signal for later execution
+                        pending_signals.append((i, signal))
+                    else:
+                        # Execute immediately (signal_lag=0, may cause look-ahead bias)
+                        reason_data = signal.get('reason', {})
+
+                        if signal['action'] == 'buy':
+                            success = self.enter_position(
+                                symbol=signal['symbol'],
+                                quantity=signal['quantity'],
+                                price=signal['price'],
+                                timestamp=current_date,
+                                side='long'
+                            )
+
+                            if success and self.trade_logger and reason_data:
+                                self._log_entry_trade(signal, current_date, current_data, reason_data)
+
+                            if success:
+                                self._track_entry_prediction(signal, current_date, current_data, reason_data)
+
+                        elif signal['action'] == 'sell':
+                            entry_trade_id = self.entry_trade_ids.get(signal['symbol'])
+                            position = self.open_positions.get(signal['symbol'])
+
+                            success = self.exit_position(
+                                symbol=signal['symbol'],
+                                price=signal['price'],
+                                timestamp=current_date
+                            )
+
+                            if success and self.trade_logger and position:
+                                self._log_exit_trade(signal, current_date, position, entry_trade_id, reason_data)
+
+                            if success and position:
+                                self._resolve_prediction(signal['symbol'], signal['price'], position)
 
             # Record equity
             self.record_equity(current_date, current_prices)

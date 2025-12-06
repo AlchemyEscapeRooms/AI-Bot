@@ -399,6 +399,198 @@ class ReinforcementLearningEngine:
             f"NewQ={self.q_table[state_key][action_idx]:.3f}"
         )
 
+    def experience_replay_batch(self, batch_size: int = 32) -> Dict[str, float]:
+        """
+        Perform batch learning from experience replay buffer.
+
+        Experience replay helps by:
+        1. Breaking correlation between consecutive experiences
+        2. Reusing rare but important experiences multiple times
+        3. Stabilizing learning through random sampling
+
+        Args:
+            batch_size: Number of experiences to sample and learn from
+
+        Returns:
+            Dict with learning statistics
+        """
+        if len(self.memory) < batch_size:
+            logger.debug(f"Not enough experiences for replay: {len(self.memory)} < {batch_size}")
+            return {'batch_size': 0, 'avg_td_error': 0.0}
+
+        # Sample random batch from memory
+        import random
+        batch = random.sample(list(self.memory), batch_size)
+
+        total_td_error = 0.0
+        total_reward = 0.0
+
+        for experience in batch:
+            # Get Q-values for current state
+            state_key = experience.state.to_key()
+            action_idx = experience.action.to_index()
+            current_q = self.q_table[state_key][action_idx]
+
+            # Calculate target Q-value
+            if experience.done or experience.next_state is None:
+                target_q = experience.reward
+            else:
+                next_state_key = experience.next_state.to_key()
+                next_max_q = np.max(self.q_table[next_state_key])
+                target_q = experience.reward + self.discount_factor * next_max_q
+
+            # Calculate TD error
+            td_error = target_q - current_q
+            total_td_error += abs(td_error)
+            total_reward += experience.reward
+
+            # Update Q-value (same as single experience learning)
+            self.q_table[state_key][action_idx] += self.learning_rate * td_error
+
+        avg_td_error = total_td_error / batch_size
+        avg_reward = total_reward / batch_size
+
+        logger.debug(f"Experience replay batch: size={batch_size}, "
+                    f"avg_td_error={avg_td_error:.4f}, avg_reward={avg_reward:.4f}")
+
+        return {
+            'batch_size': batch_size,
+            'avg_td_error': avg_td_error,
+            'avg_reward': avg_reward,
+            'memory_size': len(self.memory)
+        }
+
+    def prioritized_experience_replay(
+        self,
+        batch_size: int = 32,
+        alpha: float = 0.6,
+        beta: float = 0.4
+    ) -> Dict[str, float]:
+        """
+        Perform prioritized experience replay.
+
+        Prioritizes learning from experiences with high TD-errors,
+        meaning experiences where our prediction was most wrong.
+
+        Args:
+            batch_size: Number of experiences to sample
+            alpha: Priority exponent (0=uniform, 1=full prioritization)
+            beta: Importance sampling exponent (corrects for bias)
+
+        Returns:
+            Dict with learning statistics
+        """
+        if len(self.memory) < batch_size:
+            return {'batch_size': 0, 'avg_td_error': 0.0}
+
+        # Calculate priorities (TD-errors) for all experiences
+        priorities = []
+        experiences_list = list(self.memory)
+
+        for exp in experiences_list:
+            state_key = exp.state.to_key()
+            action_idx = exp.action.to_index()
+            current_q = self.q_table[state_key][action_idx]
+
+            if exp.done or exp.next_state is None:
+                target_q = exp.reward
+            else:
+                next_state_key = exp.next_state.to_key()
+                next_max_q = np.max(self.q_table[next_state_key])
+                target_q = exp.reward + self.discount_factor * next_max_q
+
+            td_error = abs(target_q - current_q) + 0.01  # Small constant to avoid zero priority
+            priorities.append(td_error ** alpha)
+
+        # Convert to probabilities
+        priorities_sum = sum(priorities)
+        probabilities = [p / priorities_sum for p in priorities]
+
+        # Sample based on priorities
+        import random
+        indices = random.choices(range(len(experiences_list)), weights=probabilities, k=batch_size)
+
+        total_td_error = 0.0
+        total_reward = 0.0
+
+        for idx in indices:
+            exp = experiences_list[idx]
+
+            # Calculate importance sampling weight
+            weight = (len(self.memory) * probabilities[idx]) ** (-beta)
+
+            state_key = exp.state.to_key()
+            action_idx = exp.action.to_index()
+            current_q = self.q_table[state_key][action_idx]
+
+            if exp.done or exp.next_state is None:
+                target_q = exp.reward
+            else:
+                next_state_key = exp.next_state.to_key()
+                next_max_q = np.max(self.q_table[next_state_key])
+                target_q = exp.reward + self.discount_factor * next_max_q
+
+            td_error = target_q - current_q
+            total_td_error += abs(td_error)
+            total_reward += exp.reward
+
+            # Update with importance sampling weight
+            self.q_table[state_key][action_idx] += self.learning_rate * weight * td_error
+
+        avg_td_error = total_td_error / batch_size
+        avg_reward = total_reward / batch_size
+
+        logger.debug(f"Prioritized replay: size={batch_size}, "
+                    f"avg_td_error={avg_td_error:.4f}, avg_reward={avg_reward:.4f}")
+
+        return {
+            'batch_size': batch_size,
+            'avg_td_error': avg_td_error,
+            'avg_reward': avg_reward,
+            'memory_size': len(self.memory),
+            'method': 'prioritized'
+        }
+
+    def periodic_batch_learning(self, min_experiences: int = 100, batch_size: int = 32) -> Dict[str, Any]:
+        """
+        Perform periodic batch learning when enough experiences have accumulated.
+
+        Call this periodically (e.g., every hour or after N new experiences)
+        to consolidate learning from the experience buffer.
+
+        Args:
+            min_experiences: Minimum experiences before batch learning
+            batch_size: Batch size for replay
+
+        Returns:
+            Learning results or empty dict if skipped
+        """
+        if len(self.memory) < min_experiences:
+            return {}
+
+        # Perform multiple batch replays
+        num_batches = min(5, len(self.memory) // batch_size)
+        total_stats = {
+            'batches_processed': 0,
+            'total_td_error': 0.0,
+            'total_reward': 0.0
+        }
+
+        for _ in range(num_batches):
+            stats = self.experience_replay_batch(batch_size)
+            total_stats['batches_processed'] += 1
+            total_stats['total_td_error'] += stats.get('avg_td_error', 0)
+            total_stats['total_reward'] += stats.get('avg_reward', 0)
+
+        if total_stats['batches_processed'] > 0:
+            total_stats['avg_td_error'] = total_stats['total_td_error'] / total_stats['batches_processed']
+            total_stats['avg_reward'] = total_stats['total_reward'] / total_stats['batches_processed']
+
+        logger.info(f"Periodic batch learning: {total_stats['batches_processed']} batches, "
+                   f"avg_td_error={total_stats['avg_td_error']:.4f}")
+
+        return total_stats
+
     def make_prediction(
         self,
         symbol: str,

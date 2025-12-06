@@ -29,6 +29,15 @@ from enum import Enum
 import signal
 import sys
 
+# Timezone handling for market hours
+try:
+    import pytz
+    EASTERN_TZ = pytz.timezone('US/Eastern')
+    HAS_PYTZ = True
+except ImportError:
+    HAS_PYTZ = False
+    EASTERN_TZ = None
+
 # Alpaca imports
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
@@ -428,7 +437,18 @@ class BackgroundTradingService:
         
         # Threads
         self._threads: List[threading.Thread] = []
-        
+
+        # Thread safety locks
+        self._data_lock = threading.Lock()
+        self._profile_lock = threading.Lock()
+        self._positions_lock = threading.Lock()
+
+        # Stop-loss monitoring
+        self.stop_loss_prices: Dict[str, float] = {}  # symbol -> stop price
+        self.take_profit_prices: Dict[str, float] = {}  # symbol -> take profit price
+        self.last_stop_loss_check: Optional[datetime] = None
+        self.stop_loss_check_interval_seconds = 30  # Check every 30 seconds
+
         logger.info("BackgroundTradingService created")
     
     def _init_components(self):
@@ -479,17 +499,26 @@ class BackgroundTradingService:
         }
     
     def _is_market_hours(self) -> bool:
-        """Check if market is open."""
-        now = datetime.now()
-        
+        """Check if market is open (uses Eastern Time)."""
+        # Use Eastern Time for accurate market hours
+        if HAS_PYTZ and EASTERN_TZ:
+            now = datetime.now(EASTERN_TZ)
+        else:
+            # Fallback: assume local time is close to ET (warn once)
+            now = datetime.now()
+            if not hasattr(self, '_tz_warned'):
+                logger.warning("pytz not available - using local time for market hours. "
+                              "Install pytz for accurate timezone handling: pip install pytz")
+                self._tz_warned = True
+
         # Weekend check
         if now.weekday() >= 5:
             return False
-        
+
         # Market hours (9:30 AM - 4:00 PM ET)
         market_open = time(9, 30)
         market_close = time(16, 0)
-        
+
         return market_open <= now.time() <= market_close
     
     # =========================================================================
@@ -974,7 +1003,144 @@ class BackgroundTradingService:
                     self.on_error(e)
             
             time_module.sleep(5)  # Check every 5 seconds
-    
+
+    def _stop_loss_loop(self):
+        """Background loop for monitoring stop-losses and take-profits."""
+        while not self._stop_event.is_set():
+            if self._pause_event.is_set():
+                time_module.sleep(1)
+                continue
+
+            if self.config.trading_mode == TradingMode.LEARNING_ONLY:
+                time_module.sleep(10)
+                continue
+
+            if not self._is_market_hours():
+                time_module.sleep(60)
+                continue
+
+            try:
+                self._check_stop_losses()
+            except Exception as e:
+                logger.error(f"Error in stop-loss loop: {e}")
+                if self.on_error:
+                    self.on_error(e)
+
+            time_module.sleep(self.stop_loss_check_interval_seconds)
+
+    def _check_stop_losses(self):
+        """Check all positions against stop-loss and take-profit levels."""
+        if not self.trade_executor:
+            return
+
+        with self._positions_lock:
+            positions = self.trade_executor.get_positions()
+
+        if not positions:
+            return
+
+        # Refresh price data
+        with self._data_lock:
+            self.data_manager.refresh_data()
+
+        for symbol, position in positions.items():
+            current_price = self.data_manager.get_price(symbol)
+            if current_price is None:
+                continue
+
+            entry_price = position.get('avg_cost', 0)
+            if entry_price <= 0:
+                continue
+
+            # Check if we have stop-loss set for this position
+            stop_price = self.stop_loss_prices.get(symbol)
+            take_profit = self.take_profit_prices.get(symbol)
+
+            # Auto-set stop-loss if not already set
+            if stop_price is None and entry_price > 0:
+                stop_price = entry_price * (1 - self.config.default_stop_loss_pct)
+                self.stop_loss_prices[symbol] = stop_price
+                logger.info(f"Auto-set stop-loss for {symbol}: ${stop_price:.2f} "
+                           f"({self.config.default_stop_loss_pct*100:.1f}% below entry ${entry_price:.2f})")
+
+            if take_profit is None and entry_price > 0:
+                take_profit = entry_price * (1 + self.config.default_take_profit_pct)
+                self.take_profit_prices[symbol] = take_profit
+                logger.info(f"Auto-set take-profit for {symbol}: ${take_profit:.2f} "
+                           f"({self.config.default_take_profit_pct*100:.1f}% above entry ${entry_price:.2f})")
+
+            # Check stop-loss trigger
+            if stop_price and current_price <= stop_price:
+                logger.warning(f"STOP-LOSS TRIGGERED: {symbol} @ ${current_price:.2f} "
+                              f"(stop: ${stop_price:.2f})")
+                self._execute_stop_loss(symbol, position, 'stop_loss')
+                continue
+
+            # Check take-profit trigger
+            if take_profit and current_price >= take_profit:
+                logger.info(f"TAKE-PROFIT TRIGGERED: {symbol} @ ${current_price:.2f} "
+                           f"(target: ${take_profit:.2f})")
+                self._execute_stop_loss(symbol, position, 'take_profit')
+                continue
+
+            # Update trailing stop (move stop up as price increases)
+            if stop_price and current_price > entry_price:
+                # Trail at default stop percentage from current price
+                new_stop = current_price * (1 - self.config.default_stop_loss_pct)
+                if new_stop > stop_price:
+                    self.stop_loss_prices[symbol] = new_stop
+                    logger.debug(f"Trailing stop updated for {symbol}: ${stop_price:.2f} -> ${new_stop:.2f}")
+
+        self.last_stop_loss_check = datetime.now()
+
+    def _execute_stop_loss(self, symbol: str, position: Dict, reason: str):
+        """Execute a stop-loss or take-profit order."""
+        try:
+            quantity = int(position.get('quantity', 0))
+            if quantity <= 0:
+                return
+
+            # Create sell signal
+            signal = TradeSignal(
+                symbol=symbol,
+                action='sell',
+                confidence=1.0,  # Always execute stops
+                predicted_change_pct=0,
+                horizon=PredictionHorizon.ONE_HOUR,
+                suggested_quantity=quantity,
+                suggested_position_pct=0,
+                stop_loss_pct=0,
+                take_profit_pct=0,
+                reasoning=f"Automatic {reason} triggered",
+                features={}
+            )
+
+            order_id = self.trade_executor.execute_trade(signal)
+
+            if order_id:
+                # Clear the stop/take profit levels
+                self.stop_loss_prices.pop(symbol, None)
+                self.take_profit_prices.pop(symbol, None)
+
+                logger.info(f"Executed {reason} for {symbol}: {quantity} shares, order_id={order_id}")
+                self.daily_stats['trades_executed'] += 1
+
+                if self.on_trade_executed:
+                    self.on_trade_executed(signal)
+
+        except Exception as e:
+            logger.error(f"Error executing {reason} for {symbol}: {e}")
+
+    def set_stop_loss(self, symbol: str, stop_price: float):
+        """Manually set stop-loss price for a symbol."""
+        self.stop_loss_prices[symbol] = stop_price
+        logger.info(f"Manual stop-loss set for {symbol}: ${stop_price:.2f}")
+
+    def set_take_profit(self, symbol: str, take_profit_price: float):
+        """Manually set take-profit price for a symbol."""
+        self.take_profit_prices[symbol] = take_profit_price
+        logger.info(f"Manual take-profit set for {symbol}: ${take_profit_price:.2f}")
+
     # =========================================================================
     # SERVICE CONTROL
     # =========================================================================
@@ -1001,6 +1167,7 @@ class BackgroundTradingService:
             threading.Thread(target=self._prediction_loop, name="PredictionLoop", daemon=True),
             threading.Thread(target=self._verification_loop, name="VerificationLoop", daemon=True),
             threading.Thread(target=self._trading_loop, name="TradingLoop", daemon=True),
+            threading.Thread(target=self._stop_loss_loop, name="StopLossLoop", daemon=True),
         ]
         
         for thread in self._threads:
