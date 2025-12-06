@@ -1,0 +1,141 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4a90d9', 'primaryTextColor': '#fff', 'primaryBorderColor': '#3a7bc8', 'lineColor': '#666', 'secondaryColor': '#f4f4f4', 'tertiaryColor': '#fff'}}}%%
+
+flowchart TD
+    %% ===========================================
+    %% ALPACABOT/LAEF System Architecture
+    %% ===========================================
+
+    subgraph Entry["🚀 Entry Points"]
+        CLI["`**main.py**
+        CLI Interface`"]
+        API["`**api_server.py**
+        FastAPI REST Server
+        Port 8000`"]
+        BG["`**background_service.py**
+        Continuous Service`"]
+    end
+
+    subgraph Data["📊 Data Layer"]
+        MD["`**MarketDataCollector**
+        market_data.py`"]
+        YF["`**yfinance**
+        Fallback Source`"]
+        ALP_DATA["`**Alpaca Data API**
+        Primary Source`"]
+        DB[("`**SQLite Database**
+        predictions.db
+        trading_bot.db`")]
+    end
+
+    subgraph ML["🧠 ML/Prediction Layer"]
+        MM["`**MarketMonitor**
+        market_monitor.py`"]
+        PT["`**PredictionTracker**
+        Tracks & Learns`"]
+        LT["`**LearningTrader**
+        learning_trader.py`"]
+        FE["`**FeatureExtractor**
+        Technical Indicators`"]
+        RL["`**ReinforcementLearner**
+        Q-Learning Engine
+        ⚠️ Not Integrated`"]
+    end
+
+    subgraph Trading["💰 Trading Layer"]
+        TB["`**TradingBot**
+        core/trading_bot.py`"]
+        OE["`**OrderExecutor**
+        order_executor.py`"]
+        RM["`**RiskManager**
+        risk_manager.py`"]
+        ALP_TRADE["`**Alpaca Trading API**
+        Paper/Live`"]
+    end
+
+    subgraph Backtest["📈 Backtesting"]
+        BE["`**BacktestEngine**
+        backtest_engine.py`"]
+        ST["`**Strategies**
+        9+ Strategy Types`"]
+        WF["`**Walk-Forward**
+        Incremental Learning`"]
+    end
+
+    subgraph UI["🖥️ User Interface"]
+        DASH["`**Dashboard**
+        HTML/CSS/JS`"]
+        WS["`**WebSocket**
+        Real-time Updates`"]
+        CONSOLE["`**Console Dashboard**
+        dashboard.py`"]
+    end
+
+    %% Entry Point Connections
+    CLI --> TB
+    CLI --> BE
+    CLI --> CONSOLE
+    API --> BG
+    API --> WS
+    BG --> MM
+    BG --> LT
+
+    %% Data Flow
+    MD --> YF
+    MD --> ALP_DATA
+    ALP_DATA -.->|Historical Bars| MD
+    YF -.->|Fallback Data| MD
+
+    MD --> MM
+    MD --> LT
+    MD --> BE
+
+    %% ML Flow
+    MM --> FE
+    MM --> PT
+    PT --> DB
+    LT --> FE
+    LT --> DB
+
+    RL -.->|Framework Only| MM
+
+    %% Trading Flow
+    TB --> OE
+    TB --> RM
+    OE --> ALP_TRADE
+    RM -.->|Risk Checks| OE
+
+    BG --> OE
+
+    %% Backtest Flow
+    BE --> ST
+    BE --> WF
+    BE --> DB
+    ST --> FE
+    WF --> PT
+
+    %% UI Flow
+    WS --> DASH
+    API --> DASH
+
+    %% Learning Feedback Loops
+    PT -.->|"Update Weights"| MM
+    DB -.->|"Historical Data"| BE
+    BE -.->|"Results"| DB
+    WF -.->|"Learn Every 10 Trades"| PT
+
+    %% Styling
+    classDef entryPoint fill:#4a90d9,stroke:#3a7bc8,color:#fff
+    classDef dataLayer fill:#27ae60,stroke:#1e8449,color:#fff
+    classDef mlLayer fill:#9b59b6,stroke:#7d3c98,color:#fff
+    classDef tradingLayer fill:#e74c3c,stroke:#c0392b,color:#fff
+    classDef backtestLayer fill:#f39c12,stroke:#d68910,color:#fff
+    classDef uiLayer fill:#3498db,stroke:#2980b9,color:#fff
+    classDef warning fill:#e67e22,stroke:#d35400,color:#fff
+
+    class CLI,API,BG entryPoint
+    class MD,YF,ALP_DATA,DB dataLayer
+    class MM,PT,LT,FE mlLayer
+    class RL warning
+    class TB,OE,RM,ALP_TRADE tradingLayer
+    class BE,ST,WF backtestLayer
+    class DASH,WS,CONSOLE uiLayer
