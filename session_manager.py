@@ -33,6 +33,15 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest, StockLatestQuoteRequest
 from alpaca.data.timeframe import TimeFrame
 
+# Alpaca News API
+try:
+    from alpaca.data.historical.news import NewsClient
+    from alpaca.data.requests import NewsRequest
+    ALPACA_NEWS_AVAILABLE = True
+except ImportError:
+    ALPACA_NEWS_AVAILABLE = False
+    logger.warning("Alpaca News API not available - install alpaca-py with news support")
+
 from core.learning_trader import (
     LearningTrader,
     PredictionDatabase,
@@ -119,43 +128,193 @@ class SessionConfig:
 
 
 class NewsAnalyzer:
-    """Fetches and summarizes relevant news."""
-    
+    """Fetches and summarizes relevant news using Alpaca News API."""
+
     def __init__(self, api_key: str = None, api_secret: str = None):
         self.api_key = api_key or config.get('alpaca.api_key')
         self.api_secret = api_secret or config.get('alpaca.api_secret')
-    
+        self.news_client = None
+
+        # Initialize Alpaca News Client if available
+        if ALPACA_NEWS_AVAILABLE and self.api_key and self.api_secret:
+            try:
+                self.news_client = NewsClient(self.api_key, self.api_secret)
+                logger.info("Alpaca News API client initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Alpaca News client: {e}")
+                self.news_client = None
+
     def get_overnight_news(self, symbols: List[str], hours: int = 16) -> Dict[str, List[Dict]]:
         """
-        Get news from overnight/pre-market for given symbols.
-        
-        Returns dict of symbol -> list of news items
+        Get news from overnight/pre-market for given symbols using Alpaca News API.
+
+        Args:
+            symbols: List of stock symbols to get news for
+            hours: How many hours back to look for news (default 16 for overnight)
+
+        Returns:
+            Dict of symbol -> list of news items with keys:
+                - headline, summary, source, url, created_at, sentiment
         """
-        # TODO: Implement Alpaca news API integration
-        # For now, return placeholder
-        news = {}
-        for symbol in symbols:
-            news[symbol] = []
-        
-        logger.info(f"Fetched news for {len(symbols)} symbols")
+        news = {symbol: [] for symbol in symbols}
+
+        # If Alpaca News API is not available, return empty
+        if not ALPACA_NEWS_AVAILABLE or not self.news_client:
+            logger.warning("Alpaca News API not available, returning empty news")
+            return news
+
+        try:
+            # Calculate time range
+            end_time = datetime.now()
+            start_time = end_time - timedelta(hours=hours)
+
+            # Create news request for all symbols
+            request = NewsRequest(
+                symbols=symbols,
+                start=start_time,
+                end=end_time,
+                limit=50,  # Max 50 news items total
+                sort='desc'  # Most recent first
+            )
+
+            # Fetch news from Alpaca
+            news_response = self.news_client.get_news(request)
+
+            # Process news items
+            for item in news_response.news:
+                # Determine which symbols this news is for
+                item_symbols = item.symbols if hasattr(item, 'symbols') else []
+
+                news_item = {
+                    'headline': item.headline if hasattr(item, 'headline') else '',
+                    'summary': item.summary if hasattr(item, 'summary') else '',
+                    'source': item.source if hasattr(item, 'source') else 'Unknown',
+                    'url': item.url if hasattr(item, 'url') else '',
+                    'created_at': item.created_at.isoformat() if hasattr(item, 'created_at') else '',
+                    'sentiment': self._analyze_sentiment(item.headline, item.summary if hasattr(item, 'summary') else '')
+                }
+
+                # Add to relevant symbols
+                for symbol in item_symbols:
+                    if symbol in news:
+                        news[symbol].append(news_item)
+
+            total_items = sum(len(items) for items in news.values())
+            logger.info(f"Fetched {total_items} news items for {len(symbols)} symbols from Alpaca")
+
+        except Exception as e:
+            logger.error(f"Error fetching news from Alpaca: {e}")
+            # Return empty news on error
+
         return news
-    
+
+    def _analyze_sentiment(self, headline: str, summary: str) -> str:
+        """
+        Simple keyword-based sentiment analysis.
+
+        Returns: 'positive', 'negative', or 'neutral'
+        """
+        text = (headline + ' ' + summary).lower()
+
+        positive_keywords = ['profit', 'growth', 'beat', 'upgrade', 'bullish', 'acquire',
+                            'surge', 'rally', 'gain', 'record', 'strong', 'outperform',
+                            'exceeded', 'boost', 'breakthrough']
+        negative_keywords = ['loss', 'lawsuit', 'downgrade', 'bearish', 'bankruptcy',
+                            'fraud', 'decline', 'crash', 'fall', 'weak', 'miss',
+                            'warning', 'layoff', 'cut', 'recall', 'investigation']
+
+        positive_count = sum(1 for word in positive_keywords if word in text)
+        negative_count = sum(1 for word in negative_keywords if word in text)
+
+        if positive_count > negative_count:
+            return 'positive'
+        elif negative_count > positive_count:
+            return 'negative'
+        else:
+            return 'neutral'
+
     def summarize_news(self, news: Dict[str, List[Dict]]) -> str:
-        """Generate a brief summary of overnight news."""
+        """Generate a brief summary of overnight news with sentiment indicators."""
         summary_parts = []
-        
+
         for symbol, items in news.items():
             if items:
-                summary_parts.append(f"**{symbol}**: {len(items)} news items")
-                # Add headlines
+                # Count sentiment
+                sentiments = [item.get('sentiment', 'neutral') for item in items]
+                positive = sentiments.count('positive')
+                negative = sentiments.count('negative')
+
+                # Sentiment indicator
+                if positive > negative:
+                    indicator = "🟢"
+                elif negative > positive:
+                    indicator = "🔴"
+                else:
+                    indicator = "⚪"
+
+                summary_parts.append(f"{indicator} **{symbol}**: {len(items)} news items")
+
+                # Add top headlines with sentiment
                 for item in items[:3]:  # Top 3
                     headline = item.get('headline', 'No headline')
-                    summary_parts.append(f"  - {headline}")
-        
+                    source = item.get('source', '')
+                    sentiment_emoji = {'positive': '📈', 'negative': '📉', 'neutral': '➡️'}.get(
+                        item.get('sentiment', 'neutral'), '➡️'
+                    )
+                    summary_parts.append(f"  {sentiment_emoji} {headline[:80]}{'...' if len(headline) > 80 else ''}")
+                    if source:
+                        summary_parts.append(f"     [{source}]")
+
         if not summary_parts:
-            return "No significant overnight news for your portfolio stocks."
-        
+            return "📭 No significant overnight news for your portfolio stocks."
+
         return "\n".join(summary_parts)
+
+    def get_market_news(self, limit: int = 10) -> List[Dict]:
+        """
+        Get general market news (not symbol-specific).
+
+        Returns list of news items for overall market sentiment.
+        """
+        if not ALPACA_NEWS_AVAILABLE or not self.news_client:
+            logger.warning("Alpaca News API not available for market news")
+            return []
+
+        try:
+            end_time = datetime.now()
+            start_time = end_time - timedelta(hours=24)
+
+            # Request news without specific symbols for general market news
+            request = NewsRequest(
+                start=start_time,
+                end=end_time,
+                limit=limit,
+                sort='desc'
+            )
+
+            news_response = self.news_client.get_news(request)
+
+            market_news = []
+            for item in news_response.news:
+                market_news.append({
+                    'headline': item.headline if hasattr(item, 'headline') else '',
+                    'summary': item.summary if hasattr(item, 'summary') else '',
+                    'source': item.source if hasattr(item, 'source') else 'Unknown',
+                    'url': item.url if hasattr(item, 'url') else '',
+                    'created_at': item.created_at.isoformat() if hasattr(item, 'created_at') else '',
+                    'symbols': item.symbols if hasattr(item, 'symbols') else [],
+                    'sentiment': self._analyze_sentiment(
+                        item.headline if hasattr(item, 'headline') else '',
+                        item.summary if hasattr(item, 'summary') else ''
+                    )
+                })
+
+            logger.info(f"Fetched {len(market_news)} general market news items")
+            return market_news
+
+        except Exception as e:
+            logger.error(f"Error fetching market news: {e}")
+            return []
 
 
 class TradingSessionManager:
@@ -920,8 +1079,8 @@ def run_interactive_session():
                     break
                 elif command == 'CYCLE':
                     print(manager.run_one_cycle())
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error processing command: {e}")
         
         # Run cycle every hour
         if manager.state == SessionState.TRADING:

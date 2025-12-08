@@ -54,7 +54,11 @@ class PredictionModel:
                 n_estimators=100,
                 learning_rate=0.1,
                 max_depth=6,
-                random_state=42
+                random_state=42,
+                min_data_in_bin=1,      # Allow small datasets
+                min_data_in_leaf=1,     # Allow small datasets
+                n_jobs=1,               # Disable parallel to avoid Windows subprocess issues
+                verbose=-1              # Suppress warnings
             )
         elif self.model_type == "random_forest":
             self.model = RandomForestRegressor(

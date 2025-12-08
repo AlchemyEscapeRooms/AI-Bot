@@ -84,15 +84,12 @@ class UnifiedTradingBot:
             "META", "NVDA", "AMD", "SPY", "QQQ"
         ]
         
-        # Service config
+        # Service config - trading_mode loaded from config.yaml via ServiceConfig defaults
         self.service_config = ServiceConfig(
             symbols=self.default_symbols.copy(),
-            trading_mode=TradingMode.LEARNING_ONLY,
+            # trading_mode is now set from config.yaml via ServiceConfig default
             prediction_interval_minutes=60,
             verification_interval_minutes=5,
-            min_confidence_to_trade=0.65,
-            min_accuracy_to_trade=0.55,
-            min_predictions_to_trade=100
         )
         
         # Background service

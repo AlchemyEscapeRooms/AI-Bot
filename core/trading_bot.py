@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Any, Optional
-from datetime import datetime, time as dt_time
+from datetime import datetime, time as dt_time, timedelta
 import schedule
 import time
 
@@ -150,13 +150,23 @@ class TradingBot:
         screened = self.market_data.screen_stocks()
         symbols.extend(screened[:20])  # Add top 20 screened stocks
 
-        # Train initial models
+        # Train initial models with combined data from multiple symbols
         logger.info("Training initial ML models...")
-        for symbol in symbols[:5]:  # Train on first 5 for speed
-            df = self.market_data.get_historical_data(symbol)
-            if not df.empty:
-                self.model_trainer.train_prediction_models(df)
-                break
+        training_dfs = []
+        for symbol in symbols[:10]:  # Get data from first 10 symbols
+            # Get 2 years of data for better training
+            start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+            df = self.market_data.get_historical_data(symbol, start_date=start_date)
+            if not df.empty and len(df) > 100:
+                df['symbol'] = symbol  # Tag with symbol for reference
+                training_dfs.append(df)
+                logger.info(f"Loaded {len(df)} samples from {symbol}")
+
+        if training_dfs:
+            # Combine all data for training
+            combined_df = pd.concat(training_dfs, ignore_index=True)
+            logger.info(f"Training with {len(combined_df)} total samples from {len(training_dfs)} symbols")
+            self.model_trainer.train_prediction_models(combined_df)
 
         # Evaluate strategies and select best from personality's preferred
         logger.info("Evaluating trading strategies...")
@@ -339,16 +349,36 @@ class TradingBot:
         return predictions
 
     def _get_watchlist(self) -> List[str]:
-        """Get list of symbols to watch."""
-        # Current positions
-        symbols = list(self.portfolio.position_tracker.get_all_positions().keys())
+        """Get list of symbols to watch - combines Alpaca positions with configured stocks."""
+        symbols = set()
 
-        # Add screened stocks
-        screened = self.market_data.screen_stocks()
-        symbols.extend(screened[:30])
+        # 1. Get Alpaca positions if in paper/live mode
+        if self.mode in ['paper', 'live']:
+            try:
+                alpaca_positions = self.order_executor.get_positions()
+                if alpaca_positions:
+                    symbols.update(alpaca_positions.keys())
+                    logger.debug(f"Added {len(alpaca_positions)} symbols from Alpaca positions")
+            except Exception as e:
+                logger.warning(f"Could not get Alpaca positions: {e}")
 
-        # Remove duplicates
-        return list(set(symbols))
+        # 2. Add configured stocks from config.yaml
+        configured_stocks = config.get('data.universe.initial_stocks', [])
+        if isinstance(configured_stocks, list):
+            symbols.update(configured_stocks)
+
+        # 3. Current internal positions (if any)
+        internal_positions = self.portfolio.position_tracker.get_all_positions().keys()
+        symbols.update(internal_positions)
+
+        # 4. Add top screened stocks (limit to avoid too many)
+        try:
+            screened = self.market_data.screen_stocks()
+            symbols.update(screened[:20])
+        except Exception as e:
+            logger.debug(f"Stock screening unavailable: {e}")
+
+        return list(symbols)
 
     def _generate_morning_report(
         self,
@@ -718,15 +748,24 @@ class TradingBot:
         logger.info(f"Prediction accuracy today: {accuracy_rate:.1f}%")
 
     def retrain_models(self):
-        """Retrain ML models weekly."""
+        """Retrain ML models weekly with combined data from multiple symbols."""
         logger.info("Retraining models...")
 
         symbols = self._get_watchlist()
 
-        for symbol in symbols[:5]:  # Retrain on top 5
-            df = self.market_data.get_historical_data(symbol)
-            if not df.empty:
-                self.model_trainer.retrain_models(df)
+        # Collect data from multiple symbols
+        training_dfs = []
+        for symbol in symbols[:15]:  # Get data from 15 symbols
+            start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+            df = self.market_data.get_historical_data(symbol, start_date=start_date)
+            if not df.empty and len(df) > 100:
+                df['symbol'] = symbol
+                training_dfs.append(df)
+
+        if training_dfs:
+            combined_df = pd.concat(training_dfs, ignore_index=True)
+            logger.info(f"Retraining with {len(combined_df)} samples from {len(training_dfs)} symbols")
+            self.model_trainer.retrain_models(combined_df)
 
         logger.info("Model retraining complete")
 

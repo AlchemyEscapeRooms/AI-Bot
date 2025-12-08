@@ -38,7 +38,7 @@ from alpaca.data.live import StockDataStream
 from alpaca.data.requests import StockBarsRequest, StockLatestQuoteRequest
 from alpaca.data.timeframe import TimeFrame
 
-from core.learning_trader import (
+from learning_trader import (
     LearningTrader,
     PredictionDatabase,
     FeatureExtractor,
@@ -48,7 +48,7 @@ from core.learning_trader import (
     PredictionDirection,
     MarketDataBatcher
 )
-from core.historical_trainer import HistoricalTrainer
+from historical_trainer import HistoricalTrainer
 from utils.logger import get_logger
 from config import config
 
@@ -100,30 +100,30 @@ class TradeSignal:
 
 @dataclass
 class ServiceConfig:
-    """Configuration for the background service."""
+    """Configuration for the background service. Values loaded from config.yaml."""
     # Symbols to monitor
     symbols: List[str] = field(default_factory=list)
     excluded_symbols: List[str] = field(default_factory=list)
-    
-    # Timing
-    prediction_interval_minutes: int = 60  # Make predictions every hour
+
+    # Timing - loaded from config.yaml service section
+    prediction_interval_minutes: int = field(default_factory=lambda: config.get('service.prediction_interval_minutes', 60))
     verification_interval_minutes: int = 5  # Check pending predictions every 5 min
-    data_refresh_interval_seconds: int = 60  # Refresh market data every minute
-    
-    # Trading parameters
-    trading_mode: TradingMode = TradingMode.LEARNING_ONLY
-    min_confidence_to_trade: float = 0.65
-    min_accuracy_to_trade: float = 0.55
-    min_predictions_to_trade: int = 100
-    
-    # Position sizing
-    max_position_pct: float = 0.10  # Max 10% per position
-    max_portfolio_risk_pct: float = 0.25  # Max 25% total at risk
-    max_daily_loss_pct: float = 0.02  # Stop trading if down 2%
-    
-    # Risk management
-    default_stop_loss_pct: float = 0.02  # 2% stop loss
-    default_take_profit_pct: float = 0.05  # 5% take profit
+    data_refresh_interval_seconds: int = field(default_factory=lambda: config.get('service.data_refresh_interval_seconds', 60))
+
+    # Trading parameters - loaded from config.yaml
+    trading_mode: TradingMode = field(default_factory=lambda: TradingMode.PAPER_TRADING if config.get('trading.mode', 'paper') == 'paper' else (TradingMode.LIVE_TRADING if config.get('trading.mode') == 'live' else TradingMode.LEARNING_ONLY))
+    min_confidence_to_trade: float = field(default_factory=lambda: config.get('learning.min_confidence_to_trade', 0.65))
+    min_accuracy_to_trade: float = field(default_factory=lambda: config.get('learning.min_accuracy_to_trade', 0.55))
+    min_predictions_to_trade: int = field(default_factory=lambda: config.get('learning.min_predictions_to_trade', 100))
+
+    # Position sizing - loaded from config.yaml service section
+    max_position_pct: float = field(default_factory=lambda: config.get('service.max_position_pct', 0.10))
+    max_portfolio_risk_pct: float = field(default_factory=lambda: config.get('service.max_portfolio_risk_pct', 0.25))
+    max_daily_loss_pct: float = field(default_factory=lambda: config.get('service.max_daily_loss_pct', 0.02))
+
+    # Risk management - loaded from config.yaml service section
+    default_stop_loss_pct: float = field(default_factory=lambda: config.get('service.default_stop_loss_pct', 0.02))
+    default_take_profit_pct: float = field(default_factory=lambda: config.get('service.default_take_profit_pct', 0.05))
 
 
 class MarketDataManager:
@@ -595,9 +595,9 @@ class BackgroundTradingService:
         if total_weight > 0:
             score = score / total_weight
         score = max(-1, min(1, score))
-        
-        # Determine direction and confidence
-        threshold = 0.1
+
+        # Determine direction and confidence (threshold from config)
+        threshold = config.get('learning.direction_threshold', 0.1)
         if score > threshold:
             direction = PredictionDirection.UP
             confidence = min(0.9, 0.5 + abs(score) * 0.4)
@@ -687,9 +687,9 @@ class BackgroundTradingService:
             actual_change_pct = (actual_price / price_at_pred - 1) * 100
             
             predicted_direction = pred_dict['predicted_direction']
-            
-            # Determine actual direction
-            flat_threshold = 0.3
+
+            # Determine actual direction (threshold from config)
+            flat_threshold = config.get('learning.flat_threshold', 0.3)
             if abs(actual_change_pct) < flat_threshold:
                 actual_direction = 'flat'
             elif actual_change_pct > 0:
@@ -753,9 +753,9 @@ class BackgroundTradingService:
         profile.total_predictions += 1
         if was_correct:
             profile.total_correct += 1
-        
-        # Update horizon accuracy (EMA)
-        alpha = 0.1
+
+        # Update horizon accuracy (EMA with config alpha)
+        alpha = config.get('learning.ema_alpha', 0.1)
         if horizon == 'h':
             profile.predictions_1h += 1
             profile.accuracy_1h = profile.accuracy_1h * (1 - alpha) + (1 if was_correct else 0) * alpha
@@ -765,13 +765,16 @@ class BackgroundTradingService:
         else:
             profile.predictions_next_day += 1
             profile.accuracy_next_day = profile.accuracy_next_day * (1 - alpha) + (1 if was_correct else 0) * alpha
-        
-        # Update feature weights
-        adjustment = 0.02 if was_correct else -0.02
+
+        # Update feature weights (adjustment from config)
+        weight_adj = config.get('learning.weight_adjustment', 0.02)
+        adjustment = weight_adj if was_correct else -weight_adj
+        min_weight = config.get('learning.min_weight', 0.5)
+        max_weight = config.get('learning.max_weight', 2.0)
         for feature_name in signals_used:
             if feature_name in profile.feature_weights:
                 profile.feature_weights[feature_name] *= (1 + adjustment)
-                profile.feature_weights[feature_name] = max(0.1, min(3.0, profile.feature_weights[feature_name]))
+                profile.feature_weights[feature_name] = max(min_weight, min(max_weight, profile.feature_weights[feature_name]))
         
         # Save
         self.profiles[symbol] = profile
@@ -1171,23 +1174,29 @@ class BackgroundTradingService:
 
 def create_service(
     symbols: List[str] = None,
-    trading_mode: TradingMode = TradingMode.LEARNING_ONLY,
+    trading_mode: TradingMode = None,  # None means use config.yaml
     **kwargs
 ) -> BackgroundTradingService:
     """Create a configured background trading service."""
-    
+
     default_symbols = symbols or [
         "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
         "META", "NVDA", "AMD", "SPY", "QQQ"
     ]
-    
-    config = ServiceConfig(
+
+    # Create config - trading_mode is loaded from config.yaml if not specified
+    service_config = ServiceConfig(
         symbols=default_symbols,
-        trading_mode=trading_mode,
         **kwargs
     )
-    
-    return BackgroundTradingService(config=config)
+
+    # Override trading mode if explicitly provided
+    if trading_mode is not None:
+        service_config.trading_mode = trading_mode
+
+    logger.info(f"Creating service with trading mode: {service_config.trading_mode.value}")
+
+    return BackgroundTradingService(config=service_config)
 
 
 def run_service():

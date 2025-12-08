@@ -3,7 +3,7 @@
 # Trading Configuration
 trading:
   mode: "paper"  # paper or live
-  initial_capital: 100000.0
+  initial_capital: "auto"  # "auto" to sync from Alpaca, or a specific number
   max_position_size: 0.1  # 10% of portfolio per position
   max_portfolio_risk: 0.02  # 2% max risk per trade
   min_profit_threshold: 0.001  # 0.1% minimum profit for trades
@@ -136,7 +136,25 @@ data:
     daily: ["fundamentals"]
 
   universe:
-    initial_stocks: ["SPY", "QQQ", "IWM"]  # Start with ETFs, expand based on ML
+    # Full watchlist - actively monitored for trading signals
+    initial_stocks: [
+      # Major ETFs
+      "SPY", "QQQ", "IWM", "DIA",
+      # Large Cap Tech
+      "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD", "NFLX", "CRM",
+      # Semiconductors
+      "INTC", "MU", "QCOM", "AVGO", "TXN",
+      # Finance
+      "JPM", "BAC", "GS", "MS", "V", "MA",
+      # Healthcare
+      "JNJ", "UNH", "PFE", "ABBV", "MRK",
+      # Consumer
+      "WMT", "COST", "HD", "NKE", "SBUX",
+      # Energy
+      "XOM", "CVX", "COP",
+      # Industrial
+      "BA", "CAT", "GE", "HON"
+    ]
     max_stocks: 500
     filters:
       min_price: 5.0
@@ -244,3 +262,70 @@ schedule:
   after_hours_learning: "17:00"
   model_retraining: "Saturday 02:00"
   weekly_review: "Sunday 10:00"
+
+# Market Hours (Eastern Time)
+market_hours:
+  open_hour: 9
+  open_minute: 30
+  close_hour: 16
+  close_minute: 0
+  extended_start_hour: 8
+  extended_end_hour: 18
+
+# Signal Learning Configuration
+learning:
+  # Direction prediction thresholds
+  direction_threshold: 0.1  # % change to count as directional move
+  flat_threshold: 0.3      # % range to count as flat/sideways
+
+  # Weight adjustment parameters
+  weight_adjustment: 0.02   # Amount to adjust weights per prediction
+  ema_alpha: 0.1           # EMA smoothing for accuracy updates
+  min_weight: 0.5          # Minimum signal weight
+  max_weight: 2.0          # Maximum signal weight
+
+  # Trading readiness thresholds
+  min_predictions_to_trade: 100    # Minimum predictions before trading a stock
+  min_accuracy_to_trade: 0.55      # Minimum accuracy (55%) to trade
+  min_confidence_to_trade: 0.65    # Minimum confidence (65%) to act on signal
+
+# Strategy Scoring Weights
+strategy_scoring:
+  # Trend signals
+  trend_strong_bullish: 20
+  trend_mild_bullish: 10
+  trend_strong_bearish: -20
+  trend_mild_bearish: -10
+
+  # RSI signals
+  rsi_oversold: 25       # RSI < 30, bullish
+  rsi_low: 10            # RSI 30-40
+  rsi_overbought: -25    # RSI > 70, bearish
+  rsi_high: -10          # RSI 60-70
+
+  # MACD signals
+  macd_bullish_cross: 20
+  macd_bullish: 10
+  macd_bearish_cross: -20
+  macd_bearish: -10
+
+  # Volume signals
+  volume_high: 15
+  volume_low: -15
+  volume_confirmation: 10
+
+# Service Configuration (background_service.py)
+service:
+  prediction_interval_minutes: 60   # Make predictions every hour
+  data_refresh_interval_seconds: 60 # Refresh market data every minute
+  max_position_pct: 0.10            # Max 10% per position
+  max_portfolio_risk_pct: 0.25      # Max 25% total at risk
+  max_daily_loss_pct: 0.02          # Stop trading if down 2%
+  default_stop_loss_pct: 0.02       # 2% stop loss
+  default_take_profit_pct: 0.05     # 5% take profit
+
+# Watchdog Configuration
+watchdog:
+  check_interval_seconds: 30
+  restart_delay_seconds: 10
+  max_restart_attempts: 3

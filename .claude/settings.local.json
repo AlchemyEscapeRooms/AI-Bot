@@ -26,7 +26,14 @@
       "Bash(cmd /c \"ipconfig /renew\")",
       "Bash(git worktree:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(timeout 5:*)",
+      "Bash(dir:*)",
+      "Bash(more:*)",
+      "Bash(cmd /c \"powershell -Command \"\"Get-Content ''C:\\Users\\joshu\\OneDrive\\AI Bot\\Improved\\trade_logs\\trades_readable.txt'' -Tail 50\"\"\")",
+      "Bash(powershell:*)",
+      "WebFetch(domain:127.0.0.1)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Alchemy Effect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           THE ALCHEMY EFFECT - Slate & Sage Theme
+           ============================================ */
+
+        :root {
+            /* Slate & Sage Palette */
+            --bg-dark: #1a1d23;
+            --bg-card: #242830;
+            --bg-card-hover: #2a2f38;
+            --border: #353b45;
+            --border-light: #454c58;
+
+            /* Text */
+            --text-primary: #e8ecf2;
+            --text-secondary: #9aa3b0;
+            --text-muted: #6b7280;
+
+            /* Matte Colors */
+            --sage-green: #6b8f71;
+            --sage-green-bg: rgba(107, 143, 113, 0.15);
+            --dusty-rose: #a65d5d;
+            --dusty-rose-bg: rgba(166, 93, 93, 0.15);
+            --steel-blue: #8fa8bf;
+            --steel-blue-bg: rgba(143, 168, 191, 0.15);
+            --amber: #c9a962;
+            --amber-bg: rgba(201, 169, 98, 0.15);
+
+            /* Status */
+            --active: #6b8f71;
+            --inactive: #6b7280;
+            --warning: #c9a962;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           HEADER
+           ============================================ */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: var(--amber);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .bot-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bot-status.active {
+            background: var(--sage-green-bg);
+            border: 1px solid var(--sage-green);
+            color: var(--sage-green);
+        }
+
+        .bot-status.inactive {
+            background: var(--dusty-rose-bg);
+            border: 1px solid var(--dusty-rose);
+            color: var(--dusty-rose);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .bot-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-light);
+        }
+
+        .btn-primary {
+            background: var(--sage-green);
+            border-color: var(--sage-green);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a7e60;
+        }
+
+        .btn-danger {
+            background: var(--dusty-rose);
+            border-color: var(--dusty-rose);
+            color: white;
+        }
+
+        /* ============================================
+           NAVIGATION TABS
+           ============================================ */
+
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0 32px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-tab {
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            color: var(--amber);
+            border-bottom-color: var(--amber);
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ============================================
+           CARDS
+           ============================================ */
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-link {
+            font-size: 13px;
+            color: var(--steel-blue);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .card-link:hover {
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           BRAIN STATUS CARD (Top)
+           ============================================ */
+
+        .brain-card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #282d36 100%);
+        }
+
+        .brain-stats {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .brain-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--sage-green-bg);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--sage-green);
+        }
+
+        .brain-stat {
+            text-align: center;
+        }
+
+        .brain-stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .brain-stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .brain-latest {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ============================================
+           P&L HERO CARD (Center)
+           ============================================ */
+
+        .pnl-card {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .pnl-value {
+            font-size: 56px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -2px;
+        }
+
+        .pnl-value.positive { color: var(--sage-green); }
+        .pnl-value.negative { color: var(--dusty-rose); }
+
+        .pnl-percent {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .pnl-percent.positive { color: var(--sage-green); }
+        .pnl-percent.negative { color: var(--dusty-rose); }
+
+        .sparkline-container {
+            margin: 24px auto;
+            max-width: 400px;
+            height: 60px;
+        }
+
+        .sparkline {
+            display: flex;
+            align-items: flex-end;
+            height: 100%;
+            gap: 2px;
+        }
+
+        .sparkline-bar {
+            flex: 1;
+            background: var(--steel-blue);
+            border-radius: 2px 2px 0 0;
+            min-height: 4px;
+            transition: all 0.3s;
+        }
+
+        .sparkline-bar:hover {
+            background: var(--amber);
+        }
+
+        .pnl-journey {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pnl-journey span {
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           BOTTOM ROW CARDS
+           ============================================ */
+
+        .bottom-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        /* Trending Card */
+        .trending-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trending-item:last-child {
+            border-bottom: none;
+        }
+
+        .trending-symbol {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .trending-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trending-change {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .trending-change.up { color: var(--sage-green); }
+
+        .trending-confidence {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Yesterday Card */
+        .yesterday-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .yesterday-stat:last-child {
+            border-bottom: none;
+        }
+
+        .yesterday-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .yesterday-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .yesterday-value.positive { color: var(--sage-green); }
+        .yesterday-value.negative { color: var(--dusty-rose); }
+
+        /* Predicted Profit Card */
+        .predicted-range {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .predicted-value {
+            font-size: 28px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--amber);
+        }
+
+        .predicted-meta {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .predicted-confidence {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .confidence-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--amber);
+            border-radius: 3px;
+        }
+
+        /* ============================================
+           BRAIN TAB (Full Page)
+           ============================================ */
+
+        .brain-section {
+            margin-bottom: 32px;
+        }
+
+        .brain-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .weight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .weight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .weight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .weight-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .weight-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .weight-badge.strong {
+            background: var(--sage-green-bg);
+            color: var(--sage-green);
+        }
+
+        .weight-badge.weak {
+            background: var(--dusty-rose-bg);
+            color: var(--dusty-rose);
+        }
+
+        .weight-badge.normal {
+            background: var(--steel-blue-bg);
+            color: var(--steel-blue);
+        }
+
+        .weight-description {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .weight-bar-container {
+            margin-bottom: 8px;
+        }
+
+        .weight-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .weight-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .weight-bar-fill.strong { background: var(--sage-green); }
+        .weight-bar-fill.weak { background: var(--dusty-rose); }
+        .weight-bar-fill.normal { background: var(--steel-blue); }
+
+        .weight-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Stock Profiles */
+        .stock-profile {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stock-symbol {
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stock-predictions {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stock-signals {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .stock-signal {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .signal-indicator {
+            font-size: 10px;
+        }
+
+        .signal-indicator.up { color: var(--sage-green); }
+        .signal-indicator.down { color: var(--dusty-rose); }
+        .signal-indicator.neutral { color: var(--text-muted); }
+
+        /* ============================================
+           TRADES TAB
+           ============================================ */
+
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .trades-table th {
+            text-align: left;
+            padding: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trades-table td {
+            padding: 14px 12px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .trades-table tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .trade-symbol {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .trade-action {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .trade-action.buy {
+            background: var(--sage-green-bg);
+            color: var(--sage-green);
+        }
+
+        .trade-action.sell {
+            background: var(--dusty-rose-bg);
+            color: var(--dusty-rose);
+        }
+
+        .trade-pnl {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .trade-pnl.positive { color: var(--sage-green); }
+        .trade-pnl.negative { color: var(--dusty-rose); }
+
+        /* ============================================
+           AI SIGNALS FEED
+           ============================================ */
+
+        .signals-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .signal-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .signal-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .signal-item:last-child {
+            border-bottom: none;
+        }
+
+        .signal-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .signal-symbol {
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+
+        .signal-action {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .signal-action.buy {
+            background: var(--sage-green-bg);
+            color: var(--sage-green);
+        }
+
+        .signal-action.sell {
+            background: var(--dusty-rose-bg);
+            color: var(--dusty-rose);
+        }
+
+        .signal-right {
+            text-align: right;
+        }
+
+        .signal-confidence {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .signal-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .feed-status {
+            font-size: 12px;
+            color: var(--sage-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .no-signals {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           LOADING & EMPTY STATES
+           ============================================ */
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--amber);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+
+        @media (max-width: 1024px) {
+            .bottom-row {
+                grid-template-columns: 1fr;
+            }
+
+            .brain-stats {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .pnl-value {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">⚗️</span>
+            <span class="logo-text">The <span>Alchemy</span> Effect</span>
+        </div>
+        <div class="header-right">
+            <div class="bot-status active" id="bot-status">
+                <span class="status-dot"></span>
+                <span id="bot-status-text">Bot Active</span>
+            </div>
+            <div class="bot-controls">
+                <button class="btn btn-primary" onclick="controlBot('start')">Start</button>
+                <button class="btn btn-danger" onclick="controlBot('stop')">Stop</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <a class="nav-tab active" data-tab="dashboard">Dashboard</a>
+        <a class="nav-tab" data-tab="trades">Trades</a>
+        <a class="nav-tab" data-tab="brain">Brain</a>
+        <a class="nav-tab" data-tab="backtest">Backtest</a>
+        <a class="nav-tab" data-tab="settings">Settings</a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="tab-dashboard">
+
+            <!-- Brain Status Card (Top) -->
+            <div class="card brain-card">
+                <div class="card-header">
+                    <span class="card-title">🧠 AI Brain Status</span>
+                    <a class="card-link" onclick="switchTab('brain')">View Details →</a>
+                </div>
+                <div class="brain-stats">
+                    <div class="brain-status-indicator">
+                        <span class="status-dot"></span>
+                        Learning Active
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-accuracy">--</div>
+                        <div class="brain-stat-label">Accuracy</div>
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-predictions">--</div>
+                        <div class="brain-stat-label">Predictions</div>
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-correct">--</div>
+                        <div class="brain-stat-label">Correct</div>
+                    </div>
+                </div>
+                <div class="brain-latest" id="brain-latest">
+                    Loading latest activity...
+                </div>
+            </div>
+
+            <!-- P&L Hero Card (Center) -->
+            <div class="card pnl-card">
+                <div class="pnl-value positive" id="pnl-value">$0.00</div>
+                <div class="pnl-percent positive" id="pnl-percent">
+                    <span>▲</span>
+                    <span>0.00% today</span>
+                </div>
+                <div class="sparkline-container">
+                    <div class="sparkline" id="sparkline"></div>
+                </div>
+                <div class="pnl-journey">
+                    <span id="initial-capital">$100,000</span> → <span id="current-value">$100,000</span>
+                </div>
+            </div>
+
+            <!-- Bottom Row -->
+            <div class="bottom-row">
+
+                <!-- Trending Up Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📈 Trending Up</span>
+                    </div>
+                    <div id="trending-list">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yesterday Summary Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📋 Yesterday</span>
+                    </div>
+                    <div id="yesterday-summary">
+                        <div class="yesterday-stat">
+                            <span class="yesterday-label">P&L</span>
+                            <span class="yesterday-value" id="yesterday-pnl">--</span>
+                        </div>
+                        <div class="yesterday-stat">
+                            <span class="yesterday-label">Trades</span>
+                            <span class="yesterday-value" id="yesterday-trades">--</span>
+                        </div>
+                        <div class="yesterday-stat">
+                            <span class="yesterday-label">Win Rate</span>
+                            <span class="yesterday-value" id="yesterday-winrate">--</span>
+                        </div>
+                        <div class="yesterday-stat">
+                            <span class="yesterday-label">Best Trade</span>
+                            <span class="yesterday-value positive" id="yesterday-best">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predicted Profit Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🎯 Predicted Profit</span>
+                    </div>
+                    <div class="predicted-range">
+                        <div class="predicted-value" id="predicted-range">$0 – $0</div>
+                        <div class="predicted-meta">
+                            <span id="predicted-signals">0</span> open signals
+                        </div>
+                        <div class="predicted-confidence">
+                            <span id="predicted-conf-text">0%</span> avg confidence
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="predicted-conf-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Live Feed -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-title">🤖 AI Live Signals</span>
+                    <span class="feed-status" id="feed-status">● Live</span>
+                </div>
+                <div id="ai-signals-feed" class="signals-feed">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading AI signals...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trades Tab -->
+        <div class="tab-content" id="tab-trades">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Recent Trades</span>
+                </div>
+                <table class="trades-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Action</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>P&L</th>
+                            <th>Strategy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trades-body">
+                        <tr>
+                            <td colspan="7" class="loading">
+                                <div class="loading-spinner"></div>
+                                Loading trades...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Brain Tab -->
+        <div class="tab-content" id="tab-brain">
+
+            <!-- Brain Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🧠 Learning Summary</span>
+                </div>
+                <div class="brain-stats" style="justify-content: flex-start;">
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-detail-accuracy">--</div>
+                        <div class="brain-stat-label">Overall Accuracy</div>
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-detail-total">--</div>
+                        <div class="brain-stat-label">Total Predictions</div>
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-detail-correct">--</div>
+                        <div class="brain-stat-label">Correct</div>
+                    </div>
+                    <div class="brain-stat">
+                        <div class="brain-stat-value" id="brain-detail-wrong">--</div>
+                        <div class="brain-stat-label">Wrong</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">💡 How The Brain Learns</span>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.7;">
+                    The bot tracks which signals lead to correct predictions. Signals that perform well get <strong style="color: var(--sage-green);">MORE weight</strong> (trusted more).
+                    Signals that perform poorly get <strong style="color: var(--dusty-rose);">LESS weight</strong>.
+                    Weights range from 0.5 to 2.0, starting at 1.0. Each stock also develops its own preferences over time.
+                </p>
+            </div>
+
+            <!-- Global Signal Weights -->
+            <div class="brain-section">
+                <div class="brain-section-title">📊 Global Signal Weights</div>
+                <div class="weight-grid" id="global-weights">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Per-Stock Weights -->
+            <div class="brain-section">
+                <div class="brain-section-title">🏷️ Per-Stock Learning</div>
+                <div id="stock-profiles">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backtest Tab -->
+        <div class="tab-content" id="tab-backtest">
+            <!-- Backtest Configuration -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🧪 Run Backtest</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">Symbol</label>
+                            <input type="text" id="backtest-symbol" placeholder="AAPL"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">Start Date</label>
+                            <input type="date" id="backtest-start"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">End Date</label>
+                            <input type="date" id="backtest-end"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">Strategy</label>
+                            <select id="backtest-strategy"
+                                    style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                                <option value="ai_adaptive">AI Adaptive (All Signals)</option>
+                                <option value="momentum">Momentum</option>
+                                <option value="mean_reversion">Mean Reversion</option>
+                                <option value="trend_following">Trend Following</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">Mode</label>
+                            <select id="backtest-mode"
+                                    style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                                <option value="test">Test Only (Temp DB)</option>
+                                <option value="learn">Learn & Save to Main DB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="runBacktest()" id="backtest-run-btn"
+                            style="padding: 14px 32px; background: var(--sage-green); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <span>▶</span> Run Backtest
+                    </button>
+                </div>
+            </div>
+
+            <!-- Backtest Progress -->
+            <div class="card" id="backtest-progress-card" style="display: none;">
+                <div class="card-header">
+                    <span class="card-title">⏳ Running Backtest...</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="background: var(--bg-primary); border-radius: 8px; height: 20px; overflow: hidden;">
+                        <div id="backtest-progress-bar" style="background: var(--sage-green); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <p id="backtest-progress-text" style="color: var(--text-secondary); margin-top: 10px; text-align: center;">Initializing...</p>
+                </div>
+            </div>
+
+            <!-- Backtest Results -->
+            <div class="card" id="backtest-results-card" style="display: none;">
+                <div class="card-header">
+                    <span class="card-title">📊 Backtest Results</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="brain-stats" style="justify-content: flex-start; flex-wrap: wrap; gap: 30px;">
+                        <div class="brain-stat">
+                            <div class="brain-stat-value" id="backtest-result-symbol">--</div>
+                            <div class="brain-stat-label">Symbol</div>
+                        </div>
+                        <div class="brain-stat">
+                            <div class="brain-stat-value" id="backtest-result-predictions">--</div>
+                            <div class="brain-stat-label">Total Predictions</div>
+                        </div>
+                        <div class="brain-stat">
+                            <div class="brain-stat-value positive" id="backtest-result-accuracy">--</div>
+                            <div class="brain-stat-label">Overall Accuracy</div>
+                        </div>
+                        <div class="brain-stat">
+                            <div class="brain-stat-value" id="backtest-result-1h">--</div>
+                            <div class="brain-stat-label">1-Hour Accuracy</div>
+                        </div>
+                        <div class="brain-stat">
+                            <div class="brain-stat-value" id="backtest-result-eod">--</div>
+                            <div class="brain-stat-label">End-of-Day Accuracy</div>
+                        </div>
+                        <div class="brain-stat">
+                            <div class="brain-stat-value" id="backtest-result-nextday">--</div>
+                            <div class="brain-stat-label">Next-Day Accuracy</div>
+                        </div>
+                    </div>
+
+                    <!-- Top Features -->
+                    <div style="margin-top: 30px;">
+                        <h4 style="color: var(--text-primary); margin-bottom: 15px;">🎯 Top Performing Features</h4>
+                        <div id="backtest-top-features" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backtest History -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📜 Backtest History</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div id="backtest-history">
+                        <p style="color: var(--text-muted); text-align: center;">Run a backtest to see results here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="tab-settings">
+            <!-- Trading Mode -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🎮 Trading Mode</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: var(--bg-primary); border-radius: 8px; cursor: pointer; border: 2px solid var(--border-color);" class="mode-option" data-mode="paper">
+                            <input type="radio" name="trading-mode" value="paper" checked style="width: 18px; height: 18px;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">📝 Paper Trading</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Simulated trades, no real money</div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: var(--bg-primary); border-radius: 8px; cursor: pointer; border: 2px solid var(--border-color);" class="mode-option" data-mode="live">
+                            <input type="radio" name="trading-mode" value="live" style="width: 18px; height: 18px;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--dusty-rose);">💰 Live Trading</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">Real money - use with caution!</div>
+                            </div>
+                        </label>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-top: 15px;">
+                        ⚠️ Switching to live mode requires confirmation and will use real funds from your Alpaca account.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Risk Management Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🛡️ Risk Management</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px;">
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Max Position Size (% of portfolio)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-max-position" min="1" max="25" value="10"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'max-position-value', '%')">
+                                <span id="max-position-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">10%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Max Daily Loss (% - stops trading)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-max-daily-loss" min="1" max="10" value="5"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'max-daily-loss-value', '%')">
+                                <span id="max-daily-loss-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">5%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Default Stop Loss (%)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-stop-loss" min="0.5" max="5" step="0.5" value="2"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'stop-loss-value', '%')">
+                                <span id="stop-loss-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">2%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Max Drawdown Limit (%)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-max-drawdown" min="5" max="30" value="15"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'max-drawdown-value', '%')">
+                                <span id="max-drawdown-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">15%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Parameters -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📊 Trading Parameters</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px;">
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Initial Capital ($)
+                            </label>
+                            <input type="number" id="setting-initial-capital" value="100000" min="1000" step="1000"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Default Order Type
+                            </label>
+                            <select id="setting-order-type"
+                                    style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                                <option value="market">Market Order</option>
+                                <option value="limit" selected>Limit Order</option>
+                                <option value="stop_loss">Stop Loss</option>
+                                <option value="stop_limit">Stop Limit</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Max Positions (Day Trading)
+                            </label>
+                            <input type="number" id="setting-max-positions" value="20" min="1" max="100"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Max Trades Per Day
+                            </label>
+                            <input type="number" id="setting-max-trades" value="1000" min="1" max="5000"
+                                   style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ML & AI Settings -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🤖 AI & Machine Learning</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px;">
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Prediction Model
+                            </label>
+                            <select id="setting-ml-model"
+                                    style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                                <option value="ensemble" selected>Ensemble (Recommended)</option>
+                                <option value="xgboost">XGBoost</option>
+                                <option value="lstm">LSTM Neural Network</option>
+                                <option value="random_forest">Random Forest</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Min Confidence to Trade (%)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-min-confidence" min="50" max="90" value="65"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'min-confidence-value', '%')">
+                                <span id="min-confidence-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">65%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Sentiment Weight (0-1)
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="setting-sentiment-weight" min="0" max="100" value="30"
+                                       style="flex: 1;" oninput="updateRangeValue(this, 'sentiment-weight-value', '%', 100)">
+                                <span id="sentiment-weight-value" style="color: var(--text-primary); font-weight: 600; min-width: 50px;">0.30</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                                Model Retrain Frequency
+                            </label>
+                            <select id="setting-retrain-freq"
+                                    style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                                <option value="daily">Daily</option>
+                                <option value="weekly" selected>Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watchlist Management -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📋 Watchlist</span>
+                </div>
+                <div style="padding: 20px;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">
+                            Symbols (comma-separated)
+                        </label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="setting-watchlist" placeholder="AAPL, MSFT, GOOGL, TSLA"
+                                   style="flex: 1; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
+                            <button onclick="addToWatchlist()" style="padding: 12px 20px; background: var(--sage-green); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                    <div id="watchlist-tags" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        <span class="watchlist-tag" style="padding: 8px 15px; background: var(--bg-primary); border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                            SPY <button onclick="removeFromWatchlist(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">×</button>
+                        </span>
+                        <span class="watchlist-tag" style="padding: 8px 15px; background: var(--bg-primary); border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                            QQQ <button onclick="removeFromWatchlist(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">×</button>
+                        </span>
+                        <span class="watchlist-tag" style="padding: 8px 15px; background: var(--bg-primary); border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                            IWM <button onclick="removeFromWatchlist(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">×</button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+                <button onclick="resetSettings()" style="padding: 14px 28px; background: var(--card-bg); color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; cursor: pointer;">
+                    Reset to Defaults
+                </button>
+                <button onclick="saveSettings()" style="padding: 14px 28px; background: var(--sage-green); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                    💾 Save Settings
+                </button>
+            </div>
+
+            <!-- Settings Info -->
+            <div class="card" style="margin-top: 20px; border-left: 3px solid var(--warm-gold);">
+                <div style="padding: 20px;">
+                    <p style="color: var(--text-secondary); margin: 0;">
+                        <strong style="color: var(--warm-gold);">ℹ️ Note:</strong> Settings are saved to your browser's local storage and applied on next bot start.
+                        For permanent changes, edit <code style="background: var(--bg-primary); padding: 2px 6px; border-radius: 4px;">config/config.yaml</code> directly.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ============================================
+        // THE ALCHEMY EFFECT - JavaScript
+        // ============================================
+
+        const API_BASE = '';
+
+        // Tab Navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.dataset.tab;
+                switchTab(tabId);
+            });
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`.nav-tab[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            // Load tab-specific data
+            if (tabId === 'brain') loadBrainDetails();
+            if (tabId === 'trades') loadTrades();
+        }
+
+        // API Calls
+        async function api(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`API Error (${endpoint}):`, error);
+                return null;
+            }
+        }
+
+        async function controlBot(action) {
+            try {
+                const response = await fetch(`${API_BASE}/api/bot/control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    loadStatus();
+                }
+            } catch (error) {
+                console.error('Control error:', error);
+            }
+        }
+
+        // Load Dashboard Data
+        async function loadDashboard() {
+            await Promise.all([
+                loadStatus(),
+                loadBrain(),
+                loadPnL(),
+                loadTrending(),
+                loadYesterday(),
+                loadPredicted(),
+                loadSignals()
+            ]);
+        }
+
+        async function loadStatus() {
+            const data = await api('/api/status');
+            if (data) {
+                const statusEl = document.getElementById('bot-status');
+                const textEl = document.getElementById('bot-status-text');
+
+                if (data.bot_active) {
+                    statusEl.className = 'bot-status active';
+                    textEl.textContent = 'Bot Active';
+                } else {
+                    statusEl.className = 'bot-status inactive';
+                    textEl.textContent = 'Bot Inactive';
+                }
+            }
+        }
+
+        async function loadBrain() {
+            const data = await api('/api/brain');
+            if (data) {
+                document.getElementById('brain-accuracy').textContent = `${data.overall_accuracy?.toFixed(1) || 0}%`;
+                document.getElementById('brain-predictions').textContent = data.total_predictions || 0;
+                document.getElementById('brain-correct').textContent = data.correct || 0;
+
+                // Latest activity
+                if (data.global_weights && data.global_weights.length > 0) {
+                    const top = data.global_weights[0];
+                    document.getElementById('brain-latest').textContent =
+                        `Top signal: ${top.name} (${top.weight.toFixed(2)} weight, ${top.accuracy.toFixed(0)}% accuracy)`;
+                }
+            }
+        }
+
+        async function loadPnL() {
+            const data = await api('/api/pnl');
+            if (data) {
+                const pnlValue = document.getElementById('pnl-value');
+                const pnlPercent = document.getElementById('pnl-percent');
+
+                const todayPnl = data.today_pnl || 0;
+                const todayPct = data.today_pnl_pct || 0;
+
+                pnlValue.textContent = `${todayPnl >= 0 ? '+' : ''}$${Math.abs(todayPnl).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                pnlValue.className = `pnl-value ${todayPnl >= 0 ? 'positive' : 'negative'}`;
+
+                pnlPercent.innerHTML = `<span>${todayPnl >= 0 ? '▲' : '▼'}</span><span>${Math.abs(todayPct).toFixed(2)}% today</span>`;
+                pnlPercent.className = `pnl-percent ${todayPnl >= 0 ? 'positive' : 'negative'}`;
+
+                // Journey
+                document.getElementById('initial-capital').textContent = `$${(data.initial_capital || 100000).toLocaleString()}`;
+                document.getElementById('current-value').textContent = `$${(data.current_value || 100000).toLocaleString()}`;
+
+                // Sparkline
+                renderSparkline(data.sparkline || []);
+            }
+        }
+
+        function renderSparkline(data) {
+            const container = document.getElementById('sparkline');
+            if (!data.length) {
+                container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">No data yet</div>';
+                return;
+            }
+
+            const maxVal = Math.max(...data.map(d => Math.abs(d.cumulative || 0)), 1);
+
+            container.innerHTML = data.map(d => {
+                const height = Math.max(10, (Math.abs(d.cumulative || 0) / maxVal) * 100);
+                return `<div class="sparkline-bar" style="height: ${height}%" title="${d.date}: $${d.cumulative?.toFixed(2)}"></div>`;
+            }).join('');
+        }
+
+        async function loadTrending() {
+            const data = await api('/api/trending');
+            const container = document.getElementById('trending-list');
+
+            if (!data || !data.trending || data.trending.length === 0) {
+                container.innerHTML = '<div class="empty-state">No trending stocks</div>';
+                return;
+            }
+
+            container.innerHTML = data.trending.map(t => `
+                <div class="trending-item">
+                    <span class="trending-symbol">${t.symbol}</span>
+                    <div class="trending-meta">
+                        <span class="trending-change up">▲</span>
+                        <span class="trending-confidence">🧠 ${t.confidence?.toFixed(0) || 0}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadYesterday() {
+            const data = await api('/api/yesterday');
+            if (data) {
+                const pnl = data.pnl || 0;
+                document.getElementById('yesterday-pnl').textContent = `${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+                document.getElementById('yesterday-pnl').className = `yesterday-value ${pnl >= 0 ? 'positive' : 'negative'}`;
+
+                document.getElementById('yesterday-trades').textContent = `${data.trades || 0} (${data.wins || 0}W/${data.losses || 0}L)`;
+                document.getElementById('yesterday-winrate').textContent = `${(data.win_rate || 0).toFixed(0)}%`;
+
+                if (data.best_trade) {
+                    document.getElementById('yesterday-best').textContent = `${data.best_trade.symbol} +$${data.best_trade.pnl?.toFixed(2)}`;
+                } else {
+                    document.getElementById('yesterday-best').textContent = '--';
+                }
+            }
+        }
+
+        async function loadPredicted() {
+            const data = await api('/api/predicted-profit');
+            if (data) {
+                document.getElementById('predicted-range').textContent =
+                    `$${data.predicted_low?.toFixed(0) || 0} – $${data.predicted_high?.toFixed(0) || 0}`;
+                document.getElementById('predicted-signals').textContent = data.open_signals || 0;
+                document.getElementById('predicted-conf-text').textContent = `${data.avg_confidence?.toFixed(0) || 0}%`;
+                document.getElementById('predicted-conf-bar').style.width = `${data.avg_confidence || 0}%`;
+            }
+        }
+
+        async function loadSignals() {
+            const container = document.getElementById('ai-signals-feed');
+            const statusEl = document.getElementById('feed-status');
+
+            try {
+                const data = await api('/api/signals');
+
+                if (!data || !data.signals || data.signals.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-signals">
+                            <div>No active signals</div>
+                            <div style="font-size: 12px; margin-top: 8px;">AI is analyzing market conditions...</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.signals.map(signal => {
+                    const actionClass = signal.action.toLowerCase() === 'buy' ? 'buy' : 'sell';
+                    const time = new Date(signal.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    return `
+                        <div class="signal-item">
+                            <div class="signal-left">
+                                <span class="signal-symbol">${signal.symbol}</span>
+                                <span class="signal-action ${actionClass}">${signal.action}</span>
+                            </div>
+                            <div class="signal-right">
+                                <div class="signal-confidence">${signal.confidence.toFixed(0)}%</div>
+                                <div class="signal-time">${time}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                statusEl.textContent = `● ${data.total} signals`;
+                statusEl.style.color = data.total > 0 ? 'var(--sage-green)' : 'var(--text-muted)';
+
+            } catch (error) {
+                console.error('Error loading signals:', error);
+                container.innerHTML = '<div class="no-signals">Error loading signals</div>';
+                statusEl.textContent = '● Offline';
+                statusEl.style.color = 'var(--dusty-rose)';
+            }
+        }
+
+        async function loadBrainDetails() {
+            const data = await api('/api/brain/details');
+            if (!data) return;
+
+            // Summary
+            document.getElementById('brain-detail-accuracy').textContent = `${data.summary?.overall_accuracy?.toFixed(1) || 0}%`;
+            document.getElementById('brain-detail-total').textContent = data.summary?.total_predictions || 0;
+            document.getElementById('brain-detail-correct').textContent = data.summary?.correct || 0;
+            document.getElementById('brain-detail-wrong').textContent = data.summary?.wrong || 0;
+
+            // Global Weights
+            const weightsContainer = document.getElementById('global-weights');
+            if (data.global_weights && data.global_weights.length > 0) {
+                weightsContainer.innerHTML = data.global_weights.map(w => `
+                    <div class="weight-card">
+                        <div class="weight-header">
+                            <span class="weight-name">${w.name}</span>
+                            <span class="weight-badge ${w.status}">${w.status.toUpperCase()}</span>
+                        </div>
+                        <div class="weight-description">${w.description}</div>
+                        <div class="weight-bar-container">
+                            <div class="weight-bar">
+                                <div class="weight-bar-fill ${w.status}" style="width: ${(w.weight / 2) * 100}%"></div>
+                            </div>
+                        </div>
+                        <div class="weight-stats">
+                            <span>Weight: ${w.weight.toFixed(3)}</span>
+                            <span>${w.accuracy.toFixed(0)}% acc (${w.uses} uses)</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                weightsContainer.innerHTML = '<div class="empty-state">No weight data yet</div>';
+            }
+
+            // Stock Profiles
+            const stocksContainer = document.getElementById('stock-profiles');
+            if (data.stock_profiles && data.stock_profiles.length > 0) {
+                stocksContainer.innerHTML = data.stock_profiles.slice(0, 10).map(stock => `
+                    <div class="stock-profile">
+                        <div class="stock-header">
+                            <span class="stock-symbol">${stock.symbol}</span>
+                            <span class="stock-predictions">${stock.total_predictions} predictions</span>
+                        </div>
+                        <div class="stock-signals">
+                            ${stock.signals.map(s => {
+                                const indicator = s.weight > 1.1 ? 'up' : (s.weight < 0.9 ? 'down' : 'neutral');
+                                const arrow = s.weight > 1.1 ? '▲' : (s.weight < 0.9 ? '▼' : '●');
+                                return `<div class="stock-signal">
+                                    <span class="signal-indicator ${indicator}">${arrow}</span>
+                                    <span>${s.name}</span>
+                                    <span style="color: var(--text-muted)">${s.weight.toFixed(2)}</span>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                stocksContainer.innerHTML = '<div class="empty-state">No per-stock learning data yet. The bot needs more predictions to learn stock-specific patterns.</div>';
+            }
+        }
+
+        async function loadTrades() {
+            const data = await api('/api/trades');
+            const tbody = document.getElementById('trades-body');
+
+            if (!data || !data.trades || data.trades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No trades yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.trades.map(t => {
+                const pnlClass = t.pnl > 0 ? 'positive' : (t.pnl < 0 ? 'negative' : '');
+                const pnlText = t.pnl ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : '--';
+
+                return `
+                    <tr>
+                        <td>${new Date(t.timestamp).toLocaleString()}</td>
+                        <td class="trade-symbol">${t.symbol}</td>
+                        <td><span class="trade-action ${t.action}">${t.action.toUpperCase()}</span></td>
+                        <td>${t.quantity.toFixed(2)}</td>
+                        <td>$${t.price.toFixed(2)}</td>
+                        <td class="trade-pnl ${pnlClass}">${pnlText}</td>
+                        <td>${t.strategy || '--'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ============================================
+        // BACKTEST FUNCTIONS
+        // ============================================
+
+        let backtestHistory = [];
+
+        async function runBacktest() {
+            const symbol = document.getElementById('backtest-symbol').value.trim().toUpperCase();
+            const startDate = document.getElementById('backtest-start').value;
+            const endDate = document.getElementById('backtest-end').value;
+            const strategy = document.getElementById('backtest-strategy').value;
+            const mode = document.getElementById('backtest-mode').value;
+
+            // Validation
+            if (!symbol) {
+                alert('Please enter a symbol');
+                return;
+            }
+            if (!startDate || !endDate) {
+                alert('Please select start and end dates');
+                return;
+            }
+            if (new Date(startDate) >= new Date(endDate)) {
+                alert('Start date must be before end date');
+                return;
+            }
+
+            // Show progress
+            const btn = document.getElementById('backtest-run-btn');
+            const progressCard = document.getElementById('backtest-progress-card');
+            const resultsCard = document.getElementById('backtest-results-card');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Running...';
+            progressCard.style.display = 'block';
+            resultsCard.style.display = 'none';
+
+            // Simulate progress
+            let progress = 0;
+            const progressBar = document.getElementById('backtest-progress-bar');
+            const progressText = document.getElementById('backtest-progress-text');
+
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 15;
+                    progressBar.style.width = Math.min(progress, 90) + '%';
+                    progressText.textContent = `Processing ${symbol} historical data... ${Math.round(progress)}%`;
+                }
+            }, 500);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/backtest/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: symbol,
+                        strategy: strategy,
+                        start_date: startDate,
+                        end_date: endDate,
+                        initial_capital: 100000,
+                        mode: mode
+                    })
+                });
+
+                const data = await response.json();
+
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Complete!';
+
+                setTimeout(() => {
+                    progressCard.style.display = 'none';
+
+                    if (data.success) {
+                        // Show results
+                        resultsCard.style.display = 'block';
+                        document.getElementById('backtest-result-symbol').textContent = data.symbol;
+                        document.getElementById('backtest-result-predictions').textContent = data.results.totalPredictions.toLocaleString();
+                        document.getElementById('backtest-result-accuracy').textContent = (data.results.accuracy * 100).toFixed(1) + '%';
+                        document.getElementById('backtest-result-1h').textContent = (data.results.accuracy1h * 100).toFixed(1) + '%';
+                        document.getElementById('backtest-result-eod').textContent = (data.results.accuracyEod * 100).toFixed(1) + '%';
+                        document.getElementById('backtest-result-nextday').textContent = (data.results.accuracyNextDay * 100).toFixed(1) + '%';
+
+                        // Top features
+                        const featuresContainer = document.getElementById('backtest-top-features');
+                        if (data.results.topFeatures && data.results.topFeatures.length > 0) {
+                            featuresContainer.innerHTML = data.results.topFeatures.map(([name, weight]) => `
+                                <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; border-left: 3px solid var(--sage-green);">
+                                    <div style="font-weight: 600; color: var(--text-primary);">${name}</div>
+                                    <div style="color: var(--sage-green); font-size: 18px; font-weight: bold;">${weight.toFixed(3)}</div>
+                                </div>
+                            `).join('');
+                        }
+
+                        // Add to history
+                        backtestHistory.unshift({
+                            symbol: data.symbol,
+                            startDate: startDate,
+                            endDate: endDate,
+                            strategy: strategy,
+                            accuracy: data.results.accuracy,
+                            predictions: data.results.totalPredictions,
+                            timestamp: new Date().toISOString()
+                        });
+
+                        updateBacktestHistory();
+                    } else {
+                        alert('Backtest failed: ' + (data.error || 'Unknown error'));
+                    }
+                }, 500);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                progressCard.style.display = 'none';
+                alert('Error running backtest: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>▶</span> Run Backtest';
+            }
+        }
+
+        function updateBacktestHistory() {
+            const container = document.getElementById('backtest-history');
+
+            if (backtestHistory.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Run a backtest to see results here.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <th style="text-align: left; padding: 12px; color: var(--text-secondary);">Symbol</th>
+                            <th style="text-align: left; padding: 12px; color: var(--text-secondary);">Period</th>
+                            <th style="text-align: left; padding: 12px; color: var(--text-secondary);">Strategy</th>
+                            <th style="text-align: right; padding: 12px; color: var(--text-secondary);">Predictions</th>
+                            <th style="text-align: right; padding: 12px; color: var(--text-secondary);">Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${backtestHistory.slice(0, 10).map(bt => `
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 12px; font-weight: 600; color: var(--text-primary);">${bt.symbol}</td>
+                                <td style="padding: 12px; color: var(--text-secondary);">${bt.startDate} to ${bt.endDate}</td>
+                                <td style="padding: 12px; color: var(--text-secondary);">${bt.strategy}</td>
+                                <td style="padding: 12px; text-align: right; color: var(--text-primary);">${bt.predictions.toLocaleString()}</td>
+                                <td style="padding: 12px; text-align: right; color: ${bt.accuracy >= 0.55 ? 'var(--sage-green)' : 'var(--dusty-rose)'}; font-weight: 600;">
+                                    ${(bt.accuracy * 100).toFixed(1)}%
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Initialize backtest dates to reasonable defaults
+        function initBacktestDates() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setFullYear(startDate.getFullYear() - 2); // 2 years ago
+
+            document.getElementById('backtest-end').value = endDate.toISOString().split('T')[0];
+            document.getElementById('backtest-start').value = startDate.toISOString().split('T')[0];
+        }
+
+        // ============================================
+        // SETTINGS FUNCTIONS
+        // ============================================
+
+        const DEFAULT_SETTINGS = {
+            tradingMode: 'paper',
+            maxPosition: 10,
+            maxDailyLoss: 5,
+            stopLoss: 2,
+            maxDrawdown: 15,
+            initialCapital: 100000,
+            orderType: 'limit',
+            maxPositions: 20,
+            maxTrades: 1000,
+            mlModel: 'ensemble',
+            minConfidence: 65,
+            sentimentWeight: 30,
+            retrainFreq: 'weekly',
+            watchlist: ['SPY', 'QQQ', 'IWM']
+        };
+
+        function updateRangeValue(input, displayId, suffix = '', divisor = 1) {
+            const value = parseFloat(input.value);
+            const display = document.getElementById(displayId);
+            if (divisor > 1) {
+                display.textContent = (value / divisor).toFixed(2);
+            } else {
+                display.textContent = value + suffix;
+            }
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('alchemySettings');
+            const settings = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+
+            // Trading mode
+            document.querySelector(`input[name="trading-mode"][value="${settings.tradingMode}"]`).checked = true;
+
+            // Risk settings
+            document.getElementById('setting-max-position').value = settings.maxPosition;
+            updateRangeValue(document.getElementById('setting-max-position'), 'max-position-value', '%');
+
+            document.getElementById('setting-max-daily-loss').value = settings.maxDailyLoss;
+            updateRangeValue(document.getElementById('setting-max-daily-loss'), 'max-daily-loss-value', '%');
+
+            document.getElementById('setting-stop-loss').value = settings.stopLoss;
+            updateRangeValue(document.getElementById('setting-stop-loss'), 'stop-loss-value', '%');
+
+            document.getElementById('setting-max-drawdown').value = settings.maxDrawdown;
+            updateRangeValue(document.getElementById('setting-max-drawdown'), 'max-drawdown-value', '%');
+
+            // Trading params
+            document.getElementById('setting-initial-capital').value = settings.initialCapital;
+            document.getElementById('setting-order-type').value = settings.orderType;
+            document.getElementById('setting-max-positions').value = settings.maxPositions;
+            document.getElementById('setting-max-trades').value = settings.maxTrades;
+
+            // ML settings
+            document.getElementById('setting-ml-model').value = settings.mlModel;
+            document.getElementById('setting-min-confidence').value = settings.minConfidence;
+            updateRangeValue(document.getElementById('setting-min-confidence'), 'min-confidence-value', '%');
+
+            document.getElementById('setting-sentiment-weight').value = settings.sentimentWeight;
+            updateRangeValue(document.getElementById('setting-sentiment-weight'), 'sentiment-weight-value', '%', 100);
+
+            document.getElementById('setting-retrain-freq').value = settings.retrainFreq;
+
+            // Watchlist
+            renderWatchlist(settings.watchlist);
+        }
+
+        function saveSettings() {
+            const tradingMode = document.querySelector('input[name="trading-mode"]:checked').value;
+
+            // Confirm if switching to live
+            if (tradingMode === 'live') {
+                if (!confirm('⚠️ WARNING: You are switching to LIVE trading mode!\n\nThis will use REAL MONEY from your Alpaca account.\n\nAre you absolutely sure?')) {
+                    document.querySelector('input[name="trading-mode"][value="paper"]').checked = true;
+                    return;
+                }
+            }
+
+            const settings = {
+                tradingMode: tradingMode,
+                maxPosition: parseInt(document.getElementById('setting-max-position').value),
+                maxDailyLoss: parseInt(document.getElementById('setting-max-daily-loss').value),
+                stopLoss: parseFloat(document.getElementById('setting-stop-loss').value),
+                maxDrawdown: parseInt(document.getElementById('setting-max-drawdown').value),
+                initialCapital: parseInt(document.getElementById('setting-initial-capital').value),
+                orderType: document.getElementById('setting-order-type').value,
+                maxPositions: parseInt(document.getElementById('setting-max-positions').value),
+                maxTrades: parseInt(document.getElementById('setting-max-trades').value),
+                mlModel: document.getElementById('setting-ml-model').value,
+                minConfidence: parseInt(document.getElementById('setting-min-confidence').value),
+                sentimentWeight: parseInt(document.getElementById('setting-sentiment-weight').value),
+                retrainFreq: document.getElementById('setting-retrain-freq').value,
+                watchlist: getWatchlistSymbols()
+            };
+
+            localStorage.setItem('alchemySettings', JSON.stringify(settings));
+
+            // Show success message
+            alert('✅ Settings saved successfully!\n\nChanges will be applied on next bot start.');
+        }
+
+        function resetSettings() {
+            if (confirm('Reset all settings to defaults?')) {
+                localStorage.removeItem('alchemySettings');
+                loadSettings();
+                alert('Settings reset to defaults.');
+            }
+        }
+
+        function getWatchlistSymbols() {
+            const tags = document.querySelectorAll('#watchlist-tags .watchlist-tag');
+            return Array.from(tags).map(tag => tag.textContent.trim().replace('×', '').trim());
+        }
+
+        function renderWatchlist(symbols) {
+            const container = document.getElementById('watchlist-tags');
+            container.innerHTML = symbols.map(symbol => `
+                <span class="watchlist-tag" style="padding: 8px 15px; background: var(--bg-primary); border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                    ${symbol} <button onclick="removeFromWatchlist(this)" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">×</button>
+                </span>
+            `).join('');
+        }
+
+        function addToWatchlist() {
+            const input = document.getElementById('setting-watchlist');
+            const symbols = input.value.split(',').map(s => s.trim().toUpperCase()).filter(s => s);
+
+            if (symbols.length === 0) return;
+
+            const current = getWatchlistSymbols();
+            const updated = [...new Set([...current, ...symbols])]; // Dedupe
+
+            renderWatchlist(updated);
+            input.value = '';
+        }
+
+        function removeFromWatchlist(button) {
+            button.parentElement.remove();
+        }
+
+        // Smart Auto-Refresh
+        function isMarketOpen() {
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+
+            // Monday-Friday, 9:30 AM - 4:00 PM ET (simplified)
+            if (day === 0 || day === 6) return false;
+            if (hour < 9 || hour > 16) return false;
+            if (hour === 9 && minute < 30) return false;
+
+            return true;
+        }
+
+        function startAutoRefresh() {
+            // Refresh every 30s during market hours, 5min otherwise
+            const interval = isMarketOpen() ? 30000 : 300000;
+
+            setInterval(() => {
+                loadDashboard();
+            }, interval);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            startAutoRefresh();
+            initBacktestDates();
+            loadSettings();
+        });
+    </script>
+</body>
+</html>

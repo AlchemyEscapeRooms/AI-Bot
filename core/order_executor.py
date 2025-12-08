@@ -63,22 +63,21 @@ class OrderExecutor:
         Initialize order executor.
 
         Args:
-            mode: "paper" for paper trading, "live" for real trading
+            mode: "paper" for Alpaca paper trading, "live" for real trading
         """
         self.mode = mode
         self.db = Database()
         self.trade_logger = get_trade_logger()
 
-        # Paper trading state
-        self.paper_orders: Dict[str, Dict] = {}
-        self.paper_order_id = 0
-
-        # Alpaca client for live trading
+        # Alpaca client - used for both paper and live trading
         self.alpaca_client = None
-        if mode == "live" and ALPACA_TRADING_AVAILABLE:
+        if ALPACA_TRADING_AVAILABLE:
             self._init_alpaca_client()
 
-        logger.info(f"OrderExecutor initialized in {mode} mode")
+        if not self.alpaca_client:
+            raise RuntimeError("Alpaca client failed to initialize - cannot trade without Alpaca connection")
+
+        logger.info(f"OrderExecutor initialized in {mode} mode (Alpaca connected)")
 
     def _init_alpaca_client(self):
         """Initialize Alpaca trading client."""
@@ -87,12 +86,12 @@ class OrderExecutor:
             api_secret = os.getenv('ALPACA_SECRET_KEY') or config.get('api_keys.alpaca_secret')
 
             if api_key and api_secret:
-                # Check if paper trading
-                paper = config.get('alpaca.paper_trading', True)
-                self.alpaca_client = TradingClient(api_key, api_secret, paper=paper)
-                logger.info(f"Alpaca trading client initialized (paper={paper})")
+                # Use paper=True for paper mode, paper=False for live mode
+                use_paper = (self.mode == "paper")
+                self.alpaca_client = TradingClient(api_key, api_secret, paper=use_paper)
+                logger.info(f"Alpaca trading client initialized (paper={use_paper})")
             else:
-                logger.warning("Alpaca API keys not found for live trading")
+                logger.warning("Alpaca API keys not found")
         except Exception as e:
             logger.error(f"Failed to initialize Alpaca trading client: {e}")
 
@@ -127,27 +126,11 @@ class OrderExecutor:
         Returns:
             OrderResult with execution details
         """
-        logger.info(f"Executing {side} order: {quantity} {symbol} ({order_type})")
+        logger.info(f"Executing {side} order: {quantity} {symbol} ({order_type}) via Alpaca")
 
-        if self.mode == "paper":
-            result = self._execute_paper_order(
-                symbol, side, quantity, order_type, limit_price
-            )
-        elif self.mode == "live" and self.alpaca_client:
-            result = self._execute_alpaca_order(
-                symbol, side, quantity, order_type, limit_price
-            )
-        else:
-            result = OrderResult(
-                success=False,
-                order_id="",
-                symbol=symbol,
-                side=side,
-                quantity=quantity,
-                price=0,
-                status=OrderStatus.FAILED,
-                message="No trading client available"
-            )
+        result = self._execute_alpaca_order(
+            symbol, side, quantity, order_type, limit_price
+        )
 
         # Log the trade with reasoning
         if result.success and self.trade_logger:
@@ -161,111 +144,6 @@ class OrderExecutor:
             )
 
         return result
-
-    def _execute_paper_order(
-        self,
-        symbol: str,
-        side: str,
-        quantity: float,
-        order_type: str,
-        limit_price: float = None
-    ) -> OrderResult:
-        """Execute a paper trading order."""
-        from data import MarketDataCollector
-
-        self.paper_order_id += 1
-        order_id = f"PAPER-{self.paper_order_id:08d}"
-
-        try:
-            # Get current price
-            market_data = MarketDataCollector()
-            quote = market_data.get_real_time_quote(symbol)
-            current_price = quote.get('price', 0)
-
-            if current_price <= 0:
-                return OrderResult(
-                    success=False,
-                    order_id=order_id,
-                    symbol=symbol,
-                    side=side,
-                    quantity=quantity,
-                    price=0,
-                    status=OrderStatus.REJECTED,
-                    message=f"Could not get price for {symbol}"
-                )
-
-            # For limit orders, check if price is acceptable
-            if order_type == "limit" and limit_price:
-                if side == "buy" and current_price > limit_price:
-                    return OrderResult(
-                        success=False,
-                        order_id=order_id,
-                        symbol=symbol,
-                        side=side,
-                        quantity=quantity,
-                        price=limit_price,
-                        status=OrderStatus.PENDING,
-                        message="Limit order pending - price above limit"
-                    )
-                elif side == "sell" and current_price < limit_price:
-                    return OrderResult(
-                        success=False,
-                        order_id=order_id,
-                        symbol=symbol,
-                        side=side,
-                        quantity=quantity,
-                        price=limit_price,
-                        status=OrderStatus.PENDING,
-                        message="Limit order pending - price below limit"
-                    )
-                fill_price = limit_price
-            else:
-                # Apply slippage for market orders
-                slippage = 0.0005  # 0.05% slippage
-                if side == "buy":
-                    fill_price = current_price * (1 + slippage)
-                else:
-                    fill_price = current_price * (1 - slippage)
-
-            # Store paper order
-            self.paper_orders[order_id] = {
-                'symbol': symbol,
-                'side': side,
-                'quantity': quantity,
-                'order_type': order_type,
-                'limit_price': limit_price,
-                'fill_price': fill_price,
-                'status': 'filled',
-                'timestamp': datetime.now()
-            }
-
-            logger.info(f"Paper order filled: {order_id} - {side} {quantity} {symbol} @ ${fill_price:.2f}")
-
-            return OrderResult(
-                success=True,
-                order_id=order_id,
-                symbol=symbol,
-                side=side,
-                quantity=quantity,
-                price=fill_price,
-                status=OrderStatus.FILLED,
-                filled_quantity=quantity,
-                filled_price=fill_price,
-                message="Paper order filled"
-            )
-
-        except Exception as e:
-            logger.error(f"Paper order failed: {e}")
-            return OrderResult(
-                success=False,
-                order_id=order_id,
-                symbol=symbol,
-                side=side,
-                quantity=quantity,
-                price=0,
-                status=OrderStatus.FAILED,
-                message=str(e)
-            )
 
     def _execute_alpaca_order(
         self,
@@ -387,8 +265,6 @@ class OrderExecutor:
                 reason=reason,
                 mode="live" if self.mode == "live" else "paper",
                 side="long" if result.side.lower() == "buy" else "short",
-                order_id=result.order_id,
-                order_type="market",  # Could be passed in
                 portfolio_value_before=portfolio_value,
                 market_snapshot=market_snapshot,
                 timestamp=result.timestamp
@@ -400,85 +276,81 @@ class OrderExecutor:
             logger.error(f"Failed to log trade: {e}")
 
     def get_order_status(self, order_id: str) -> Optional[Dict]:
-        """Get status of an order."""
-        if self.mode == "paper":
-            return self.paper_orders.get(order_id)
-        elif self.alpaca_client:
-            try:
-                order = self.alpaca_client.get_order_by_id(order_id)
-                return {
-                    'order_id': str(order.id),
-                    'symbol': order.symbol,
-                    'side': str(order.side),
-                    'quantity': float(order.qty),
-                    'filled_quantity': float(order.filled_qty or 0),
-                    'status': str(order.status),
-                    'filled_price': float(order.filled_avg_price or 0)
-                }
-            except Exception as e:
-                logger.error(f"Failed to get order status: {e}")
-                return None
-        return None
+        """Get status of an order from Alpaca."""
+        try:
+            order = self.alpaca_client.get_order_by_id(order_id)
+            return {
+                'order_id': str(order.id),
+                'symbol': order.symbol,
+                'side': str(order.side),
+                'quantity': float(order.qty),
+                'filled_quantity': float(order.filled_qty or 0),
+                'status': str(order.status),
+                'filled_price': float(order.filled_avg_price or 0)
+            }
+        except Exception as e:
+            logger.error(f"Failed to get order status: {e}")
+            return None
 
     def cancel_order(self, order_id: str) -> bool:
-        """Cancel an open order."""
-        if self.mode == "paper":
-            if order_id in self.paper_orders:
-                self.paper_orders[order_id]['status'] = 'cancelled'
-                return True
+        """Cancel an open order on Alpaca."""
+        try:
+            self.alpaca_client.cancel_order_by_id(order_id)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to cancel order: {e}")
             return False
-        elif self.alpaca_client:
-            try:
-                self.alpaca_client.cancel_order_by_id(order_id)
-                return True
-            except Exception as e:
-                logger.error(f"Failed to cancel order: {e}")
-                return False
-        return False
 
     def get_open_orders(self) -> List[Dict]:
-        """Get all open orders."""
-        if self.mode == "paper":
+        """Get all open orders from Alpaca."""
+        try:
+            orders = self.alpaca_client.get_orders()
             return [
-                order for order in self.paper_orders.values()
-                if order['status'] in ['pending', 'submitted']
+                {
+                    'order_id': str(o.id),
+                    'symbol': o.symbol,
+                    'side': str(o.side),
+                    'quantity': float(o.qty),
+                    'status': str(o.status)
+                }
+                for o in orders
             ]
-        elif self.alpaca_client:
-            try:
-                orders = self.alpaca_client.get_orders()
-                return [
-                    {
-                        'order_id': str(o.id),
-                        'symbol': o.symbol,
-                        'side': str(o.side),
-                        'quantity': float(o.qty),
-                        'status': str(o.status)
-                    }
-                    for o in orders
-                ]
-            except Exception as e:
-                logger.error(f"Failed to get open orders: {e}")
-                return []
-        return []
+        except Exception as e:
+            logger.error(f"Failed to get open orders: {e}")
+            return []
 
     def get_account_info(self) -> Optional[Dict]:
-        """Get account information."""
-        if self.mode == "paper":
+        """Get account information from Alpaca."""
+        try:
+            account = self.alpaca_client.get_account()
             return {
-                'mode': 'paper',
-                'orders_count': len(self.paper_orders)
+                'mode': self.mode,
+                'buying_power': float(account.buying_power),
+                'cash': float(account.cash),
+                'portfolio_value': float(account.portfolio_value),
+                'equity': float(account.equity)
             }
-        elif self.alpaca_client:
+        except Exception as e:
+            logger.error(f"Failed to get account info: {e}")
+            return None
+
+    def get_positions(self) -> Dict[str, Dict]:
+        """Get current positions from Alpaca."""
+        positions = {}
+
+        if self.alpaca_client:
             try:
-                account = self.alpaca_client.get_account()
-                return {
-                    'mode': 'live',
-                    'buying_power': float(account.buying_power),
-                    'cash': float(account.cash),
-                    'portfolio_value': float(account.portfolio_value),
-                    'equity': float(account.equity)
-                }
+                alpaca_positions = self.alpaca_client.get_all_positions()
+                for pos in alpaca_positions:
+                    positions[pos.symbol] = {
+                        'quantity': float(pos.qty),
+                        'avg_cost': float(pos.avg_entry_price),
+                        'current_price': float(pos.current_price),
+                        'market_value': float(pos.market_value),
+                        'unrealized_pl': float(pos.unrealized_pl),
+                        'unrealized_pl_pct': float(pos.unrealized_plpc) * 100
+                    }
             except Exception as e:
-                logger.error(f"Failed to get account info: {e}")
-                return None
-        return None
+                logger.error(f"Failed to get positions: {e}")
+
+        return positions
