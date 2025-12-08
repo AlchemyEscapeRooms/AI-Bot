@@ -41,6 +41,7 @@ TODO: Consider merging web_api.py endpoints into this file for consolidation.
 
 import asyncio
 import json
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
@@ -87,6 +88,19 @@ class BacktestRequest(BaseModel):
 class UserCommand(BaseModel):
     command: str
 
+class BotCommand(BaseModel):
+    action: str  # 'start', 'stop', 'pause'
+
+class SettingsUpdate(BaseModel):
+    min_confidence: Optional[float] = None
+    max_position_size: Optional[float] = None
+    max_daily_loss: Optional[float] = None
+    stop_loss: Optional[float] = None
+    max_drawdown: Optional[float] = None
+    initial_capital: Optional[float] = None
+    max_positions: Optional[int] = None
+    max_trades_per_day: Optional[int] = None
+
 # ============================================================================
 # APP SETUP
 # ============================================================================
@@ -129,11 +143,19 @@ def get_service() -> BackgroundTradingService:
         )
 
         logger.info(f"Trading mode from config: {service_config.trading_mode.value}")
-        
+
+        # Get API keys from environment (loaded from .env)
+        api_key = os.environ.get('ALPACA_API_KEY') or config.get('alpaca.api_key')
+        api_secret = os.environ.get('ALPACA_SECRET_KEY') or config.get('alpaca.api_secret')
+
+        if not api_key or not api_secret:
+            logger.error("Alpaca API keys not found! Set ALPACA_API_KEY and ALPACA_SECRET_KEY in .env file")
+            raise ValueError("Alpaca API keys not configured")
+
         trading_service = BackgroundTradingService(
             config=service_config,
-            api_key=config.get('alpaca.api_key'),
-            api_secret=config.get('alpaca.api_secret'),
+            api_key=api_key,
+            api_secret=api_secret,
             data_dir=str(data_dir)
         )
         
@@ -182,6 +204,14 @@ async def startup_event():
     logger.info("API Server starting up...")
     data_dir.mkdir(parents=True, exist_ok=True)
 
+    # Auto-start the trading service
+    try:
+        service = get_service()
+        service.start()
+        logger.info(f"Trading service auto-started in {service.config.trading_mode.value} mode")
+    except Exception as e:
+        logger.error(f"Failed to auto-start trading service: {e}")
+
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up on shutdown."""
@@ -197,13 +227,19 @@ async def shutdown_event():
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
     """Serve the main dashboard."""
-    dashboard_path = Path(__file__).parent / "static" / "dashboard.html"
-    
+    # Try alchemy_dashboard.html first (the full-featured dashboard)
+    dashboard_path = Path(__file__).parent / "alchemy_dashboard.html"
+
     if dashboard_path.exists():
         return FileResponse(dashboard_path)
-    else:
-        # Return embedded dashboard if file doesn't exist
-        return HTMLResponse(content=get_embedded_dashboard(), status_code=200)
+
+    # Fallback to static folder
+    static_path = Path(__file__).parent / "static" / "dashboard.html"
+    if static_path.exists():
+        return FileResponse(static_path)
+
+    # Return embedded dashboard if no files exist
+    return HTMLResponse(content=get_embedded_dashboard(), status_code=200)
 
 # ============================================================================
 # SERVICE CONTROL ENDPOINTS
@@ -250,6 +286,58 @@ async def get_service_status():
     """Get current service status."""
     service = get_service()
     return service.get_status()
+
+# ============================================================================
+# BOT CONTROL ENDPOINT (compatibility with alchemy_dashboard.html)
+# ============================================================================
+
+@app.post("/api/bot/control")
+async def control_bot(command: BotCommand):
+    """Control the trading bot (start/stop/pause) - compatibility endpoint."""
+    service = get_service()
+
+    try:
+        if command.action == 'start':
+            if service.state != ServiceState.RUNNING:
+                service.start()
+            return {'success': True, 'status': 'running', 'state': service.state.value}
+
+        elif command.action == 'stop':
+            if service.state != ServiceState.STOPPED:
+                service.stop()
+            return {'success': True, 'status': 'stopped', 'state': service.state.value}
+
+        elif command.action == 'pause':
+            service.pause()
+            return {'success': True, 'status': 'paused', 'state': service.state.value}
+
+        elif command.action == 'resume':
+            service.resume()
+            return {'success': True, 'status': 'running', 'state': service.state.value}
+
+        else:
+            return {'success': False, 'error': f'Unknown action: {command.action}'}
+
+    except Exception as e:
+        logger.error(f"Error controlling bot: {e}")
+        return {'success': False, 'error': str(e)}
+
+@app.get("/api/status")
+async def get_status():
+    """Get bot status - compatibility endpoint for dashboard."""
+    service = get_service()
+    status = service.get_status()
+
+    # Add additional info expected by dashboard
+    return {
+        'state': status.get('state', 'stopped'),
+        'trading_mode': status.get('trading_mode', 'paper'),
+        'symbols_count': len(service.config.symbols) if service.config else 0,
+        'predictions_today': status.get('predictions_today', 0),
+        'trades_today': status.get('trades_today', 0),
+        'uptime': status.get('uptime', 'N/A'),
+        **status
+    }
 
 # ============================================================================
 # PORTFOLIO & ACCOUNT ENDPOINTS
@@ -474,6 +562,87 @@ async def confirm_live_trading():
     return {"success": True, "mode": "live", "warning": "LIVE TRADING ENABLED - Real money will be used"}
 
 # ============================================================================
+# SETTINGS ENDPOINTS
+# ============================================================================
+
+@app.get("/api/settings")
+async def get_settings():
+    """Get current bot settings."""
+    try:
+        return {
+            "success": True,
+            "settings": {
+                "trading_mode": config.get('trading.mode', 'paper'),
+                "min_confidence": config.get('learning.min_confidence_to_trade', 0.65),
+                "max_position_size": config.get('trading.max_position_size', 0.1),
+                "max_daily_loss": config.get('trading.max_daily_loss', 0.05),
+                "stop_loss": config.get('trading.stop_loss_pct', 0.02),
+                "max_drawdown": config.get('trading.max_drawdown', 0.15),
+                "initial_capital": config.get('trading.initial_capital', 100000),
+                "max_positions": config.get('trading.max_positions', 20),
+                "max_trades_per_day": config.get('trading.max_trades_per_day', 1000),
+                "watchlist": config.get('data.universe.initial_stocks', [])
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting settings: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/settings")
+async def update_settings(settings: SettingsUpdate):
+    """Update bot settings (saves to config.yaml)."""
+    try:
+        import yaml
+
+        # Read current config
+        config_path = Path(__file__).parent / "config" / "config.yaml"
+        with open(config_path, 'r') as f:
+            current_config = yaml.safe_load(f)
+
+        # Update settings that were provided
+        if settings.min_confidence is not None:
+            if 'learning' not in current_config:
+                current_config['learning'] = {}
+            current_config['learning']['min_confidence_to_trade'] = settings.min_confidence
+
+        if settings.max_position_size is not None:
+            if 'trading' not in current_config:
+                current_config['trading'] = {}
+            current_config['trading']['max_position_size'] = settings.max_position_size
+
+        if settings.max_daily_loss is not None:
+            current_config['trading']['max_daily_loss'] = settings.max_daily_loss
+
+        if settings.stop_loss is not None:
+            current_config['trading']['stop_loss_pct'] = settings.stop_loss
+
+        if settings.max_drawdown is not None:
+            current_config['trading']['max_drawdown'] = settings.max_drawdown
+
+        if settings.initial_capital is not None:
+            current_config['trading']['initial_capital'] = settings.initial_capital
+
+        if settings.max_positions is not None:
+            current_config['trading']['max_positions'] = settings.max_positions
+
+        if settings.max_trades_per_day is not None:
+            current_config['trading']['max_trades_per_day'] = settings.max_trades_per_day
+
+        # Write updated config
+        with open(config_path, 'w') as f:
+            yaml.dump(current_config, f, default_flow_style=False, sort_keys=False)
+
+        # Reload config
+        config.reload()
+
+        logger.info(f"Settings updated: {settings}")
+        return {"success": True, "message": "Settings saved successfully"}
+
+    except Exception as e:
+        logger.error(f"Error updating settings: {e}")
+        return {"success": False, "error": str(e)}
+
+# ============================================================================
 # BACKTESTING ENDPOINTS
 # ============================================================================
 
@@ -583,41 +752,74 @@ async def get_morning_briefing():
 
 @app.get("/api/signals")
 async def get_trade_signals():
-    """Get current trade signals/suggestions."""
+    """Get current trade signals/suggestions - the AI live feed."""
     service = get_service()
-    db = PredictionDatabase(str(data_dir / "predictions.db"))
-
-    # Get thresholds from config
-    min_confidence = config.get('learning.min_confidence_to_trade', 0.65)
-    min_predictions = config.get('learning.min_predictions_to_trade', 100)
-    min_accuracy = config.get('learning.min_accuracy_to_trade', 0.55)
-
     signals = []
 
-    # Get recent high-confidence predictions
-    pending = db.get_pending_predictions()
+    try:
+        # Try to get signals from MarketMonitor's ai_predictions table
+        import pandas as pd
+        from core.market_monitor import get_market_monitor
 
-    for pred in pending:
-        if pred['confidence'] >= min_confidence:
-            profile = db.get_stock_profile(pred['symbol'])
+        monitor = get_market_monitor()
 
-            # Only include if stock is ready
-            if profile and profile.total_predictions >= min_predictions and profile.overall_accuracy >= min_accuracy:
+        # Query recent high-confidence predictions using 'signals' column (not signals_used)
+        with monitor.prediction_tracker.db.get_connection() as conn:
+            df = pd.read_sql_query("""
+                SELECT symbol, predicted_direction, confidence, predicted_change_pct,
+                       timestamp, signals
+                FROM ai_predictions
+                WHERE timestamp >= datetime('now', '-4 hours')
+                AND resolved = 0
+                AND confidence >= 60
+                ORDER BY confidence DESC, timestamp DESC
+                LIMIT 20
+            """, conn)
+
+        if not df.empty:
+            for _, row in df.iterrows():
+                # Get stock-specific accuracy if available
+                stock_weights = monitor.prediction_tracker.get_stock_weights(row['symbol'])
+
                 signals.append({
-                    "symbol": pred['symbol'],
-                    "action": "buy" if pred['predicted_direction'] == 'up' else "sell",
-                    "confidence": pred['confidence'],
-                    "horizon": pred['horizon'],
-                    "reasoning": f"{pred['horizon']} prediction with {pred['confidence']:.0%} confidence",
-                    "stockAccuracy": profile.overall_accuracy
+                    'symbol': row['symbol'],
+                    'action': 'BUY' if row['predicted_direction'] == 'up' else 'SELL',
+                    'direction': row['predicted_direction'],
+                    'confidence': float(row['confidence']),
+                    'predicted_change': float(row['predicted_change_pct']) if row['predicted_change_pct'] else 0,
+                    'timestamp': str(row['timestamp']),
+                    'has_custom_weights': len(stock_weights) > 0
                 })
-    
+
+    except Exception as e:
+        logger.error(f"Error getting signals from ai_predictions: {e}")
+        # Fallback to PredictionDatabase
+        try:
+            db = PredictionDatabase(str(data_dir / "predictions.db"))
+            min_confidence = config.get('learning.min_confidence_to_trade', 0.65)
+            pending = db.get_pending_predictions()
+
+            for pred in pending:
+                if pred['confidence'] >= min_confidence:
+                    signals.append({
+                        "symbol": pred['symbol'],
+                        "action": "BUY" if pred['predicted_direction'] == 'up' else "SELL",
+                        "direction": pred['predicted_direction'],
+                        "confidence": pred['confidence'],
+                        "horizon": pred.get('horizon', 'unknown'),
+                        "timestamp": str(pred.get('timestamp', datetime.now()))
+                    })
+        except Exception as e2:
+            logger.error(f"Fallback also failed: {e2}")
+
     # Sort by confidence
     signals.sort(key=lambda x: x['confidence'], reverse=True)
-    
+
     return {
         "signals": signals[:10],  # Top 10
-        "tradingMode": service.config.trading_mode.value
+        "total": len(signals),
+        "tradingMode": service.config.trading_mode.value if service.config else 'paper',
+        "last_updated": datetime.now().isoformat()
     }
 
 # ============================================================================
@@ -834,11 +1036,11 @@ async def get_pnl():
 
         trade_logger = get_trade_logger()
 
-        # Get all-time stats
-        summary = trade_logger.get_trade_summary()
+        # Get all-time stats (exclude backtest trades)
+        summary = trade_logger.get_trade_summary(mode='paper')
 
-        # Get today's stats
-        df = trade_logger.get_trades()
+        # Get today's stats (exclude backtest trades)
+        df = trade_logger.get_trades(mode='paper')
         today_pnl = 0
 
         if not df.empty:
@@ -848,7 +1050,7 @@ async def get_pnl():
             if not today_df.empty and 'realized_pnl' in today_df.columns:
                 today_pnl = float(today_df['realized_pnl'].sum()) if today_df['realized_pnl'].notna().any() else 0
 
-        # Get historical P&L for sparkline (last 30 days)
+        # Get historical P&L for sparkline (last 30 days, paper/live only)
         sparkline = []
 
         if not df.empty:
@@ -869,13 +1071,33 @@ async def get_pnl():
                         'cumulative': float(cumulative)
                     })
 
-        initial_capital = config.get('trading.initial_capital', 100000)
-        total_pnl = summary.get('total_realized_pnl', 0)
-        current_value = initial_capital + total_pnl
+        # Get actual portfolio value from Alpaca
+        initial_capital_cfg = config.get('trading.initial_capital', 100000)
+        # Handle "auto" or string values
+        if isinstance(initial_capital_cfg, str):
+            initial_capital = 100000  # Default if "auto"
+        else:
+            initial_capital = float(initial_capital_cfg)
+        total_pnl = float(summary.get('total_realized_pnl', 0) or 0)
+
+        # Try to get actual current value from Alpaca
+        try:
+            from alpaca.trading.client import TradingClient
+            api_key = os.environ.get('ALPACA_API_KEY') or config.get('alpaca.api_key')
+            api_secret = os.environ.get('ALPACA_SECRET_KEY') or config.get('alpaca.api_secret')
+            if api_key and api_secret:
+                client = TradingClient(api_key, api_secret, paper=True)
+                account = client.get_account()
+                current_value = float(account.portfolio_value)
+            else:
+                current_value = initial_capital + total_pnl
+        except Exception as alpaca_err:
+            logger.warning(f"Could not fetch Alpaca account: {alpaca_err}")
+            current_value = initial_capital + total_pnl
 
         return {
             'today_pnl': today_pnl,
-            'today_pnl_pct': (today_pnl / initial_capital * 100) if initial_capital > 0 else 0,
+            'today_pnl_pct': (today_pnl / current_value * 100) if current_value > 0 else 0,
             'total_pnl': total_pnl,
             'total_pnl_pct': (total_pnl / initial_capital * 100) if initial_capital > 0 else 0,
             'initial_capital': initial_capital,

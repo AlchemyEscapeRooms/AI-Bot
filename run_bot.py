@@ -23,57 +23,66 @@ from pathlib import Path
 
 def main():
     print("""
-    ╔═══════════════════════════════════════════════════════════╗
-    ║                                                           ║
-    ║     ⚗️  ALCHEMY TRADING BOT                               ║
-    ║                                                           ║
-    ║     Starting up...                                        ║
-    ║                                                           ║
-    ╚═══════════════════════════════════════════════════════════╝
+    ===========================================================
+
+         ALCHEMY TRADING BOT
+
+         Starting up...
+
+    ===========================================================
     """)
     
     # Check dependencies
     print("Checking dependencies...")
-    
-    required = ['fastapi', 'uvicorn', 'alpaca-py', 'pandas', 'numpy']
+
+    # Map package names to their import names
+    required = {
+        'fastapi': 'fastapi',
+        'uvicorn': 'uvicorn',
+        'alpaca-py': 'alpaca',  # alpaca-py imports as 'alpaca'
+        'pandas': 'pandas',
+        'numpy': 'numpy'
+    }
     missing = []
-    
-    for pkg in required:
+
+    for pkg_name, import_name in required.items():
         try:
-            __import__(pkg.replace('-', '_'))
+            __import__(import_name)
         except ImportError:
-            missing.append(pkg)
+            missing.append(pkg_name)
     
     if missing:
-        print(f"\n❌ Missing packages: {', '.join(missing)}")
+        print(f"\n[X] Missing packages: {', '.join(missing)}")
         print(f"\nInstall with: pip install {' '.join(missing)}")
         sys.exit(1)
-    
-    print("✓ All dependencies installed")
-    
-    # Check for API keys
-    from config import config
-    
-    api_key = config.get('alpaca.api_key')
-    api_secret = config.get('alpaca.api_secret')
-    
+
+    print("[OK] All dependencies installed")
+
+    # Load .env file first
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    # Check for API keys (check environment variables directly)
+    api_key = os.environ.get('ALPACA_API_KEY')
+    api_secret = os.environ.get('ALPACA_SECRET_KEY')
+
     if not api_key or not api_secret:
-        print("\n❌ Alpaca API keys not configured!")
-        print("\nPlease set your API keys in config.py or environment variables:")
+        print("\n[X] Alpaca API keys not configured!")
+        print("\nPlease set your API keys in .env file:")
         print("  ALPACA_API_KEY=your_key")
-        print("  ALPACA_API_SECRET=your_secret")
+        print("  ALPACA_SECRET_KEY=your_secret")
         sys.exit(1)
-    
-    print("✓ API keys configured")
-    
+
+    print("[OK] API keys configured")
+
     # Create data directory
     data_dir = Path("data")
     data_dir.mkdir(exist_ok=True)
-    print("✓ Data directory ready")
-    
+    print("[OK] Data directory ready")
+
     # Start the API server
-    print("\n🚀 Starting API server on http://localhost:8000")
-    print("   Dashboard will open in your browser...\n")
+    print("\n>>> Starting API server on http://localhost:8000")
+    print("    Dashboard will open in your browser...\n")
     
     # Open browser after a short delay
     def open_browser():

@@ -1049,7 +1049,7 @@ DEFAULT_PARAMS = {
         'position_size': 0.1
     },
     'ai_prediction': {
-        'min_confidence': 70,
+        'min_confidence': 60,  # Lowered from 70 to allow more signals
         'position_size': 0.1
     }
 }

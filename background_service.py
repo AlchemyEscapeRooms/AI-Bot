@@ -36,7 +36,7 @@ from alpaca.trading.enums import OrderSide, TimeInForce, OrderType
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.live import StockDataStream
 from alpaca.data.requests import StockBarsRequest, StockLatestQuoteRequest
-from alpaca.data.timeframe import TimeFrame
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 from learning_trader import (
     LearningTrader,
@@ -183,15 +183,15 @@ class MarketDataManager:
         try:
             tf_map = {
                 "1Min": TimeFrame.Minute,
-                "5Min": TimeFrame(5, "Min"),
-                "15Min": TimeFrame(15, "Min"),
+                "5Min": TimeFrame(5, TimeFrameUnit.Minute),
+                "15Min": TimeFrame(15, TimeFrameUnit.Minute),
                 "1Hour": TimeFrame.Hour,
                 "1Day": TimeFrame.Day
             }
             
             request = StockBarsRequest(
                 symbol_or_symbols=symbol,
-                timeframe=tf_map.get(timeframe, TimeFrame(5, "Min")),
+                timeframe=tf_map.get(timeframe, TimeFrame(5, TimeFrameUnit.Minute)),
                 limit=limit
             )
             
@@ -225,15 +225,15 @@ class MarketDataManager:
         try:
             tf_map = {
                 "1Min": TimeFrame.Minute,
-                "5Min": TimeFrame(5, "Min"),
-                "15Min": TimeFrame(15, "Min"),
+                "5Min": TimeFrame(5, TimeFrameUnit.Minute),
+                "15Min": TimeFrame(15, TimeFrameUnit.Minute),
                 "1Hour": TimeFrame.Hour,
                 "1Day": TimeFrame.Day
             }
             
             request = StockBarsRequest(
                 symbol_or_symbols=self.symbols,
-                timeframe=tf_map.get(timeframe, TimeFrame(5, "Min")),
+                timeframe=tf_map.get(timeframe, TimeFrame(5, TimeFrameUnit.Minute)),
                 limit=limit
             )
             
