@@ -1044,7 +1044,7 @@ async def get_pnl():
         today_pnl = 0
 
         if not df.empty:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_localize(None)
             cutoff = datetime.now() - timedelta(days=1)
             today_df = df[df['timestamp'] >= cutoff]
             if not today_df.empty and 'realized_pnl' in today_df.columns:
@@ -1169,9 +1169,9 @@ async def get_yesterday_summary():
                 'worst_trade': None
             }
 
-        # Filter by date
+        # Filter by date - use UTC and make timezone-naive for comparison
         cutoff = datetime.now() - timedelta(days=1)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_localize(None)
         df = df[df['timestamp'] >= cutoff]
 
         # Calculate stats
@@ -1298,8 +1298,13 @@ async def get_predicted_profit():
         num_signals = len(df)
 
         # Estimate based on confidence and typical trade size
-        initial_capital = config.get('trading.initial_capital', 100000)
-        position_size = config.get('trading.max_position_size', 0.1)
+        initial_capital_cfg = config.get('trading.initial_capital', 100000)
+        # Handle "auto" or string values
+        if isinstance(initial_capital_cfg, str):
+            initial_capital = 100000  # Default if "auto"
+        else:
+            initial_capital = float(initial_capital_cfg)
+        position_size = float(config.get('trading.max_position_size', 0.1))
         typical_position = initial_capital * position_size
 
         # Conservative and optimistic estimates
