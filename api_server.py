@@ -1018,14 +1018,14 @@ async def get_simple_trader_signals():
             row = df.iloc[i]
 
             has_position = symbol in current_positions
-            buy_signal = strategy.check_buy(df, i)
-            sell_signal = strategy.check_sell(df, i)
+            buy_signal = bool(strategy.check_buy(df, i))
+            sell_signal = bool(strategy.check_sell(df, i))
 
             signal_info = {
                 "symbol": symbol,
                 "strategy": strategy.name,
                 "price": float(row['close']),
-                "has_position": has_position,
+                "has_position": bool(has_position),
                 "indicators": {
                     "rsi": round(float(row['rsi']), 1),
                     "macd_diff": round(float(row['macd_diff']), 4),
@@ -1057,7 +1057,7 @@ async def get_simple_trader_signals():
         return {
             "success": True,
             "signals": signals,
-            "market_open": trader._is_market_hours(),
+            "market_open": bool(trader._is_market_hours()),
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
