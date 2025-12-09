@@ -1688,14 +1688,26 @@
 
         async function controlBot(action) {
             try {
-                const response = await fetch(`${API_BASE}/api/bot/control`, {
+                // Use SimpleTrader endpoints for bot control
+                let endpoint = '';
+                if (action === 'start') {
+                    endpoint = '/api/simple-trader/start';
+                } else if (action === 'stop') {
+                    endpoint = '/api/simple-trader/stop';
+                } else {
+                    // Fallback to old endpoint for other actions
+                    endpoint = '/api/bot/control';
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action })
+                    body: action !== 'start' && action !== 'stop' ? JSON.stringify({ action }) : '{}'
                 });
                 const data = await response.json();
                 if (data.success) {
                     loadStatus();
+                    loadSignals(); // Also refresh signals after bot state change
                 }
             } catch (error) {
                 console.error('Control error:', error);
@@ -1716,17 +1728,37 @@
         }
 
         async function loadStatus() {
-            const data = await api('/api/status');
-            if (data) {
+            // Try SimpleTrader status first, fallback to old API
+            let data = await api('/api/simple-trader/status');
+
+            if (data && data.success) {
                 const statusEl = document.getElementById('bot-status');
                 const textEl = document.getElementById('bot-status-text');
 
-                if (data.bot_active) {
+                if (data.running) {
                     statusEl.className = 'bot-status active';
-                    textEl.textContent = 'Bot Active';
+                    textEl.textContent = 'Simple Trader Active';
                 } else {
                     statusEl.className = 'bot-status inactive';
-                    textEl.textContent = 'Bot Inactive';
+                    textEl.textContent = 'Simple Trader Inactive';
+                }
+
+                // Store strategies for display elsewhere
+                window.simpleTraderStrategies = data.strategies || {};
+            } else {
+                // Fallback to old status endpoint
+                data = await api('/api/status');
+                if (data) {
+                    const statusEl = document.getElementById('bot-status');
+                    const textEl = document.getElementById('bot-status-text');
+
+                    if (data.bot_active) {
+                        statusEl.className = 'bot-status active';
+                        textEl.textContent = 'Bot Active';
+                    } else {
+                        statusEl.className = 'bot-status inactive';
+                        textEl.textContent = 'Bot Inactive';
+                    }
                 }
             }
         }
@@ -1840,44 +1872,85 @@
             const statusEl = document.getElementById('feed-status');
 
             try {
-                const data = await api('/api/signals');
+                // Use SimpleTrader signals (shows strategy-based signals)
+                const data = await api('/api/simple-trader/signals');
 
-                if (!data || !data.signals || data.signals.length === 0) {
+                if (!data || !data.success || !data.signals || data.signals.length === 0) {
                     container.innerHTML = `
                         <div class="no-signals">
                             <div>No active signals</div>
-                            <div style="font-size: 12px; margin-top: 8px;">AI is analyzing market conditions...</div>
+                            <div style="font-size: 12px; margin-top: 8px;">Simple Trader is analyzing indicators...</div>
                         </div>
                     `;
+                    statusEl.textContent = '● No signals';
+                    statusEl.style.color = 'var(--text-muted)';
                     return;
                 }
 
-                container.innerHTML = data.signals.map(signal => {
-                    const actionClass = signal.action.toLowerCase() === 'buy' ? 'buy' : 'sell';
-                    const time = new Date(signal.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                // Filter to show only BUY/SELL signals first, then HOLD
+                const actionSignals = data.signals.filter(s => s.action !== 'HOLD');
+                const holdSignals = data.signals.filter(s => s.action === 'HOLD');
+                const displaySignals = [...actionSignals, ...holdSignals.slice(0, 3)]; // Show action signals + top 3 holds
+
+                container.innerHTML = displaySignals.map(signal => {
+                    const actionClass = signal.action.toLowerCase() === 'buy' ? 'buy' :
+                                       signal.action.toLowerCase() === 'sell' ? 'sell' : 'hold';
+                    const rsi = signal.indicators?.rsi?.toFixed(0) || '--';
 
                     return `
                         <div class="signal-item">
                             <div class="signal-left">
                                 <span class="signal-symbol">${signal.symbol}</span>
                                 <span class="signal-action ${actionClass}">${signal.action}</span>
+                                <span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">${signal.strategy}</span>
                             </div>
                             <div class="signal-right">
-                                <div class="signal-confidence">${signal.confidence.toFixed(0)}%</div>
-                                <div class="signal-time">${time}</div>
+                                <div class="signal-confidence" title="RSI: ${rsi}">${signal.confidence}%</div>
+                                <div class="signal-time">$${signal.price?.toFixed(2) || '--'}</div>
                             </div>
                         </div>
                     `;
                 }).join('');
 
-                statusEl.textContent = `● ${data.total} signals`;
-                statusEl.style.color = data.total > 0 ? 'var(--sage-green)' : 'var(--text-muted)';
+                const activeCount = actionSignals.length;
+                statusEl.textContent = `● ${activeCount} active signal${activeCount !== 1 ? 's' : ''}`;
+                statusEl.style.color = activeCount > 0 ? 'var(--sage-green)' : 'var(--text-muted)';
 
             } catch (error) {
                 console.error('Error loading signals:', error);
-                container.innerHTML = '<div class="no-signals">Error loading signals</div>';
-                statusEl.textContent = '● Offline';
-                statusEl.style.color = 'var(--dusty-rose)';
+                // Fallback to old signals API
+                try {
+                    const data = await api('/api/signals');
+                    if (data && data.signals && data.signals.length > 0) {
+                        container.innerHTML = data.signals.map(signal => {
+                            const actionClass = signal.action.toLowerCase() === 'buy' ? 'buy' : 'sell';
+                            const time = new Date(signal.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                            return `
+                                <div class="signal-item">
+                                    <div class="signal-left">
+                                        <span class="signal-symbol">${signal.symbol}</span>
+                                        <span class="signal-action ${actionClass}">${signal.action}</span>
+                                    </div>
+                                    <div class="signal-right">
+                                        <div class="signal-confidence">${signal.confidence.toFixed(0)}%</div>
+                                        <div class="signal-time">${time}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        statusEl.textContent = `● ${data.total} signals`;
+                        statusEl.style.color = 'var(--sage-green)';
+                    } else {
+                        container.innerHTML = '<div class="no-signals">No active signals</div>';
+                        statusEl.textContent = '● Offline';
+                        statusEl.style.color = 'var(--dusty-rose)';
+                    }
+                } catch (e2) {
+                    container.innerHTML = '<div class="no-signals">Error loading signals</div>';
+                    statusEl.textContent = '● Offline';
+                    statusEl.style.color = 'var(--dusty-rose)';
+                }
             }
         }
 
@@ -1997,6 +2070,9 @@
                 return;
             }
 
+            // Calculate lookback days from date range
+            const lookbackDays = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
+
             // Show progress
             const btn = document.getElementById('backtest-run-btn');
             const progressCard = document.getElementById('backtest-progress-card');
@@ -2016,21 +2092,20 @@
                 if (progress < 90) {
                     progress += Math.random() * 15;
                     progressBar.style.width = Math.min(progress, 90) + '%';
-                    progressText.textContent = `Processing ${symbol} historical data... ${Math.round(progress)}%`;
+                    progressText.textContent = `Testing strategies on ${symbol}... ${Math.round(progress)}%`;
                 }
             }, 500);
 
             try {
-                const response = await fetch(`${API_BASE}/api/backtest/run`, {
+                // Use SimpleTrader backtest endpoint
+                const response = await fetch(`${API_BASE}/api/backtest/simple`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         symbol: symbol,
-                        strategy: strategy,
-                        start_date: startDate,
-                        end_date: endDate,
-                        initial_capital: 100000,
-                        mode: mode
+                        strategy: strategy === 'ai_adaptive' ? null : strategy, // null = auto-select best
+                        lookback_days: lookbackDays,
+                        initial_capital: 10000
                     })
                 });
 
@@ -2044,81 +2119,92 @@
                     progressCard.style.display = 'none';
 
                     if (data.success) {
-                        // Show results
+                        // Show results using SimpleTrader format
                         resultsCard.style.display = 'block';
                         document.getElementById('backtest-result-symbol').textContent = data.symbol;
-                        document.getElementById('backtest-result-predictions').textContent = data.results.totalPredictions.toLocaleString();
-                        document.getElementById('backtest-result-accuracy').textContent = (data.results.accuracy * 100).toFixed(1) + '%';
-                        document.getElementById('backtest-result-1h').textContent = (data.results.accuracy1h * 100).toFixed(1) + '%';
-                        document.getElementById('backtest-result-eod').textContent = (data.results.accuracyEod * 100).toFixed(1) + '%';
-                        document.getElementById('backtest-result-nextday').textContent = (data.results.accuracyNextDay * 100).toFixed(1) + '%';
 
-                        // Trading P&L Results (simulated - NOT real money!)
-                        const trading = data.results.trading || {};
-                        document.getElementById('backtest-result-initial').textContent = '$' + (trading.initialCapital || 100000).toLocaleString();
-                        document.getElementById('backtest-result-final').textContent = '$' + (trading.finalEquity || 100000).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                        // SimpleTrader returns different format - adapt it
+                        const best = data.best_strategy;
+                        document.getElementById('backtest-result-predictions').textContent = data.bars_analyzed?.toLocaleString() || '--';
+                        document.getElementById('backtest-result-accuracy').textContent = best.win_rate.toFixed(1) + '%';
 
-                        const pnl = trading.totalPnl || 0;
+                        // Show strategy comparison instead of 1h/eod/nextday
+                        document.getElementById('backtest-result-1h').textContent = best.name;
+                        document.getElementById('backtest-result-eod').textContent = best.total_trades + ' trades';
+                        document.getElementById('backtest-result-nextday').textContent = best.winning_trades + ' wins';
+
+                        // Trading P&L Results
+                        document.getElementById('backtest-result-initial').textContent = '$' + best.initial_capital.toLocaleString();
+                        document.getElementById('backtest-result-final').textContent = '$' + best.final_equity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                        const pnl = best.total_pnl || 0;
                         const pnlEl = document.getElementById('backtest-result-pnl');
                         pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                         pnlEl.className = 'brain-stat-value ' + (pnl >= 0 ? 'positive' : 'negative');
 
-                        const pnlPct = trading.totalPnlPct || 0;
+                        const pnlPct = best.return_pct || 0;
                         const pnlPctEl = document.getElementById('backtest-result-pnl-pct');
                         pnlPctEl.textContent = (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%';
                         pnlPctEl.className = 'brain-stat-value ' + (pnlPct >= 0 ? 'positive' : 'negative');
 
-                        document.getElementById('backtest-result-trades').textContent = trading.totalTrades || 0;
-                        document.getElementById('backtest-result-winrate').textContent = ((trading.winRate || 0) * 100).toFixed(1) + '%';
-                        document.getElementById('backtest-result-pf').textContent = (trading.profitFactor || 0).toFixed(2);
-                        document.getElementById('backtest-result-drawdown').textContent = ((trading.maxDrawdown || 0) * 100).toFixed(1) + '%';
+                        document.getElementById('backtest-result-trades').textContent = best.total_trades || 0;
+                        document.getElementById('backtest-result-winrate').textContent = best.win_rate.toFixed(1) + '%';
+                        document.getElementById('backtest-result-pf').textContent = '--'; // Not available in simple backtest
+                        document.getElementById('backtest-result-drawdown').textContent = '--'; // Not available in simple backtest
 
-                        // Recent trades list
+                        // Show all strategies comparison
                         const tradesContainer = document.getElementById('backtest-trades-list');
-                        if (trading.trades && trading.trades.length > 0) {
-                            tradesContainer.innerHTML = trading.trades.map(t => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px;">
-                                    <div>
-                                        <span style="color: ${t.pnl >= 0 ? 'var(--sage-green)' : 'var(--dusty-rose)'}; font-weight: 600;">${t.action}</span>
-                                        <span style="color: var(--text-primary); margin-left: 8px;">${t.shares} ${t.symbol}</span>
-                                        <span style="color: var(--text-secondary); margin-left: 8px;">@ $${t.price.toFixed(2)}</span>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        ${t.pnl !== undefined ? `
-                                            <span style="color: ${t.pnl >= 0 ? 'var(--sage-green)' : 'var(--dusty-rose)'}; font-weight: 600;">
-                                                ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)} (${t.pnl_pct >= 0 ? '+' : ''}${t.pnl_pct.toFixed(2)}%)
+                        if (data.all_strategies && data.all_strategies.length > 0) {
+                            tradesContainer.innerHTML = `
+                                <div style="font-weight: 600; margin-bottom: 10px; color: var(--text-primary);">All Strategies Tested:</div>
+                                ${data.all_strategies.map((s, i) => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); font-size: 13px; ${i === 0 ? 'background: var(--sage-green-bg);' : ''}">
+                                        <div>
+                                            <span style="font-weight: 600; color: var(--text-primary);">${i === 0 ? '🏆 ' : ''}${s.name}</span>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <span style="color: ${s.return_pct >= 0 ? 'var(--sage-green)' : 'var(--dusty-rose)'}; font-weight: 600;">
+                                                ${s.return_pct >= 0 ? '+' : ''}${s.return_pct.toFixed(2)}%
                                             </span>
-                                            <span style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">${t.reason}</span>
-                                        ` : ''}
+                                            <span style="color: var(--text-muted); font-size: 11px; margin-left: 8px;">
+                                                ${s.trades} trades · ${s.win_rate.toFixed(0)}% win
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            `).join('');
+                                `).join('')}
+                            `;
                         } else {
-                            tradesContainer.innerHTML = '<p style="color: var(--text-muted);">No trades executed during backtest period.</p>';
+                            tradesContainer.innerHTML = '<p style="color: var(--text-muted);">No strategy comparison available.</p>';
                         }
 
-                        // Top features
+                        // Top features - show best strategy info for SimpleTrader
                         const featuresContainer = document.getElementById('backtest-top-features');
-                        if (data.results.topFeatures && data.results.topFeatures.length > 0) {
-                            featuresContainer.innerHTML = data.results.topFeatures.map(([name, weight]) => `
-                                <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; border-left: 3px solid var(--sage-green);">
-                                    <div style="font-weight: 600; color: var(--text-primary);">${name}</div>
-                                    <div style="color: var(--sage-green); font-size: 18px; font-weight: bold;">${weight.toFixed(3)}</div>
-                                </div>
-                            `).join('');
-                        }
+                        featuresContainer.innerHTML = `
+                            <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; border-left: 3px solid var(--sage-green);">
+                                <div style="font-weight: 600; color: var(--text-primary);">Best Strategy</div>
+                                <div style="color: var(--sage-green); font-size: 18px; font-weight: bold;">${best.name}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; border-left: 3px solid var(--amber);">
+                                <div style="font-weight: 600; color: var(--text-primary);">Bars Analyzed</div>
+                                <div style="color: var(--amber); font-size: 18px; font-weight: bold;">${data.bars_analyzed}</div>
+                            </div>
+                            <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; border-left: 3px solid var(--steel-blue);">
+                                <div style="font-weight: 600; color: var(--text-primary);">Lookback</div>
+                                <div style="color: var(--steel-blue); font-size: 18px; font-weight: bold;">${data.lookback_days} days</div>
+                            </div>
+                        `;
 
-                        // Add to history with P&L info
+                        // Add to history with P&L info (adapted for SimpleTrader)
                         backtestHistory.unshift({
                             symbol: data.symbol,
                             startDate: startDate,
                             endDate: endDate,
-                            strategy: strategy,
-                            accuracy: data.results.accuracy,
-                            predictions: data.results.totalPredictions,
-                            pnl: trading.totalPnl || 0,
-                            pnlPct: trading.totalPnlPct || 0,
-                            trades: trading.totalTrades || 0,
+                            strategy: best.name,
+                            accuracy: best.win_rate / 100, // Convert to decimal for display
+                            predictions: data.bars_analyzed,
+                            pnl: best.total_pnl || 0,
+                            pnlPct: best.return_pct || 0,
+                            trades: best.total_trades || 0,
                             timestamp: new Date().toISOString()
                         });
 

@@ -62,6 +62,17 @@ from background_service import (
 )
 from learning_trader import PredictionDatabase, StockLearningProfile
 from historical_trainer import HistoricalTrainer
+from simple_trader import (
+    SimpleTrader,
+    STRATEGIES,
+    select_best_strategy,
+    backtest_strategy,
+    calculate_rsi,
+    calculate_macd,
+    calculate_bollinger,
+    calculate_volume_ratio,
+    calculate_sma
+)
 from utils.logger import get_logger
 from config import config
 
@@ -122,12 +133,43 @@ app.add_middleware(
 
 # Global state
 trading_service: Optional[BackgroundTradingService] = None
+simple_trader: Optional[SimpleTrader] = None  # New simple trader instance
 websocket_clients: List[WebSocket] = []
 data_dir = Path("data")
 
 # ============================================================================
 # SERVICE MANAGEMENT
 # ============================================================================
+
+def get_simple_trader() -> SimpleTrader:
+    """Get or create the SimpleTrader instance."""
+    global simple_trader
+
+    if simple_trader is None:
+        # Get symbols from config
+        symbols = config.get('data.universe.initial_stocks',
+                            ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD", "SPY", "QQQ"])
+
+        # Determine paper mode from config
+        trading_mode = config.get('trading.mode', 'paper')
+        paper = trading_mode != 'live'
+
+        simple_trader = SimpleTrader(
+            symbols=symbols,
+            paper=paper,
+            calibration_days=config.get('simple_trader.calibration_days', 90),
+            recalibrate_hours=config.get('simple_trader.recalibrate_hours', 24),
+            position_size_pct=config.get('trading.max_position_size', 0.10),
+            max_positions=config.get('trading.max_positions', 5)
+        )
+
+        # Load previous state
+        simple_trader._load_state()
+
+        logger.info(f"SimpleTrader initialized with {len(symbols)} symbols ({'PAPER' if paper else 'LIVE'})")
+
+    return simple_trader
+
 
 def get_service() -> BackgroundTradingService:
     """Get or create the trading service."""
@@ -713,6 +755,329 @@ async def run_backtest(request: BacktestRequest):
         import traceback
         logger.error(traceback.format_exc())
         return {"success": False, "error": str(e)}
+
+
+# ============================================================================
+# SIMPLE TRADER BACKTEST ENDPOINT (NEW - Uses simple_trader.py logic)
+# ============================================================================
+
+class SimpleBacktestRequest(BaseModel):
+    symbol: str
+    strategy: Optional[str] = None  # If None, auto-select best strategy
+    lookback_days: int = 90
+    initial_capital: float = 10000
+
+
+@app.post("/api/backtest/simple")
+async def run_simple_backtest(request: SimpleBacktestRequest):
+    """
+    Run a backtest using simple_trader.py strategy logic.
+    This tests individual indicator strategies (RSI, MACD, Bollinger, etc.)
+    """
+    try:
+        import pandas as pd
+        from alpaca.data.historical import StockHistoricalDataClient
+        from alpaca.data.requests import StockBarsRequest
+        from alpaca.data.timeframe import TimeFrame
+
+        symbol = request.symbol.upper()
+
+        # Get API keys
+        api_key = os.environ.get('ALPACA_API_KEY') or config.get('alpaca.api_key')
+        api_secret = os.environ.get('ALPACA_SECRET_KEY') or config.get('alpaca.api_secret')
+
+        if not api_key or not api_secret:
+            return {"success": False, "error": "Alpaca API keys not configured"}
+
+        # Fetch historical data
+        client = StockHistoricalDataClient(api_key, api_secret)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=request.lookback_days)
+
+        bars_request = StockBarsRequest(
+            symbol_or_symbols=symbol,
+            timeframe=TimeFrame.Hour,
+            start=start_date,
+            end=end_date
+        )
+
+        bars = client.get_stock_bars(bars_request)
+        df = bars.df
+
+        if df.empty:
+            return {"success": False, "error": f"No data available for {symbol}"}
+
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.xs(symbol, level='symbol')
+
+        # Calculate all indicators
+        df['rsi'] = calculate_rsi(df['close'])
+        df['macd'], df['macd_signal'], df['macd_diff'] = calculate_macd(df['close'])
+        df['bb_upper'], df['bb_lower'], df['bb_position'] = calculate_bollinger(df['close'])
+        df['volume_ratio'] = calculate_volume_ratio(df['volume'])
+        df['sma20'] = calculate_sma(df['close'], 20)
+        df = df.dropna()
+
+        if len(df) < 30:
+            return {"success": False, "error": f"Not enough data for {symbol} (need at least 30 bars)"}
+
+        # Test all strategies or just the requested one
+        results = []
+
+        if request.strategy and request.strategy in STRATEGIES:
+            # Test specific strategy
+            strategy_class = STRATEGIES[request.strategy]
+            strategy = strategy_class()
+            result = backtest_strategy(df, strategy, request.initial_capital)
+            results.append(result)
+        else:
+            # Test all strategies and find best
+            for name, strategy_class in STRATEGIES.items():
+                strategy = strategy_class()
+                result = backtest_strategy(df, strategy, request.initial_capital)
+                results.append(result)
+
+        # Sort by return
+        results.sort(key=lambda x: x['return_pct'], reverse=True)
+        best = results[0]
+
+        # Calculate final equity
+        final_equity = request.initial_capital * (1 + best['return_pct'] / 100)
+
+        return {
+            "success": True,
+            "symbol": symbol,
+            "lookback_days": request.lookback_days,
+            "bars_analyzed": len(df),
+            "best_strategy": {
+                "name": best['name'],
+                "return_pct": round(best['return_pct'], 2),
+                "win_rate": round(best['win_rate'], 1),
+                "total_trades": best['trades'],
+                "winning_trades": best['winners'],
+                "initial_capital": request.initial_capital,
+                "final_equity": round(final_equity, 2),
+                "total_pnl": round(final_equity - request.initial_capital, 2)
+            },
+            "all_strategies": [
+                {
+                    "name": r['name'],
+                    "return_pct": round(r['return_pct'], 2),
+                    "win_rate": round(r['win_rate'], 1),
+                    "trades": r['trades']
+                }
+                for r in results
+            ]
+        }
+
+    except Exception as e:
+        logger.error(f"Simple backtest error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================================
+# SIMPLE TRADER CONTROL ENDPOINTS
+# ============================================================================
+
+@app.get("/api/simple-trader/status")
+async def get_simple_trader_status():
+    """Get SimpleTrader status including strategies per stock."""
+    try:
+        trader = get_simple_trader()
+        status = trader.get_status()
+
+        return {
+            "success": True,
+            "running": status['running'],
+            "paper": status['paper'],
+            "market_open": status['market_open'],
+            "symbols": status['symbols'],
+            "strategies": status['strategies'],
+            "positions": status['positions'],
+            "account": status['account'],
+            "stats": status['stats']
+        }
+    except Exception as e:
+        logger.error(f"Error getting simple trader status: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/simple-trader/start")
+async def start_simple_trader(background_tasks: BackgroundTasks):
+    """Start the SimpleTrader in background."""
+    try:
+        trader = get_simple_trader()
+
+        if trader.running:
+            return {"success": False, "message": "SimpleTrader is already running"}
+
+        # Calibrate strategies if needed
+        uncalibrated = [s for s in trader.symbols if s not in trader.stock_configs]
+        if uncalibrated:
+            logger.info(f"Calibrating {len(uncalibrated)} stocks...")
+            for symbol in uncalibrated:
+                trader.calibrate_if_needed(symbol)
+
+        # Run in background thread
+        def run_trader():
+            trader.run(check_interval_seconds=60)
+
+        import threading
+        thread = threading.Thread(target=run_trader, daemon=True)
+        thread.start()
+
+        return {
+            "success": True,
+            "message": "SimpleTrader started",
+            "strategies": {s: c.strategy.name for s, c in trader.stock_configs.items()}
+        }
+    except Exception as e:
+        logger.error(f"Error starting simple trader: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/simple-trader/stop")
+async def stop_simple_trader():
+    """Stop the SimpleTrader."""
+    try:
+        trader = get_simple_trader()
+
+        if not trader.running:
+            return {"success": False, "message": "SimpleTrader is not running"}
+
+        trader.stop()
+        return {"success": True, "message": "SimpleTrader stopped"}
+    except Exception as e:
+        logger.error(f"Error stopping simple trader: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/simple-trader/calibrate")
+async def calibrate_simple_trader(symbol: Optional[str] = None):
+    """Calibrate strategies for all stocks or a specific stock."""
+    try:
+        trader = get_simple_trader()
+
+        if symbol:
+            # Calibrate single stock
+            symbol = symbol.upper()
+            result = select_best_strategy(symbol, trader.calibration_days)
+
+            strategy_class = STRATEGIES.get(result['best_strategy'])
+            if strategy_class:
+                from simple_trader import StockConfig
+                trader.stock_configs[symbol] = StockConfig(
+                    symbol=symbol,
+                    strategy=strategy_class(),
+                    last_calibration=datetime.now()
+                )
+                trader._save_state()
+
+            return {
+                "success": True,
+                "symbol": symbol,
+                "best_strategy": result['best_strategy'],
+                "return_pct": round(result['best_return'], 2),
+                "win_rate": round(result['best_win_rate'], 1),
+                "all_results": result['all_results']
+            }
+        else:
+            # Calibrate all stocks
+            trader.calibrate_all()
+            return {
+                "success": True,
+                "message": f"Calibrated {len(trader.stock_configs)} stocks",
+                "strategies": {s: c.strategy.name for s, c in trader.stock_configs.items()}
+            }
+    except Exception as e:
+        logger.error(f"Error calibrating: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/simple-trader/signals")
+async def get_simple_trader_signals():
+    """Get current buy/sell signals from SimpleTrader."""
+    try:
+        trader = get_simple_trader()
+        signals = []
+        current_positions = trader.get_current_positions()
+
+        for symbol in trader.symbols:
+            config = trader.stock_configs.get(symbol)
+            if not config:
+                continue
+
+            df = trader.fetch_latest_data(symbol)
+            if df is None or len(df) < 2:
+                continue
+
+            strategy = config.strategy
+            i = len(df) - 1
+            row = df.iloc[i]
+
+            has_position = symbol in current_positions
+            buy_signal = strategy.check_buy(df, i)
+            sell_signal = strategy.check_sell(df, i)
+
+            signal_info = {
+                "symbol": symbol,
+                "strategy": strategy.name,
+                "price": float(row['close']),
+                "has_position": has_position,
+                "indicators": {
+                    "rsi": round(float(row['rsi']), 1),
+                    "macd_diff": round(float(row['macd_diff']), 4),
+                    "bb_position": round(float(row['bb_position']), 2),
+                    "volume_ratio": round(float(row['volume_ratio']), 2)
+                },
+                "buy_signal": buy_signal,
+                "sell_signal": sell_signal,
+                "buy_rule": strategy.buy_rule,
+                "sell_rule": strategy.sell_rule
+            }
+
+            # Determine action
+            if not has_position and buy_signal:
+                signal_info["action"] = "BUY"
+                signal_info["confidence"] = 80  # Simple strategies have fixed confidence
+            elif has_position and sell_signal:
+                signal_info["action"] = "SELL"
+                signal_info["confidence"] = 80
+            else:
+                signal_info["action"] = "HOLD"
+                signal_info["confidence"] = 50
+
+            signals.append(signal_info)
+
+        # Sort by action priority (BUY/SELL first)
+        signals.sort(key=lambda x: (0 if x['action'] in ['BUY', 'SELL'] else 1, x['symbol']))
+
+        return {
+            "success": True,
+            "signals": signals,
+            "market_open": trader._is_market_hours(),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting signals: {e}")
+        return {"success": False, "error": str(e), "signals": []}
+
+
+@app.get("/api/simple-trader/strategies")
+async def get_available_strategies():
+    """Get list of available trading strategies."""
+    strategies = []
+    for name, strategy_class in STRATEGIES.items():
+        strategy = strategy_class()
+        strategies.append({
+            "name": name,
+            "buy_rule": strategy.buy_rule,
+            "sell_rule": strategy.sell_rule
+        })
+    return {"strategies": strategies}
+
 
 # ============================================================================
 # MORNING BRIEFING ENDPOINT
