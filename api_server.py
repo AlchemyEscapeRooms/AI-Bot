@@ -53,7 +53,8 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# Import our trading bot components
+# Global event loop reference for thread-safe callbacks
+main_event_loop: Optional[asyncio.AbstractEventLoop] = None
 from background_service import (
     BackgroundTradingService,
     ServiceConfig,
@@ -201,19 +202,26 @@ def get_service() -> BackgroundTradingService:
             data_dir=str(data_dir)
         )
         
-        # Set up callbacks for WebSocket broadcasts
-        trading_service.on_prediction = lambda p: asyncio.create_task(broadcast_event('prediction', {
-            'symbol': p.symbol,
-            'horizon': p.horizon.value,
-            'direction': p.predicted_direction.value,
-            'confidence': p.confidence
-        }))
-        
-        trading_service.on_trade_signal = lambda s: asyncio.create_task(broadcast_event('trade_signal', {
-            'symbol': s.symbol,
-            'action': s.action,
-            'confidence': s.confidence
-        }))
+        # Set up callbacks for WebSocket broadcasts (thread-safe)
+        def on_prediction_callback(p):
+            if main_event_loop and main_event_loop.is_running():
+                asyncio.run_coroutine_threadsafe(broadcast_event('prediction', {
+                    'symbol': p.symbol,
+                    'horizon': p.horizon.value,
+                    'direction': p.predicted_direction.value,
+                    'confidence': p.confidence
+                }), main_event_loop)
+
+        def on_trade_signal_callback(s):
+            if main_event_loop and main_event_loop.is_running():
+                asyncio.run_coroutine_threadsafe(broadcast_event('trade_signal', {
+                    'symbol': s.symbol,
+                    'action': s.action,
+                    'confidence': s.confidence
+                }), main_event_loop)
+
+        trading_service.on_prediction = on_prediction_callback
+        trading_service.on_trade_signal = on_trade_signal_callback
     
     return trading_service
 
@@ -243,6 +251,9 @@ async def broadcast_event(event_type: str, data: Dict):
 @app.on_event("startup")
 async def startup_event():
     """Initialize on startup."""
+    global main_event_loop
+    main_event_loop = asyncio.get_running_loop()
+
     logger.info("API Server starting up...")
     data_dir.mkdir(parents=True, exist_ok=True)
 
