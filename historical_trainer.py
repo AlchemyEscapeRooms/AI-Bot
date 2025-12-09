@@ -17,9 +17,11 @@ Author: Claude AI
 Date: November 29, 2025
 """
 
+import os
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import field
 from datetime import datetime, timedelta, time
 from dataclasses import dataclass
 import json
@@ -60,8 +62,15 @@ class HistoricalTrainer:
         db_path: str = "data/predictions_historical.db"
     ):
         self.symbols = symbols
-        self.api_key = api_key or config.get('alpaca.api_key')
-        self.api_secret = api_secret or config.get('alpaca.api_secret')
+        # Try multiple config paths for API keys, also check environment variables
+        self.api_key = (api_key
+                       or config.get('api_keys.alpaca.api_key')
+                       or config.get('alpaca.api_key')
+                       or os.environ.get('ALPACA_API_KEY'))
+        self.api_secret = (api_secret
+                          or config.get('api_keys.alpaca.secret_key')
+                          or config.get('alpaca.api_secret')
+                          or os.environ.get('ALPACA_SECRET_KEY'))
         
         # Initialize Alpaca client
         self.data_client = StockHistoricalDataClient(
@@ -78,11 +87,26 @@ class HistoricalTrainer:
         # Stock profiles
         self.profiles: Dict[str, StockLearningProfile] = {}
         self._init_profiles()
-        
+
         # Training stats
         self.total_predictions = 0
         self.correct_predictions = 0
-        
+
+        # Portfolio simulation
+        self.initial_capital = 100000.0
+        self.cash = self.initial_capital
+        self.positions: Dict[str, Dict] = {}  # symbol -> {shares, entry_price, entry_time}
+        self.trades: List[Dict] = []  # List of completed trades
+        self.equity_curve: List[Dict] = []  # Track equity over time
+
+        # Trading parameters (match live trading)
+        self.max_position_pct = config.get('service.max_position_pct', 0.1)
+        # Lower confidence threshold for backtest to generate more trades
+        # Live uses 0.55, but backtest uses 0.51 to see more activity
+        self.min_confidence = 0.51
+        self.stop_loss_pct = config.get('trading.stop_loss_pct', 0.02)
+        self.take_profit_pct = config.get('service.default_take_profit_pct', 0.05)
+
         logger.info(f"HistoricalTrainer initialized for {len(symbols)} symbols")
     
     def _init_profiles(self):
@@ -254,52 +278,53 @@ class HistoricalTrainer:
         # Extract features from historical data only
         features = self.feature_extractor.extract_all_features(historical_data)
         if not features:
+            if current_idx < 55:  # Log first few failures
+                logger.info(f"No features extracted for {symbol} at idx {current_idx}, historical_data len={len(historical_data)}")
             return None
         
         # Make prediction using current weights
         profile = self.profiles[symbol]
         weights = profile.feature_weights
         
-        # Calculate weighted score
+        # Calculate weighted score (matches live trading logic in background_service.py)
         score = 0
         total_weight = 0
         signals_used = {}
-        
+
         for feature_name, weight in weights.items():
-            if feature_name in features:
-                value = features[feature_name]
-                signals_used[feature_name] = value
-                
-                # Normalize and weight
-                if feature_name == 'rsi_14' or feature_name == 'rsi_7':
-                    contribution = (50 - value) / 50 * weight
-                elif feature_name == 'bb_position':
-                    contribution = (0.5 - value) * 2 * weight
-                elif feature_name in ['trend_strength', 'momentum_score', 'macd_hist']:
+            if feature_name not in features:
+                continue
+
+            value = features[feature_name]
+            signals_used[feature_name] = value
+
+            # Normalize and weight (same logic as background_service._generate_prediction)
+            if feature_name in ['rsi_14', 'rsi_7']:
+                contribution = (50 - value) / 50 * weight
+            elif feature_name == 'bb_position':
+                contribution = (0.5 - value) * 2 * weight
+            elif feature_name in ['trend_strength', 'momentum_score', 'macd_hist']:
+                contribution = value / 100 * weight
+            elif feature_name == 'mean_reversion_score':
+                if features.get('rsi_14', 50) < 40:
                     contribution = value / 100 * weight
-                elif feature_name == 'mean_reversion_score':
-                    if features.get('rsi_14', 50) < 40:
-                        contribution = value / 100 * weight
-                    else:
-                        contribution = -value / 100 * weight
-                elif 'price_change' in feature_name:
-                    contribution = value / 5 * weight
-                elif feature_name == 'macd_accelerating':
-                    contribution = value * weight * 0.3
-                elif feature_name == 'consecutive_days':
-                    contribution = -value * weight * 0.1  # Mean reversion
                 else:
-                    contribution = value * weight * 0.01
-                
-                score += contribution
-                total_weight += abs(weight)
-        
+                    contribution = -value / 100 * weight
+            elif 'price_change' in feature_name:
+                contribution = value / 5 * weight
+            else:
+                contribution = value * weight * 0.01
+
+            score += contribution
+            total_weight += abs(weight)
+
         if total_weight > 0:
             score = score / total_weight
         score = max(-1, min(1, score))
-        
-        # Determine direction
-        threshold = 0.1
+
+        # Determine direction and confidence
+        # Note: Using lower threshold for backtest since score calculations produce small values
+        threshold = config.get('learning.direction_threshold', 0.1) * 0.3  # 0.03 instead of 0.1
         if score > threshold:
             direction = PredictionDirection.UP
             confidence = min(0.9, 0.5 + abs(score) * 0.4)
@@ -309,6 +334,29 @@ class HistoricalTrainer:
         else:
             direction = PredictionDirection.FLAT
             confidence = 0.5
+
+        # Debug: Log first few predictions to understand score distribution
+        if profile.total_predictions < 2 and horizon == PredictionHorizon.ONE_HOUR:
+            logger.info(f"DEBUG {symbol} Prediction #{profile.total_predictions}: score={score:.4f}, threshold={threshold}, direction={direction.value}, confidence={confidence:.2%}")
+            logger.info(f"  Features used: rsi_14={signals_used.get('rsi_14', 'N/A'):.1f}, trend_strength={signals_used.get('trend_strength', 'N/A')}, macd_hist={signals_used.get('macd_hist', 'N/A'):.4f}")
+            logger.info(f"  total_weight={total_weight:.2f}, raw_score_before_div={score * total_weight:.4f}")
+
+        # Adjust confidence by historical accuracy (matches live)
+        # But only apply adjustment after enough predictions to be meaningful
+        if profile.total_predictions >= 50:
+            if horizon == PredictionHorizon.ONE_HOUR:
+                accuracy = profile.accuracy_1h
+            elif horizon == PredictionHorizon.END_OF_DAY:
+                accuracy = profile.accuracy_eod
+            else:
+                accuracy = profile.accuracy_next_day
+
+            confidence = confidence * (0.5 + accuracy * 0.5)
+
+        # Debug: Log confidence for 1-hour UP predictions (potential trades)
+        if horizon == PredictionHorizon.ONE_HOUR and direction == PredictionDirection.UP:
+            if self.total_predictions < 10:  # Only log first few
+                logger.info(f"Trade candidate: {symbol} UP, confidence={confidence:.2%}, score={score:.3f}, threshold={self.min_confidence:.2%}")
         
         # Expected move
         atr_pct = features.get('atr_pct', 1.5)
@@ -389,13 +437,16 @@ class HistoricalTrainer:
             profile.predictions_next_day += 1
             profile.accuracy_next_day = profile.accuracy_next_day * (1 - alpha) + (1 if was_correct else 0) * alpha
         
-        # Update feature weights
-        weight_adjustment = 0.02 if was_correct else -0.02  # Smaller adjustments
-        
+        # Update feature weights (use config values to match live)
+        weight_adj = config.get('learning.weight_adjustment', 0.02)
+        min_weight = config.get('learning.min_weight', 0.5)
+        max_weight = config.get('learning.max_weight', 2.0)
+        weight_adjustment = weight_adj if was_correct else -weight_adj
+
         for feature_name in prediction.signals_used:
             if feature_name in profile.feature_weights:
                 profile.feature_weights[feature_name] *= (1 + weight_adjustment)
-                profile.feature_weights[feature_name] = max(0.1, min(3.0, profile.feature_weights[feature_name]))
+                profile.feature_weights[feature_name] = max(min_weight, min(max_weight, profile.feature_weights[feature_name]))
         
         # Track stats
         self.total_predictions += 1
@@ -403,7 +454,149 @@ class HistoricalTrainer:
             self.correct_predictions += 1
         
         return was_correct
-    
+
+    # =========================================================================
+    # PORTFOLIO SIMULATION - Trade execution matching live trading logic
+    # =========================================================================
+
+    def _get_portfolio_value(self, current_prices: Dict[str, float]) -> float:
+        """Calculate total portfolio value (cash + positions)."""
+        total = self.cash
+        for symbol, position in self.positions.items():
+            if symbol in current_prices:
+                total += position['shares'] * current_prices[symbol]
+        return total
+
+    def _execute_buy(self, symbol: str, price: float, timestamp, confidence: float) -> Optional[Dict]:
+        """Execute a buy order in simulation."""
+        # Calculate position size (same as live trading)
+        portfolio_value = self._get_portfolio_value({symbol: price})
+        max_position_value = portfolio_value * self.max_position_pct
+        shares = int(max_position_value / price)
+
+        if shares <= 0:
+            return None
+
+        cost = shares * price
+
+        if cost > self.cash:
+            # Adjust shares to available cash
+            shares = int(self.cash / price)
+            if shares <= 0:
+                return None
+            cost = shares * price
+
+        # Execute buy
+        self.cash -= cost
+        self.positions[symbol] = {
+            'shares': shares,
+            'entry_price': price,
+            'entry_time': timestamp,
+            'confidence': confidence,
+            'stop_loss': price * (1 - self.stop_loss_pct),
+            'take_profit': price * (1 + self.take_profit_pct)
+        }
+
+        trade = {
+            'symbol': symbol,
+            'action': 'BUY',
+            'shares': shares,
+            'price': price,
+            'value': cost,
+            'timestamp': timestamp,
+            'confidence': confidence
+        }
+
+        logger.debug(f"BUY {shares} {symbol} @ ${price:.2f} (confidence: {confidence:.1%})")
+        return trade
+
+    def _execute_sell(self, symbol: str, price: float, timestamp, reason: str) -> Optional[Dict]:
+        """Execute a sell order in simulation."""
+        if symbol not in self.positions:
+            return None
+
+        position = self.positions[symbol]
+        shares = position['shares']
+        entry_price = position['entry_price']
+
+        # Calculate P&L
+        proceeds = shares * price
+        cost_basis = shares * entry_price
+        pnl = proceeds - cost_basis
+        pnl_pct = (price / entry_price - 1) * 100
+
+        # Execute sell
+        self.cash += proceeds
+        del self.positions[symbol]
+
+        trade = {
+            'symbol': symbol,
+            'action': 'SELL',
+            'shares': shares,
+            'price': price,
+            'value': proceeds,
+            'timestamp': timestamp,
+            'entry_price': entry_price,
+            'pnl': pnl,
+            'pnl_pct': pnl_pct,
+            'reason': reason,
+            'hold_time': str(timestamp - position['entry_time']) if hasattr(timestamp, '__sub__') else 'N/A'
+        }
+
+        self.trades.append(trade)
+        logger.debug(f"SELL {shares} {symbol} @ ${price:.2f} | P&L: ${pnl:.2f} ({pnl_pct:.2f}%) | Reason: {reason}")
+        return trade
+
+    def _check_stop_loss_take_profit(self, symbol: str, current_price: float, timestamp) -> Optional[Dict]:
+        """Check if stop loss or take profit should trigger."""
+        if symbol not in self.positions:
+            return None
+
+        position = self.positions[symbol]
+
+        if current_price <= position['stop_loss']:
+            return self._execute_sell(symbol, current_price, timestamp, 'stop_loss')
+        elif current_price >= position['take_profit']:
+            return self._execute_sell(symbol, current_price, timestamp, 'take_profit')
+
+        return None
+
+    def _evaluate_trade_signal(
+        self,
+        prediction: 'Prediction',
+        current_price: float,
+        timestamp
+    ) -> Optional[Dict]:
+        """
+        Evaluate if a prediction should trigger a trade.
+        Matches the logic in background_service._evaluate_trade_signal
+        """
+        symbol = prediction.symbol
+
+        # Only trade on 1-hour predictions (most actionable)
+        if prediction.horizon != PredictionHorizon.ONE_HOUR:
+            return None
+
+        # Check if we already have a position
+        if symbol in self.positions:
+            # Exit on DOWN signal with lower confidence threshold than entry
+            # Entry needs 51%, exit only needs the prediction to be DOWN (not FLAT)
+            if prediction.predicted_direction == PredictionDirection.DOWN and prediction.confidence >= 0.50:
+                logger.info(f"SELL SIGNAL: {symbol} DOWN prediction (conf={prediction.confidence:.1%}), exiting position")
+                return self._execute_sell(symbol, current_price, timestamp, 'signal_reversal')
+            return None
+
+        # For new entries, require minimum confidence
+        if prediction.confidence < self.min_confidence:
+            return None
+
+        # Entry signal - only buy on UP predictions
+        if prediction.predicted_direction == PredictionDirection.UP:
+            logger.info(f"BUY SIGNAL: {symbol} UP prediction, confidence={prediction.confidence:.1%}, entering position @ ${current_price:.2f}")
+            return self._execute_buy(symbol, current_price, timestamp, prediction.confidence)
+
+        return None
+
     def train_on_historical(
         self,
         start_date: str,
@@ -430,55 +623,149 @@ class HistoricalTrainer:
         
         # Fetch all historical data
         all_data = self.fetch_all_historical_data(start_date, end_date, "1Hour")
-        
+
         if not all_data:
             logger.error("No historical data available")
-            return {}
+            return {'error': 'No historical data available', 'total_predictions': 0}
+
+        for symbol, df in all_data.items():
+            logger.info(f"Data for {symbol}: {len(df)} bars, from {df.index[0] if len(df) > 0 else 'N/A'} to {df.index[-1] if len(df) > 0 else 'N/A'}")
         
         # Reset stats
         self.total_predictions = 0
         self.correct_predictions = 0
-        
+
+        # Reset portfolio for fresh simulation
+        self.cash = self.initial_capital
+        self.positions = {}
+        self.trades = []
+        self.equity_curve = []
+
         # Process each symbol
         for symbol, df in all_data.items():
             if verbose:
                 logger.info(f"\nTraining on {symbol} ({len(df)} bars)...")
-            
+
             symbol_predictions = 0
             symbol_correct = 0
-            
+
             # Walk through data
+            logger.info(f"Walking through {symbol}: indices 50 to {len(df) - 10}, step={prediction_interval}")
+            predictions_made = 0
+            up_predictions = 0
+            down_predictions = 0
+            flat_predictions = 0
+
             for idx in range(50, len(df) - 10, prediction_interval):  # Need 50 bars history, leave 10 for verification
-                
+
+                current_bar = df.iloc[idx]
+                current_price = current_bar['close']
+                current_time = df.index[idx]
+
+                # Check stop loss / take profit on existing positions
+                self._check_stop_loss_take_profit(symbol, current_price, current_time)
+
+                # Track equity at each bar
+                self.equity_curve.append({
+                    'timestamp': current_time,
+                    'equity': self._get_portfolio_value({symbol: current_price}),
+                    'cash': self.cash,
+                    'positions_value': self._get_portfolio_value({symbol: current_price}) - self.cash
+                })
+
                 # Make predictions for all horizons
                 for horizon in PredictionHorizon:
                     result = self._make_prediction_at_time(symbol, df, idx, horizon)
-                    
+
                     if result is None:
                         continue
-                    
+
                     prediction, actual_price = result
                     was_correct = self._verify_and_learn(prediction, actual_price)
-                    
+
                     symbol_predictions += 1
+                    predictions_made += 1
                     if was_correct:
                         symbol_correct += 1
-            
+
+                    # Track direction distribution
+                    if prediction.predicted_direction == PredictionDirection.UP:
+                        up_predictions += 1
+                    elif prediction.predicted_direction == PredictionDirection.DOWN:
+                        down_predictions += 1
+                    else:
+                        flat_predictions += 1
+
+                    # Execute trade based on prediction (simulated, not real!)
+                    self._evaluate_trade_signal(prediction, current_price, current_time)
+
+            # Close any remaining positions at end of backtest
+            if symbol in self.positions:
+                final_price = df.iloc[-1]['close']
+                final_time = df.index[-1]
+                self._execute_sell(symbol, final_price, final_time, 'end_of_backtest')
+
             # Save updated profile
             self.db.update_stock_profile(self.profiles[symbol])
-            
+
             if verbose and symbol_predictions > 0:
                 accuracy = symbol_correct / symbol_predictions
                 logger.info(f"  {symbol}: {symbol_predictions} predictions, {accuracy:.1%} accuracy")
+                logger.info(f"  {symbol}: Directions - UP: {up_predictions}, DOWN: {down_predictions}, FLAT: {flat_predictions}")
+                logger.info(f"  {symbol}: {len(self.trades)} trades executed so far")
         
         # Calculate final stats
         overall_accuracy = self.correct_predictions / self.total_predictions if self.total_predictions > 0 else 0
-        
+
+        # Calculate trading P&L stats
+        final_equity = self.cash  # All positions should be closed
+        total_pnl = final_equity - self.initial_capital
+        total_pnl_pct = (total_pnl / self.initial_capital) * 100
+
+        # Trade statistics
+        total_trades = len(self.trades)
+        winning_trades = [t for t in self.trades if t.get('pnl', 0) > 0]
+        losing_trades = [t for t in self.trades if t.get('pnl', 0) < 0]
+        win_rate = len(winning_trades) / total_trades if total_trades > 0 else 0
+
+        total_gains = sum(t.get('pnl', 0) for t in winning_trades)
+        total_losses = abs(sum(t.get('pnl', 0) for t in losing_trades))
+        profit_factor = total_gains / total_losses if total_losses > 0 else float('inf') if total_gains > 0 else 0
+
+        avg_win = total_gains / len(winning_trades) if winning_trades else 0
+        avg_loss = total_losses / len(losing_trades) if losing_trades else 0
+
+        # Max drawdown from equity curve
+        max_drawdown = 0
+        peak_equity = self.initial_capital
+        for point in self.equity_curve:
+            if point['equity'] > peak_equity:
+                peak_equity = point['equity']
+            drawdown = (peak_equity - point['equity']) / peak_equity
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
+
         results = {
             'total_predictions': self.total_predictions,
             'correct_predictions': self.correct_predictions,
             'overall_accuracy': overall_accuracy,
             'symbols_trained': len(all_data),
+            # Trading results
+            'trading': {
+                'initial_capital': self.initial_capital,
+                'final_equity': final_equity,
+                'total_pnl': total_pnl,
+                'total_pnl_pct': total_pnl_pct,
+                'total_trades': total_trades,
+                'winning_trades': len(winning_trades),
+                'losing_trades': len(losing_trades),
+                'win_rate': win_rate,
+                'profit_factor': profit_factor,
+                'avg_win': avg_win,
+                'avg_loss': avg_loss,
+                'max_drawdown': max_drawdown,
+                'trades': self.trades[-20:]  # Last 20 trades for display
+            },
             'profiles': {symbol: {
                 'accuracy_1h': p.accuracy_1h,
                 'accuracy_eod': p.accuracy_eod,
@@ -486,20 +773,29 @@ class HistoricalTrainer:
                 'total_predictions': p.total_predictions,
                 'overall_accuracy': p.overall_accuracy,
                 'top_features': sorted(
-                    p.feature_weights.items(), 
-                    key=lambda x: x[1], 
+                    p.feature_weights.items(),
+                    key=lambda x: x[1],
                     reverse=True
                 )[:5]
             } for symbol, p in self.profiles.items()}
         }
-        
+
         logger.info("\n" + "=" * 60)
-        logger.info("HISTORICAL TRAINING COMPLETE")
+        logger.info("HISTORICAL BACKTEST COMPLETE")
         logger.info("=" * 60)
         logger.info(f"Total predictions: {self.total_predictions}")
         logger.info(f"Correct: {self.correct_predictions}")
         logger.info(f"Overall accuracy: {overall_accuracy:.1%}")
-        
+        logger.info("-" * 40)
+        logger.info("TRADING RESULTS (Simulated)")
+        logger.info(f"Initial Capital: ${self.initial_capital:,.2f}")
+        logger.info(f"Final Equity: ${final_equity:,.2f}")
+        logger.info(f"Total P&L: ${total_pnl:,.2f} ({total_pnl_pct:+.2f}%)")
+        logger.info(f"Total Trades: {total_trades}")
+        logger.info(f"Win Rate: {win_rate:.1%}")
+        logger.info(f"Profit Factor: {profit_factor:.2f}")
+        logger.info(f"Max Drawdown: {max_drawdown:.1%}")
+
         return results
     
     def export_learned_weights(self, output_path: str = "data/learned_weights.json"):

@@ -329,8 +329,10 @@ async def get_status():
     status = service.get_status()
 
     # Add additional info expected by dashboard
+    state = status.get('state', 'stopped')
     return {
-        'state': status.get('state', 'stopped'),
+        'state': state,
+        'bot_active': state == 'running',  # Dashboard expects this boolean
         'trading_mode': status.get('trading_mode', 'paper'),
         'symbols_count': len(service.config.symbols) if service.config else 0,
         'predictions_today': status.get('predictions_today', 0),
@@ -648,23 +650,28 @@ async def update_settings(settings: SettingsUpdate):
 
 @app.post("/api/backtest/run")
 async def run_backtest(request: BacktestRequest):
-    """Run a backtest on historical data."""
-    
+    """Run a backtest on historical data with full trade simulation."""
+
     try:
         trainer = HistoricalTrainer(
             symbols=[request.symbol.upper()],
             db_path=str(data_dir / "backtest_temp.db") if request.mode == "test" else str(data_dir / "predictions.db")
         )
-        
+
+        # Set initial capital from request
+        trainer.initial_capital = request.initial_capital
+        trainer.cash = request.initial_capital
+
         results = trainer.train_on_historical(
             start_date=request.start_date,
             end_date=request.end_date,
             prediction_interval=1,
             verbose=False
         )
-        
+
         profile = trainer.profiles.get(request.symbol.upper())
-        
+        trading = results.get('trading', {})
+
         if profile:
             return {
                 "success": True,
@@ -679,14 +686,32 @@ async def run_backtest(request: BacktestRequest):
                         profile.feature_weights.items(),
                         key=lambda x: x[1],
                         reverse=True
-                    )[:5]
+                    )[:5],
+                    # Trading P&L results
+                    "trading": {
+                        "initialCapital": trading.get('initial_capital', request.initial_capital),
+                        "finalEquity": trading.get('final_equity', request.initial_capital),
+                        "totalPnl": trading.get('total_pnl', 0),
+                        "totalPnlPct": trading.get('total_pnl_pct', 0),
+                        "totalTrades": trading.get('total_trades', 0),
+                        "winningTrades": trading.get('winning_trades', 0),
+                        "losingTrades": trading.get('losing_trades', 0),
+                        "winRate": trading.get('win_rate', 0),
+                        "profitFactor": min(trading.get('profit_factor', 0), 999.99),  # Cap infinity for JSON
+                        "avgWin": trading.get('avg_win', 0),
+                        "avgLoss": trading.get('avg_loss', 0),
+                        "maxDrawdown": trading.get('max_drawdown', 0),
+                        "trades": trading.get('trades', [])
+                    }
                 }
             }
         else:
             return {"success": False, "error": "No results generated"}
-            
+
     except Exception as e:
         logger.error(f"Backtest error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return {"success": False, "error": str(e)}
 
 # ============================================================================
