@@ -764,12 +764,13 @@ async def get_trade_signals():
         monitor = get_market_monitor()
 
         # Query recent high-confidence predictions using 'signals' column (not signals_used)
+        # Use 24 hours to show signals even when market is closed
         with monitor.prediction_tracker.db.get_connection() as conn:
             df = pd.read_sql_query("""
                 SELECT symbol, predicted_direction, confidence, predicted_change_pct,
                        timestamp, signals
                 FROM ai_predictions
-                WHERE timestamp >= datetime('now', '-4 hours')
+                WHERE timestamp >= datetime('now', '-24 hours')
                 AND resolved = 0
                 AND confidence >= 60
                 ORDER BY confidence DESC, timestamp DESC

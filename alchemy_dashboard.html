@@ -887,7 +887,21 @@
         <!-- Dashboard Tab -->
         <div class="tab-content active" id="tab-dashboard">
 
-            <!-- Brain Status Card (Top) -->
+            <!-- AI Live Feed (Top) -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                    <span class="card-title">🤖 AI Live Signals</span>
+                    <span class="feed-status" id="feed-status">● Live</span>
+                </div>
+                <div id="ai-signals-feed" class="signals-feed">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading AI signals...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brain Status Card -->
             <div class="card brain-card">
                 <div class="card-header">
                     <span class="card-title">🧠 AI Brain Status</span>
@@ -988,20 +1002,6 @@
                                 <div class="confidence-fill" id="predicted-conf-bar" style="width: 0%"></div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Live Feed -->
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-title">🤖 AI Live Signals</span>
-                    <span class="feed-status" id="feed-status">● Live</span>
-                </div>
-                <div id="ai-signals-feed" class="signals-feed">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        Loading AI signals...
                     </div>
                 </div>
             </div>
