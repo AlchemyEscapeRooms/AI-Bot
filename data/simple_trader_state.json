@@ -1,0 +1,67 @@
+{
+  "positions": {},
+  "stock_configs": {
+    "AAPL": {
+      "strategy": "Volume Spike",
+      "last_calibration": "2025-12-10T13:27:14.328159"
+    },
+    "TSLA": {
+      "strategy": "RSI 30/70",
+      "last_calibration": "2025-12-10T13:27:20.843924"
+    },
+    "MSFT": {
+      "strategy": "Volume Spike",
+      "last_calibration": "2025-12-10T13:27:15.904238"
+    },
+    "DIA": {
+      "strategy": "MACD Cross",
+      "last_calibration": "2025-12-10T13:27:12.348474"
+    },
+    "META": {
+      "strategy": "Mean Rev 2%",
+      "last_calibration": "2025-12-10T13:27:22.307373"
+    },
+    "TXN": {
+      "strategy": "RSI 30/70",
+      "last_calibration": "2025-12-10T13:27:37.881339"
+    },
+    "UNH": {
+      "strategy": "MACD Cross",
+      "last_calibration": "2025-12-10T13:27:50.161141"
+    },
+    "GE": {
+      "strategy": "RSI 30/70",
+      "last_calibration": "2025-12-10T13:28:08.227251"
+    },
+    "ARKQ": {
+      "strategy": "RSI 30/70",
+      "last_calibration": "2025-12-10T15:56:33.746430"
+    },
+    "ARKW": {
+      "strategy": "Bollinger 20/80",
+      "last_calibration": "2025-12-10T15:56:34.524073"
+    },
+    "ASML": {
+      "strategy": "Volume Spike",
+      "last_calibration": "2025-12-10T15:56:35.621237"
+    },
+    "PATH": {
+      "strategy": "MACD Cross",
+      "last_calibration": "2025-12-10T15:56:36.846715"
+    },
+    "SNOW": {
+      "strategy": "Bollinger Mean Rev",
+      "last_calibration": "2025-12-10T15:56:39.454343"
+    },
+    "TSM": {
+      "strategy": "RSI 40/70",
+      "last_calibration": "2025-12-10T15:56:40.770310"
+    }
+  },
+  "stats": {
+    "trades_executed": 20,
+    "winning_trades": 5,
+    "losing_trades": 4,
+    "total_pnl": 2641.3612999999996
+  }
+}

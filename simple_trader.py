@@ -24,6 +24,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import json
 
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except ImportError:
+    from backports.zoneinfo import ZoneInfo  # Fallback for older Python
+
 import pandas as pd
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
@@ -35,10 +40,44 @@ from alpaca.data.timeframe import TimeFrame
 from dotenv import load_dotenv
 load_dotenv()
 
+# Import trade logger for logging all trades
+from utils.trade_logger import get_trade_logger, TradeReason
+
 sys.stdout.reconfigure(encoding='utf-8')
 
 API_KEY = os.environ.get('ALPACA_API_KEY')
 API_SECRET = os.environ.get('ALPACA_SECRET_KEY')
+
+
+# =============================================================================
+# PORTFOLIO SYMBOL FETCHING
+# =============================================================================
+
+def get_portfolio_symbols(paper: bool = True) -> List[str]:
+    """
+    Get symbols from current Alpaca portfolio positions.
+
+    This ensures the bot only monitors/trades stocks you actually own.
+
+    Args:
+        paper: If True, use paper trading account. If False, use live account.
+
+    Returns:
+        List of stock symbols currently in the portfolio.
+    """
+    try:
+        client = TradingClient(API_KEY, API_SECRET, paper=paper)
+        positions = client.get_all_positions()
+        symbols = [pos.symbol for pos in positions]
+
+        if not symbols:
+            print("[WARNING] No positions found in Alpaca portfolio!")
+            print("          The bot needs stocks in your portfolio to monitor.")
+
+        return symbols
+    except Exception as e:
+        print(f"[ERROR] Failed to get portfolio symbols: {e}")
+        return []
 
 
 # =============================================================================
@@ -205,15 +244,24 @@ STRATEGIES = {
 # STRATEGY SELECTOR
 # =============================================================================
 
-def backtest_strategy(df: pd.DataFrame, strategy: Strategy, initial_capital: float = 10000) -> dict:
+def backtest_strategy(df: pd.DataFrame, strategy: Strategy, initial_capital: float = 10000,
+                       symbol: str = 'UNKNOWN', log_trades: bool = False) -> dict:
     """Run backtest with given strategy."""
     cash = initial_capital
     shares = 0
     position_price = 0
     trades = []
+    trade_logger = None
+
+    if log_trades:
+        try:
+            trade_logger = get_trade_logger()
+        except:
+            pass
 
     for i in range(len(df)):
         price = df.iloc[i]['close']
+        timestamp = df.index[i] if hasattr(df.index[i], 'to_pydatetime') else datetime.now()
 
         # Buy
         if strategy.check_buy(df, i) and shares == 0:
@@ -221,14 +269,66 @@ def backtest_strategy(df: pd.DataFrame, strategy: Strategy, initial_capital: flo
             if shares > 0:
                 cash -= shares * price
                 position_price = price
-                trades.append({'type': 'BUY', 'price': price})
+                trades.append({'type': 'BUY', 'price': price, 'shares': shares, 'timestamp': timestamp})
+
+                # Log backtest trade
+                if trade_logger:
+                    try:
+                        reason = TradeReason(
+                            primary_signal=strategy.name,
+                            signal_value=0,
+                            threshold=0,
+                            direction='buy_signal',
+                            explanation=f"BACKTEST BUY: {strategy.buy_rule}"
+                        )
+                        trade_logger.log_trade(
+                            symbol=symbol,
+                            action='BUY',
+                            quantity=shares,
+                            price=price,
+                            strategy_name=strategy.name,
+                            strategy_params={'buy_rule': strategy.buy_rule, 'sell_rule': strategy.sell_rule},
+                            reason=reason,
+                            mode='backtest',
+                            portfolio_value_before=cash + shares * price,
+                            timestamp=timestamp if isinstance(timestamp, datetime) else None
+                        )
+                    except:
+                        pass
 
         # Sell
         elif strategy.check_sell(df, i) and shares > 0:
             proceeds = shares * price
             pnl = proceeds - (shares * position_price)
             cash += proceeds
-            trades.append({'type': 'SELL', 'price': price, 'pnl': pnl})
+            trades.append({'type': 'SELL', 'price': price, 'pnl': pnl, 'shares': shares, 'timestamp': timestamp})
+
+            # Log backtest trade
+            if trade_logger:
+                try:
+                    reason = TradeReason(
+                        primary_signal=strategy.name,
+                        signal_value=0,
+                        threshold=0,
+                        direction='sell_signal',
+                        explanation=f"BACKTEST SELL: {strategy.sell_rule}"
+                    )
+                    trade_logger.log_trade(
+                        symbol=symbol,
+                        action='SELL',
+                        quantity=shares,
+                        price=price,
+                        strategy_name=strategy.name,
+                        strategy_params={'buy_rule': strategy.buy_rule, 'sell_rule': strategy.sell_rule},
+                        reason=reason,
+                        mode='backtest',
+                        portfolio_value_before=cash,
+                        realized_pnl=pnl,
+                        timestamp=timestamp if isinstance(timestamp, datetime) else None
+                    )
+                except:
+                    pass
+
             shares = 0
 
     # Liquidate at end
@@ -556,6 +656,34 @@ class SimpleTrader:
             self.stats['trades_executed'] += 1
             self._save_state()
 
+            # Log the trade
+            try:
+                trade_logger = get_trade_logger()
+                config = self.stock_configs.get(symbol)
+                strategy = config.strategy if config else None
+
+                reason = TradeReason(
+                    primary_signal=strategy_name,
+                    signal_value=0,
+                    threshold=0,
+                    direction='buy_signal',
+                    explanation=f"BUY: {strategy.buy_rule if strategy else 'Manual'}"
+                )
+
+                trade_logger.log_trade(
+                    symbol=symbol,
+                    action='BUY',
+                    quantity=shares,
+                    price=price,
+                    strategy_name=strategy_name,
+                    strategy_params={'buy_rule': strategy.buy_rule if strategy else '', 'sell_rule': strategy.sell_rule if strategy else ''},
+                    reason=reason,
+                    mode='paper' if self.paper else 'live',
+                    portfolio_value_before=equity
+                )
+            except Exception as log_err:
+                print(f"[WARN] Trade logging failed: {log_err}")
+
             return True
 
         except Exception as e:
@@ -603,6 +731,37 @@ class SimpleTrader:
             self.stats['trades_executed'] += 1
             self._save_state()
 
+            # Log the trade
+            try:
+                trade_logger = get_trade_logger()
+                config = self.stock_configs.get(symbol)
+                strategy = config.strategy if config else None
+                strategy_name = strategy.name if strategy else 'Unknown'
+
+                reason = TradeReason(
+                    primary_signal=strategy_name,
+                    signal_value=0,
+                    threshold=0,
+                    direction='sell_signal',
+                    explanation=f"SELL: {strategy.sell_rule if strategy else 'Manual'} - {result_str}"
+                )
+
+                account = self.get_account()
+                trade_logger.log_trade(
+                    symbol=symbol,
+                    action='SELL',
+                    quantity=shares,
+                    price=pos['current_price'],
+                    strategy_name=strategy_name,
+                    strategy_params={'buy_rule': strategy.buy_rule if strategy else '', 'sell_rule': strategy.sell_rule if strategy else ''},
+                    reason=reason,
+                    mode='paper' if self.paper else 'live',
+                    portfolio_value_before=account['equity'],
+                    realized_pnl=pnl
+                )
+            except Exception as log_err:
+                print(f"[WARN] Trade logging failed: {log_err}")
+
             return True
 
         except Exception as e:
@@ -644,8 +803,9 @@ class SimpleTrader:
                     self.execute_sell(symbol)
 
     def _is_market_hours(self) -> bool:
-        """Check if market is open."""
-        now = datetime.now()
+        """Check if market is open (Eastern Time)."""
+        et = ZoneInfo('America/New_York')
+        now = datetime.now(et)
 
         # Weekend check
         if now.weekday() >= 5:
@@ -789,13 +949,22 @@ class SimpleTrader:
 
 def main():
     """Main entry point."""
-    # Default symbols
-    symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD', 'SPY', 'QQQ']
+    # Get symbols from Alpaca portfolio
+    paper = True  # Start with paper trading
+    symbols = get_portfolio_symbols(paper=paper)
+
+    if not symbols:
+        print("\n[ERROR] No positions found in your Alpaca portfolio!")
+        print("        Please buy some stocks first, then run the bot.")
+        print("        The bot monitors and trades stocks you already own.")
+        return
+
+    print(f"\n[INFO] Found {len(symbols)} stocks in portfolio: {', '.join(symbols)}")
 
     # Create trader
     trader = SimpleTrader(
         symbols=symbols,
-        paper=True,  # Start with paper trading
+        paper=paper,
         calibration_days=90,
         recalibrate_hours=24,
         position_size_pct=0.10,

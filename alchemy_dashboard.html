@@ -1129,10 +1129,14 @@
                             <label style="display: block; color: var(--text-secondary); margin-bottom: 8px; font-size: 14px;">Strategy</label>
                             <select id="backtest-strategy"
                                     style="width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 16px;">
-                                <option value="ai_adaptive">AI Adaptive (All Signals)</option>
-                                <option value="momentum">Momentum</option>
-                                <option value="mean_reversion">Mean Reversion</option>
-                                <option value="trend_following">Trend Following</option>
+                                <option value="auto">Auto-Select Best Strategy</option>
+                                <option value="RSI 30/70">RSI 30/70</option>
+                                <option value="RSI 40/70">RSI 40/70</option>
+                                <option value="MACD Cross">MACD Cross</option>
+                                <option value="Bollinger 20/80">Bollinger 20/80</option>
+                                <option value="Bollinger Mean Rev">Bollinger Mean Reversion</option>
+                                <option value="Volume Spike">Volume Spike</option>
+                                <option value="Mean Rev 2%">Mean Reversion 2%</option>
                             </select>
                         </div>
                         <div>
@@ -2103,7 +2107,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         symbol: symbol,
-                        strategy: strategy === 'ai_adaptive' ? null : strategy, // null = auto-select best
+                        strategy: strategy === 'auto' ? null : strategy, // null = auto-select best
                         lookback_days: lookbackDays,
                         initial_capital: 10000
                     })

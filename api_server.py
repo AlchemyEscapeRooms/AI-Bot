@@ -72,7 +72,8 @@ from simple_trader import (
     calculate_macd,
     calculate_bollinger,
     calculate_volume_ratio,
-    calculate_sma
+    calculate_sma,
+    get_portfolio_symbols
 )
 from utils.logger import get_logger
 from config import config
@@ -147,13 +148,18 @@ def get_simple_trader() -> SimpleTrader:
     global simple_trader
 
     if simple_trader is None:
-        # Get symbols from config
-        symbols = config.get('data.universe.initial_stocks',
-                            ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD", "SPY", "QQQ"])
-
         # Determine paper mode from config
         trading_mode = config.get('trading.mode', 'paper')
         paper = trading_mode != 'live'
+
+        # Get symbols from Alpaca portfolio (the stocks you actually own)
+        symbols = get_portfolio_symbols(paper=paper)
+
+        # Fallback to config if portfolio is empty
+        if not symbols:
+            logger.warning("No positions in Alpaca portfolio, falling back to config symbols")
+            symbols = config.get('data.universe.initial_stocks',
+                                ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "AMD", "SPY", "QQQ"])
 
         simple_trader = SimpleTrader(
             symbols=symbols,
@@ -167,7 +173,7 @@ def get_simple_trader() -> SimpleTrader:
         # Load previous state
         simple_trader._load_state()
 
-        logger.info(f"SimpleTrader initialized with {len(symbols)} symbols ({'PAPER' if paper else 'LIVE'})")
+        logger.info(f"SimpleTrader initialized with {len(symbols)} symbols from portfolio ({'PAPER' if paper else 'LIVE'})")
 
     return simple_trader
 
@@ -257,20 +263,19 @@ async def startup_event():
     logger.info("API Server starting up...")
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    # Auto-start the trading service
+    # Initialize SimpleTrader (the primary trading system)
     try:
-        service = get_service()
-        service.start()
-        logger.info(f"Trading service auto-started in {service.config.trading_mode.value} mode")
+        trader = get_simple_trader()
+        logger.info(f"SimpleTrader initialized with {len(trader.symbols)} symbols from portfolio")
     except Exception as e:
-        logger.error(f"Failed to auto-start trading service: {e}")
+        logger.error(f"Failed to initialize SimpleTrader: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up on shutdown."""
-    global trading_service
-    if trading_service and trading_service.state != ServiceState.STOPPED:
-        trading_service.stop()
+    global simple_trader
+    if simple_trader and simple_trader.running:
+        simple_trader.stop()
     logger.info("API Server shut down")
 
 # ============================================================================
@@ -377,22 +382,37 @@ async def control_bot(command: BotCommand):
 
 @app.get("/api/status")
 async def get_status():
-    """Get bot status - compatibility endpoint for dashboard."""
-    service = get_service()
-    status = service.get_status()
+    """Get bot status from SimpleTrader."""
+    try:
+        trader = get_simple_trader()
+        status = trader.get_status()
+        account = status.get('account', {})
 
-    # Add additional info expected by dashboard
-    state = status.get('state', 'stopped')
-    return {
-        'state': state,
-        'bot_active': state == 'running',  # Dashboard expects this boolean
-        'trading_mode': status.get('trading_mode', 'paper'),
-        'symbols_count': len(service.config.symbols) if service.config else 0,
-        'predictions_today': status.get('predictions_today', 0),
-        'trades_today': status.get('trades_today', 0),
-        'uptime': status.get('uptime', 'N/A'),
-        **status
-    }
+        return {
+            'state': 'running' if trader.running else 'ready',
+            'bot_active': trader.running,
+            'trading_mode': 'paper' if trader.paper else 'live',
+            'symbols_count': len(trader.symbols),
+            'predictions_today': 0,  # SimpleTrader doesn't make predictions
+            'trades_today': status.get('stats', {}).get('trades_executed', 0),
+            'uptime': 'N/A',
+            'active_symbols': len(trader.symbols),
+            'market_open': trader._is_market_hours(),
+            'daily_stats': {
+                'predictions_made': 0,
+                'predictions_verified': 0,
+                'accuracy': 0,
+                'signals_generated': 0,
+                'trades_executed': status.get('stats', {}).get('trades_executed', 0),
+                'daily_pl': status.get('stats', {}).get('total_pnl', 0),
+                'daily_pl_pct': 0
+            },
+            'account': account,
+            'strategies': status.get('strategies', {})
+        }
+    except Exception as e:
+        logger.error(f"Error getting status: {e}")
+        return {'state': 'error', 'bot_active': False, 'error': str(e)}
 
 # ============================================================================
 # PORTFOLIO & ACCOUNT ENDPOINTS
@@ -400,46 +420,46 @@ async def get_status():
 
 @app.get("/api/portfolio")
 async def get_portfolio():
-    """Get current portfolio positions."""
-    service = get_service()
-    
-    if service.trade_executor is None:
-        return {"positions": [], "error": "Service not initialized"}
-    
-    positions = service.trade_executor.get_positions()
-    account = service.trade_executor.get_account()
-    
-    # Format positions for frontend
-    formatted_positions = []
-    for symbol, data in positions.items():
-        formatted_positions.append({
-            "symbol": symbol,
-            "quantity": data['quantity'],
-            "avgCost": data['avg_cost'],
-            "currentPrice": data['current_price'],
-            "marketValue": data['market_value'],
-            "unrealizedPL": data['unrealized_pl'],
-            "unrealizedPLPct": data['unrealized_pl_pct'] * 100
-        })
-    
-    return {
-        "positions": formatted_positions,
-        "account": {
-            "equity": account.get('equity', 0),
-            "cash": account.get('cash', 0),
-            "buyingPower": account.get('buying_power', 0)
+    """Get current portfolio positions from SimpleTrader."""
+    try:
+        trader = get_simple_trader()
+        positions = trader.get_current_positions()
+        account = trader.get_account()
+
+        # Format positions for frontend
+        formatted_positions = []
+        for symbol, data in positions.items():
+            formatted_positions.append({
+                "symbol": symbol,
+                "quantity": data['shares'],
+                "avgCost": data['avg_cost'],
+                "currentPrice": data['current_price'],
+                "marketValue": data['shares'] * data['current_price'],
+                "unrealizedPL": data['unrealized_pnl'],
+                "unrealizedPLPct": (data['unrealized_pnl'] / (data['shares'] * data['avg_cost']) * 100) if data['shares'] > 0 else 0
+            })
+
+        return {
+            "positions": formatted_positions,
+            "account": {
+                "equity": account.get('equity', 0),
+                "cash": account.get('cash', 0),
+                "buyingPower": account.get('buying_power', 0)
+            }
         }
-    }
+    except Exception as e:
+        logger.error(f"Error getting portfolio: {e}")
+        return {"positions": [], "error": str(e)}
 
 @app.get("/api/account")
 async def get_account():
-    """Get account information."""
-    service = get_service()
-    
-    if service.trade_executor is None:
-        return {"error": "Service not initialized"}
-    
-    return service.trade_executor.get_account()
+    """Get account information from SimpleTrader."""
+    try:
+        trader = get_simple_trader()
+        return trader.get_account()
+    except Exception as e:
+        logger.error(f"Error getting account: {e}")
+        return {"error": str(e)}
 
 # ============================================================================
 # PREDICTIONS & LEARNING ENDPOINTS
@@ -1007,6 +1027,47 @@ async def calibrate_simple_trader(symbol: Optional[str] = None):
         return {"success": False, "error": str(e)}
 
 
+@app.post("/api/simple-trader/force-buy")
+async def force_buy(symbol: str, shares: int = 1):
+    """Force a buy order for testing purposes."""
+    try:
+        trader = get_simple_trader()
+        config = trader.stock_configs.get(symbol)
+        strategy_name = config.strategy.name if config else "Manual Test"
+
+        # Execute the buy
+        success = trader.execute_buy(symbol.upper(), strategy_name)
+
+        return {
+            "success": success,
+            "symbol": symbol.upper(),
+            "strategy": strategy_name,
+            "message": f"Buy order {'executed' if success else 'failed'} for {symbol}"
+        }
+    except Exception as e:
+        logger.error(f"Error forcing buy: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/simple-trader/force-sell")
+async def force_sell(symbol: str):
+    """Force a sell order for testing purposes."""
+    try:
+        trader = get_simple_trader()
+
+        # Execute the sell
+        success = trader.execute_sell(symbol.upper())
+
+        return {
+            "success": success,
+            "symbol": symbol.upper(),
+            "message": f"Sell order {'executed' if success else 'failed'} for {symbol}"
+        }
+    except Exception as e:
+        logger.error(f"Error forcing sell: {e}")
+        return {"success": False, "error": str(e)}
+
+
 @app.get("/api/simple-trader/signals")
 async def get_simple_trader_signals():
     """Get current buy/sell signals from SimpleTrader."""
@@ -1153,76 +1214,59 @@ async def get_morning_briefing():
 
 @app.get("/api/signals")
 async def get_trade_signals():
-    """Get current trade signals/suggestions - the AI live feed."""
-    service = get_service()
-    signals = []
-
+    """Get current trade signals from SimpleTrader strategies."""
     try:
-        # Try to get signals from MarketMonitor's ai_predictions table
-        import pandas as pd
-        from core.market_monitor import get_market_monitor
+        trader = get_simple_trader()
+        signals = []
+        current_positions = trader.get_current_positions()
 
-        monitor = get_market_monitor()
+        for symbol in trader.symbols:
+            config = trader.stock_configs.get(symbol)
+            if not config:
+                continue
 
-        # Query recent high-confidence predictions using 'signals' column (not signals_used)
-        # Use 24 hours to show signals even when market is closed
-        with monitor.prediction_tracker.db.get_connection() as conn:
-            df = pd.read_sql_query("""
-                SELECT symbol, predicted_direction, confidence, predicted_change_pct,
-                       timestamp, signals
-                FROM ai_predictions
-                WHERE timestamp >= datetime('now', '-24 hours')
-                AND resolved = 0
-                AND confidence >= 60
-                ORDER BY confidence DESC, timestamp DESC
-                LIMIT 20
-            """, conn)
+            df = trader.fetch_latest_data(symbol)
+            if df is None or len(df) < 2:
+                continue
 
-        if not df.empty:
-            for _, row in df.iterrows():
-                # Get stock-specific accuracy if available
-                stock_weights = monitor.prediction_tracker.get_stock_weights(row['symbol'])
+            strategy = config.strategy
+            i = len(df) - 1
+            latest = df.iloc[i]
+            has_position = symbol in current_positions
 
+            buy_signal = strategy.check_buy(df, i)
+            sell_signal = strategy.check_sell(df, i)
+
+            # Only include if there's an actionable signal
+            if buy_signal or sell_signal:
                 signals.append({
-                    'symbol': row['symbol'],
-                    'action': 'BUY' if row['predicted_direction'] == 'up' else 'SELL',
-                    'direction': row['predicted_direction'],
-                    'confidence': float(row['confidence']),
-                    'predicted_change': float(row['predicted_change_pct']) if row['predicted_change_pct'] else 0,
-                    'timestamp': str(row['timestamp']),
-                    'has_custom_weights': len(stock_weights) > 0
+                    'symbol': symbol,
+                    'action': 'SELL' if sell_signal and has_position else 'BUY' if buy_signal and not has_position else 'HOLD',
+                    'direction': 'down' if sell_signal else 'up',
+                    'confidence': 75 if (buy_signal or sell_signal) else 50,
+                    'strategy': strategy.name,
+                    'buy_rule': strategy.buy_rule,
+                    'sell_rule': strategy.sell_rule,
+                    'timestamp': datetime.now().isoformat(),
+                    'indicators': {
+                        'rsi': round(float(latest.get('rsi', 0)), 1),
+                        'macd_diff': round(float(latest.get('macd_diff', 0)), 4),
+                        'bb_position': round(float(latest.get('bb_position', 0)), 2)
+                    }
                 })
 
+        # Sort by confidence
+        signals.sort(key=lambda x: x['confidence'], reverse=True)
+
+        return {
+            "signals": signals[:10],
+            "total": len(signals),
+            "tradingMode": 'paper' if trader.paper else 'live',
+            "last_updated": datetime.now().isoformat()
+        }
     except Exception as e:
-        logger.error(f"Error getting signals from ai_predictions: {e}")
-        # Fallback to PredictionDatabase
-        try:
-            db = PredictionDatabase(str(data_dir / "predictions.db"))
-            min_confidence = config.get('learning.min_confidence_to_trade', 0.65)
-            pending = db.get_pending_predictions()
-
-            for pred in pending:
-                if pred['confidence'] >= min_confidence:
-                    signals.append({
-                        "symbol": pred['symbol'],
-                        "action": "BUY" if pred['predicted_direction'] == 'up' else "SELL",
-                        "direction": pred['predicted_direction'],
-                        "confidence": pred['confidence'],
-                        "horizon": pred.get('horizon', 'unknown'),
-                        "timestamp": str(pred.get('timestamp', datetime.now()))
-                    })
-        except Exception as e2:
-            logger.error(f"Fallback also failed: {e2}")
-
-    # Sort by confidence
-    signals.sort(key=lambda x: x['confidence'], reverse=True)
-
-    return {
-        "signals": signals[:10],  # Top 10
-        "total": len(signals),
-        "tradingMode": service.config.trading_mode.value if service.config else 'paper',
-        "last_updated": datetime.now().isoformat()
-    }
+        logger.error(f"Error getting signals: {e}")
+        return {"signals": [], "total": 0, "error": str(e)}
 
 # ============================================================================
 # AI BRAIN STATUS ENDPOINTS (merged from web_api.py)
@@ -1230,75 +1274,57 @@ async def get_trade_signals():
 
 @app.get("/api/brain")
 async def get_brain_status():
-    """Get AI brain status - global and per-stock weights."""
+    """Get SimpleTrader strategy status - per-stock strategy assignments."""
     try:
-        from core.market_monitor import get_market_monitor
-        monitor = get_market_monitor()
+        trader = get_simple_trader()
+        stats = trader.stats
 
-        # Get prediction stats
-        stats = monitor.prediction_tracker.get_accuracy_stats(days=30)
-        signal_perf = monitor.prediction_tracker.get_signal_performance(days=30)
+        # Count strategy usage
+        strategy_counts = {}
+        for symbol, config in trader.stock_configs.items():
+            strategy_name = config.strategy.name
+            if strategy_name not in strategy_counts:
+                strategy_counts[strategy_name] = 0
+            strategy_counts[strategy_name] += 1
 
-        # Format global weights
+        # Format as "global weights" (really strategy distribution)
         global_weights = []
-        signal_names = {
-            'momentum_20d': {'name': '20-Day Momentum', 'desc': 'Measures price change over 20 days'},
-            'rsi': {'name': 'RSI', 'desc': 'Overbought/oversold indicator'},
-            'macd_signal': {'name': 'MACD Signal', 'desc': 'Trend & momentum crossover'},
-            'volume_ratio': {'name': 'Volume Ratio', 'desc': 'Current vs average volume'},
-            'price_vs_sma20': {'name': 'Price vs SMA', 'desc': 'Price relative to 20-day moving average'},
-            'bollinger_position': {'name': 'Bollinger Position', 'desc': 'Price within Bollinger Bands'}
-        }
-
-        for signal, weight in sorted(monitor.signal_weights.items(), key=lambda x: x[1], reverse=True):
-            info = signal_names.get(signal, {'name': signal, 'desc': ''})
-
-            # Get accuracy for this signal
-            accuracy = 0
-            uses = 0
-            if not signal_perf.empty:
-                sig_row = signal_perf[signal_perf['signal'] == signal]
-                if not sig_row.empty:
-                    accuracy = float(sig_row.iloc[0]['accuracy'])
-                    uses = int(sig_row.iloc[0]['uses'])
-
+        for strategy_name, count in sorted(strategy_counts.items(), key=lambda x: x[1], reverse=True):
             global_weights.append({
-                'signal': signal,
-                'name': info['name'],
-                'description': info['desc'],
-                'weight': float(weight),
-                'accuracy': accuracy,
-                'uses': uses,
-                'status': 'strong' if weight > 1.1 else ('weak' if weight < 0.9 else 'normal')
+                'signal': strategy_name,
+                'name': strategy_name,
+                'description': f'Used by {count} stocks',
+                'weight': count / len(trader.stock_configs) if trader.stock_configs else 0,
+                'accuracy': 0,  # Would need backtest results
+                'uses': count,
+                'status': 'strong' if count >= 5 else 'normal'
             })
 
-        # Get per-stock weights
-        stock_weights_df = monitor.prediction_tracker.get_all_stock_weights()
+        # Per-stock strategies
         per_stock = {}
+        for symbol, config in trader.stock_configs.items():
+            per_stock[symbol] = [{
+                'signal': config.strategy.name,
+                'name': config.strategy.name,
+                'buy_rule': config.strategy.buy_rule,
+                'sell_rule': config.strategy.sell_rule,
+                'last_calibration': config.last_calibration.isoformat() if config.last_calibration else None
+            }]
 
-        if not stock_weights_df.empty:
-            for symbol in stock_weights_df['symbol'].unique():
-                symbol_data = stock_weights_df[stock_weights_df['symbol'] == symbol]
-                per_stock[symbol] = []
-
-                for _, row in symbol_data.iterrows():
-                    info = signal_names.get(row['signal_name'], {'name': row['signal_name'], 'desc': ''})
-                    per_stock[symbol].append({
-                        'signal': row['signal_name'],
-                        'name': info['name'],
-                        'weight': float(row['weight']),
-                        'accuracy': float(row['accuracy']) if row['accuracy'] else 0,
-                        'uses': int(row['sample_size']) if row['sample_size'] else 0
-                    })
+        # Calculate win rate
+        total_trades = stats.get('winning_trades', 0) + stats.get('losing_trades', 0)
+        win_rate = (stats.get('winning_trades', 0) / total_trades * 100) if total_trades > 0 else 0
 
         return {
-            'overall_accuracy': stats.get('accuracy', 0),
-            'total_predictions': stats.get('total_predictions', 0),
-            'correct': stats.get('correct', 0),
-            'wrong': stats.get('wrong', 0),
+            'overall_accuracy': win_rate,
+            'total_predictions': 0,  # SimpleTrader doesn't make predictions
+            'correct': stats.get('winning_trades', 0),
+            'wrong': stats.get('losing_trades', 0),
             'global_weights': global_weights,
             'per_stock_weights': per_stock,
-            'learning_status': 'active'
+            'learning_status': 'calibrated',
+            'total_stocks': len(trader.stock_configs),
+            'total_pnl': stats.get('total_pnl', 0)
         }
 
     except Exception as e:
@@ -1431,80 +1457,38 @@ async def get_brain_details():
 
 @app.get("/api/pnl")
 async def get_pnl():
-    """Get P&L data for dashboard."""
+    """Get P&L data from SimpleTrader."""
     try:
-        import pandas as pd
-        from utils.trade_logger import get_trade_logger
+        trader = get_simple_trader()
+        status = trader.get_status()
+        stats = status.get('stats', {})
+        account = status.get('account', {})
 
-        trade_logger = get_trade_logger()
+        # Get current portfolio value from Alpaca
+        current_value = account.get('equity', 100000)
 
-        # Get all-time stats (exclude backtest trades)
-        summary = trade_logger.get_trade_summary(mode='paper')
+        # Get SimpleTrader's tracked P&L
+        total_pnl = stats.get('total_pnl', 0)
 
-        # Get today's stats (exclude backtest trades)
-        df = trade_logger.get_trades(mode='paper')
-        today_pnl = 0
+        # Calculate unrealized P&L from positions
+        positions = status.get('positions', {})
+        unrealized_pnl = sum(p.get('unrealized_pnl', 0) for p in positions.values())
 
-        if not df.empty:
-            df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_localize(None)
-            cutoff = datetime.now() - timedelta(days=1)
-            today_df = df[df['timestamp'] >= cutoff]
-            if not today_df.empty and 'realized_pnl' in today_df.columns:
-                today_pnl = float(today_df['realized_pnl'].sum()) if today_df['realized_pnl'].notna().any() else 0
-
-        # Get historical P&L for sparkline (last 30 days, paper/live only)
-        sparkline = []
-
-        if not df.empty:
-            df = df[df['realized_pnl'].notna()]
-
-            # Group by date and sum P&L
-            if not df.empty:
-                df['date'] = df['timestamp'].dt.date
-                daily = df.groupby('date')['realized_pnl'].sum().tail(30)
-
-                # Calculate cumulative
-                cumulative = 0
-                for date, pnl in daily.items():
-                    cumulative += pnl
-                    sparkline.append({
-                        'date': str(date),
-                        'daily_pnl': float(pnl),
-                        'cumulative': float(cumulative)
-                    })
-
-        # Get actual portfolio value from Alpaca
-        initial_capital_cfg = config.get('trading.initial_capital', 100000)
-        # Handle "auto" or string values
-        if isinstance(initial_capital_cfg, str):
-            initial_capital = 100000  # Default if "auto"
-        else:
-            initial_capital = float(initial_capital_cfg)
-        total_pnl = float(summary.get('total_realized_pnl', 0) or 0)
-
-        # Try to get actual current value from Alpaca
-        try:
-            from alpaca.trading.client import TradingClient
-            api_key = os.environ.get('ALPACA_API_KEY') or config.get('alpaca.api_key')
-            api_secret = os.environ.get('ALPACA_SECRET_KEY') or config.get('alpaca.api_secret')
-            if api_key and api_secret:
-                client = TradingClient(api_key, api_secret, paper=True)
-                account = client.get_account()
-                current_value = float(account.portfolio_value)
-            else:
-                current_value = initial_capital + total_pnl
-        except Exception as alpaca_err:
-            logger.warning(f"Could not fetch Alpaca account: {alpaca_err}")
-            current_value = initial_capital + total_pnl
+        # Initial capital (rough estimate)
+        initial_capital = 100000  # Default starting capital
 
         return {
-            'today_pnl': today_pnl,
-            'today_pnl_pct': (today_pnl / current_value * 100) if current_value > 0 else 0,
+            'today_pnl': total_pnl,  # SimpleTrader tracks cumulative
+            'today_pnl_pct': (total_pnl / current_value * 100) if current_value > 0 else 0,
             'total_pnl': total_pnl,
             'total_pnl_pct': (total_pnl / initial_capital * 100) if initial_capital > 0 else 0,
+            'unrealized_pnl': unrealized_pnl,
             'initial_capital': initial_capital,
             'current_value': current_value,
-            'sparkline': sparkline
+            'trades_executed': stats.get('trades_executed', 0),
+            'winning_trades': stats.get('winning_trades', 0),
+            'losing_trades': stats.get('losing_trades', 0),
+            'sparkline': []  # Would need historical tracking to populate
         }
 
     except Exception as e:
@@ -1523,12 +1507,25 @@ async def get_trades(limit: int = 50):
     """Get recent trades."""
     try:
         from utils.trade_logger import get_trade_logger
+        import math
 
         trade_logger = get_trade_logger()
         df = trade_logger.get_trades()
 
         if df.empty:
             return {'trades': []}
+
+        def safe_float(val):
+            """Convert to float, handling NaN and None."""
+            if val is None:
+                return None
+            try:
+                f = float(val)
+                if math.isnan(f) or math.isinf(f):
+                    return None
+                return f
+            except (ValueError, TypeError):
+                return None
 
         trades = []
         for _, row in df.head(limit).iterrows():
@@ -1537,9 +1534,9 @@ async def get_trades(limit: int = 50):
                 'timestamp': str(row['timestamp']),
                 'symbol': row['symbol'],
                 'action': row['action'],
-                'quantity': float(row['quantity']),
-                'price': float(row['price']),
-                'pnl': float(row['realized_pnl']) if row['realized_pnl'] else None,
+                'quantity': safe_float(row['quantity']),
+                'price': safe_float(row['price']),
+                'pnl': safe_float(row.get('realized_pnl')),
                 'strategy': row.get('strategy_name', ''),
                 'reason': row.get('primary_signal', '')
             })

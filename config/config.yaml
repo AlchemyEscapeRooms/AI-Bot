@@ -315,3 +315,9 @@ watchdog:
   check_interval_seconds: 30
   restart_delay_seconds: 10
   max_restart_attempts: 3
+simple_trader:
+  calibration_days: 90
+  recalibrate_hours: 24
+  position_size_pct: 0.10
+  max_positions: 5
+  check_interval_seconds: 60

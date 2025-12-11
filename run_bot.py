@@ -22,6 +22,9 @@ import threading
 from pathlib import Path
 
 def main():
+    # Change to script's directory to ensure relative paths work
+    script_dir = Path(__file__).parent.resolve()
+    os.chdir(script_dir)
     print("""
     ===========================================================
 
@@ -41,7 +44,8 @@ def main():
         'uvicorn': 'uvicorn',
         'alpaca-py': 'alpaca',  # alpaca-py imports as 'alpaca'
         'pandas': 'pandas',
-        'numpy': 'numpy'
+        'numpy': 'numpy',
+        'python-dotenv': 'dotenv'  # Required for loading .env file
     }
     missing = []
 
@@ -94,13 +98,28 @@ def main():
     
     # Run uvicorn
     import uvicorn
-    uvicorn.run(
-        "api_server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=False,
-        log_level="info"
-    )
+    from api_server import app
+
+    try:
+        uvicorn.run(
+            app,
+            host="127.0.0.1",
+            port=8000,
+            log_level="info"
+        )
+    except OSError as e:
+        if "address already in use" in str(e).lower() or "10048" in str(e):
+            print("\n[X] Error: Port 8000 is already in use!")
+            print("    Another instance may be running.")
+            print("    Try: Close other instances or use a different port.")
+        else:
+            print(f"\n[X] Server error: {e}")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n\nShutting down gracefully...")
+    except Exception as e:
+        print(f"\n[X] Unexpected error: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
