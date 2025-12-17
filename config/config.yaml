@@ -321,3 +321,16 @@ simple_trader:
   position_size_pct: 0.10
   max_positions: 5
   check_interval_seconds: 60
+scanner:
+  enabled: true
+  daily_news_budget: 100
+  default_batch_size: 50
+  min_score_to_recommend: 60
+  min_score_to_auto_add: 75
+  max_auto_add_per_scan: 3
+  news_cache_hours: 6
+  weights:
+    sentiment: 0.30
+    technical: 0.30
+    volume: 0.20
+    momentum: 0.20

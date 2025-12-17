@@ -1,0 +1,790 @@
+{
+  "scan_time": "2025-12-15T10:27:48.302692",
+  "count": 50,
+  "results": [
+    {
+      "symbol": "CSCO",
+      "composite_score": 59.15,
+      "sentiment_score": 0.61,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Cisco Systems, Inc. (CSCO) Shares Hit a record high For The First Time In Over 25 Years, Bloomberg R"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:04.248242",
+      "error": null
+    },
+    {
+      "symbol": "BAC",
+      "composite_score": 58.76,
+      "sentiment_score": 0.584,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Saturday: Hili dialogue"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:59.881588",
+      "error": null
+    },
+    {
+      "symbol": "INTU",
+      "composite_score": 57.08,
+      "sentiment_score": 0.472,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Analysts Stay Bullish on Intuit (INTU) After Strong Q1 Results"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:48.332219",
+      "error": null
+    },
+    {
+      "symbol": "KLAC",
+      "composite_score": 56.74,
+      "sentiment_score": 0.45,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Chiefs vs. Chargers radio coverage: Station, channel, streaming to listen live to NFL Week 15 game b"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:17.890982",
+      "error": null
+    },
+    {
+      "symbol": "MSFT",
+      "composite_score": 55.47,
+      "sentiment_score": 0.365,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 3,
+      "news_headlines": [
+        "Wall Street Says Microsoft Can Hit $650. Here\u2019s the Path",
+        "Private Markets: Musk\u2019s SpaceX targets 2026 IPO at valuation of $1.5T",
+        "Wall Street Says Microsoft Can Hit $650. Here\u2019s the Path"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:22:53.315172",
+      "error": null
+    },
+    {
+      "symbol": "JPM",
+      "composite_score": 55.11,
+      "sentiment_score": 0.341,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 4,
+      "news_headlines": [
+        "Morgan Stanley Maintains An Equal Weight Rating On JPMorgan Chase & Co. (JPM)",
+        "Jim Cramer Highlights JPMorgan\u2019s Stock\u2019s Decline After Its Meeting",
+        "Morgan Stanley Maintains An Equal Weight Rating On JPMorgan Chase & Co. (JPM)"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:53.908607",
+      "error": null
+    },
+    {
+      "symbol": "WFC",
+      "composite_score": 55.08,
+      "sentiment_score": 0.338,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "Jim Cramer Says He Likes \u201cWells Fargo Now That Its Asset Cap Has Been Lifted\u201d",
+        "Brighton & Hove Albion WFC 0-3 Chelsea FCW, Women\u2019s Super League: Post-match reaction"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:05.895625",
+      "error": null
+    },
+    {
+      "symbol": "USB",
+      "composite_score": 54.62,
+      "sentiment_score": 0.308,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 80,
+      "news_headlines": [
+        "Slab is the first MIDI controller built exclusively for Serato Studio",
+        "2-Pack 4' LISEN USB A to USB C 3.1A Coiled Carplay Cables $5",
+        "2025 tech gift guide for Apple users \u2014 personally tested and recommended"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:48.753496",
+      "error": null
+    },
+    {
+      "symbol": "MRVL",
+      "composite_score": 54.35,
+      "sentiment_score": 0.29,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "Marvell\u2019s (MRVL) Stock Pops After Q3 Earnings \u2013 Time to Buy?",
+        "Marvell\u2019s (MRVL) Stock Pops After Q3 Earnings \u2013 Time to Buy?"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:35.893323",
+      "error": null
+    },
+    {
+      "symbol": "IBM",
+      "composite_score": 53.77,
+      "sentiment_score": 0.252,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 19,
+      "news_headlines": [
+        "Jamie Dimon says soft skills like emotional intelligence and communication are vital as AI eliminate",
+        "Is IBM the Top Tech Stock to Buy for 2026?",
+        "Use Windows 3.1 Straight From Your Browser To Boot Up Pure Nostalgia"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:30.164157",
+      "error": null
+    },
+    {
+      "symbol": "COF",
+      "composite_score": 53.45,
+      "sentiment_score": 0.23,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Jim Cramer on Visa: \u201cThey\u2019re Doing Incredibly Well\u201d"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:05.995192",
+      "error": null
+    },
+    {
+      "symbol": "AMZN",
+      "composite_score": 53.44,
+      "sentiment_score": 0.23,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 10,
+      "news_headlines": [
+        "Private Markets: Musk\u2019s SpaceX targets 2026 IPO at valuation of $1.5T",
+        "TURBULENCE 2025 1080p AMZN WEB-DL H264-BYNDR",
+        "Rubble and Crew S03 1080p AMZN WEB-DL H264-AtotIK"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:09.660234",
+      "error": null
+    },
+    {
+      "symbol": "GOOG",
+      "composite_score": 53.3,
+      "sentiment_score": 0.22,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 3,
+      "news_headlines": [
+        "Alphabet poised for another paper gain as SpaceX valuation jumps",
+        "Disney takes surprise legal action against Google over likenesses",
+        "Truth and Reconciliation Mechanisms Archives Locator, Tumblr, Google Photos, More: Sunday ResearchBu"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:04.623939",
+      "error": null
+    },
+    {
+      "symbol": "MSCI",
+      "composite_score": 53.12,
+      "sentiment_score": 0.208,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 17,
+      "news_headlines": [
+        "MSCI Isn't Wrong to Be Cautious on DATs",
+        "MSCI Isn't Wrong to Be Cautious on DATs",
+        "Michael Saylor's Strategy Hangs on to Spot in Nasdaq 100 Index"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:48.301691",
+      "error": null
+    },
+    {
+      "symbol": "ADI",
+      "composite_score": 53.07,
+      "sentiment_score": 0.205,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 3,
+      "news_headlines": [
+        "adidas Anthony Edwards 2 \u201cAlphadawg\u201d Releases December 2026",
+        "Clock Jitter Cleaners Market Size to Surpass USD 242.26 Million by 2033, at a CAGR of 6.26% | Resear",
+        "Assam CM Himanta Biswa Sarma honoured for leadership rooted in governance and civilisational values"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:11.926218",
+      "error": null
+    },
+    {
+      "symbol": "C",
+      "composite_score": 52.92,
+      "sentiment_score": 0.195,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 100,
+      "news_headlines": [
+        "Supermarket skincare dupes could save you hundreds. But do budget beauty products work?",
+        "Arctic air plunges south as residents of the Pacific Northwest remain on guard after severe flooding",
+        "Figure AI CEO says over 170,000 people have applied to his robot company in the last 3 years. He hir"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:24.940714",
+      "error": null
+    },
+    {
+      "symbol": "GOOGL",
+      "composite_score": 52.86,
+      "sentiment_score": 0.19,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 5,
+      "news_headlines": [
+        "How to Make a 1.77% 1-Month Yield in GOOGL Stock - It Still Looks Undervalued",
+        "How to Make a 1.77% 1-Month Yield in GOOGL Stock - It Still Looks Undervalued",
+        "Alphabet poised for another paper gain as SpaceX valuation jumps"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:22:57.586420",
+      "error": null
+    },
+    {
+      "symbol": "NVDA",
+      "composite_score": 52.65,
+      "sentiment_score": 0.177,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 9,
+      "news_headlines": [
+        "The Saturday Spread: Here\u2019s How to Properly Trade the Nvidia (NVDA) Stock Discount",
+        "The Saturday Spread: Here\u2019s How to Properly Trade the Nvidia (NVDA) Stock Discount",
+        "Nvidia's AI Dominance Is Still Building. Could the Stock Go Even Higher?"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:15.631495",
+      "error": null
+    },
+    {
+      "symbol": "CME",
+      "composite_score": 52.56,
+      "sentiment_score": 0.171,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 6,
+      "news_headlines": [
+        "NASA's Parker Solar Probe Spies Solar Wind 'U-Turn'",
+        "CFTC\u2019s Treasury Reform Paves Way for Crypto Market",
+        "BTC OGs selling covered calls is the main culprit suppressing price: Analyst"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:35.952909",
+      "error": null
+    },
+    {
+      "symbol": "TSLA",
+      "composite_score": 52.47,
+      "sentiment_score": 0.165,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Tesla vs. Rivian: Which EV Stock Will Outperform in 2026?"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:27.529116",
+      "error": null
+    },
+    {
+      "symbol": "BK",
+      "composite_score": 52.45,
+      "sentiment_score": 0.164,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 6,
+      "news_headlines": [
+        "Panthers Prospect Signs Two-Year Extension In Sweden",
+        "Algeria: Amin Chiakha furious after being left out of the CAN 2025 squad",
+        "[eBook] Free: Marc Kadella Legal Mysteries Bks 15, 16, 17, Vol 1-9 (Bk 23) | City of Stones Bk 4 (De"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:12.125544",
+      "error": null
+    },
+    {
+      "symbol": "AMD",
+      "composite_score": 52.2,
+      "sentiment_score": 0.147,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 37,
+      "news_headlines": [
+        "Six Months Later, the Switch 2 Proves It Has Staying Power",
+        "Forget Samsung Odyssey, Alienware Restocks Its 34\u2033 Curved Gaming Monitor at an All-Time Low After Se",
+        "iBUYPOWER Element SE Gaming PC: Ryzen 7 8700F, RTX 5060 Ti, 32GB RAM, 1TB SSD $899 + Free Shipping"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:33.987835",
+      "error": null
+    },
+    {
+      "symbol": "MCO",
+      "composite_score": 52.18,
+      "sentiment_score": 0.145,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "4 Things That Actually Got LESS Complicated in Disney World in 2025",
+        "Do the New TSA Changes Affect How Soon You Have to Get to the Airport?"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:42.086640",
+      "error": null
+    },
+    {
+      "symbol": "CRM",
+      "composite_score": 51.94,
+      "sentiment_score": 0.13,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 11,
+      "news_headlines": [
+        "The Gorman Paradox: Where Are All the AI-Generated Apps?",
+        "I automated half my PC tasks without learning to code \u2014 here\u2019s the tool",
+        "Private Markets: Musk\u2019s SpaceX targets 2026 IPO at valuation of $1.5T"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:45.636131",
+      "error": null
+    },
+    {
+      "symbol": "NOW",
+      "composite_score": 51.85,
+      "sentiment_score": 0.123,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 100,
+      "news_headlines": [
+        "Google Has Taken Down AI-Generated Content Following Disney\u2019s Cease and Desist",
+        "A Kinect for kids is outselling Xbox to become the hot console this holiday",
+        "First it was K-pop, now it's K-food. Here's how to bring Korean cooking into your kitchen"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:47.110496",
+      "error": null
+    },
+    {
+      "symbol": "ICE",
+      "composite_score": 51.49,
+      "sentiment_score": 0.099,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 98,
+      "news_headlines": [
+        "He was an Uber driver in the US. Now he's scared of jihadists after deportation to Somalia",
+        "Biohack Your Way To Lactose Tolerance (Through Suffering)",
+        "Skywatchers rejoice: The Geminids meteor shower peaks tonight"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:30.951756",
+      "error": null
+    },
+    {
+      "symbol": "MS",
+      "composite_score": 51.42,
+      "sentiment_score": 0.095,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 96,
+      "news_headlines": [
+        "MS Project lets you build smarter schedules and stop juggling spreadsheets \u2014 $49.97 for life",
+        "VPN location claims don't match real traffic exits",
+        "The Tantalizing Tales of 8 Stolen\u2014and Recovered\u2014Works of Art"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:20.981630",
+      "error": null
+    },
+    {
+      "symbol": "META",
+      "composite_score": 51.36,
+      "sentiment_score": 0.09,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 100,
+      "news_headlines": [
+        "If a Meta AI model can read a brain-wide signal, why wouldn't the brain?",
+        "\u2018Cyberpunk 2077\u2019 Proved a Game Can Change Itself, But Not Its History",
+        "Meet the young founders who have raised millions for their startups"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:22.657323",
+      "error": null
+    },
+    {
+      "symbol": "SNPS",
+      "composite_score": 51.08,
+      "sentiment_score": 0.072,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "SYNOPSYS DEADLINE: ROSEN, SKILLED INVESTOR COUNSEL, Encourages Synopsys, Inc. Investors with Losses ",
+        "SNPS FRAUD UPDATE: Important Synopsys, Inc. Securities Fraud Class Action Deadline is Approaching fo"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:23.918998",
+      "error": null
+    },
+    {
+      "symbol": "CDNS",
+      "composite_score": 51.08,
+      "sentiment_score": 0.072,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "Automated Real-Time Pirate IPTV Blocking in France \u201cWithin Six Months\u201d",
+        "Digital Marketing for Accounting Firms: Complete 2025 Guide"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:29.908876",
+      "error": null
+    },
+    {
+      "symbol": "PNC",
+      "composite_score": 50.87,
+      "sentiment_score": 0.058,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "No Woods, No Problem: Langer Back To Defend At PNC With Dalys Chasing",
+        "Fantasy Baseball Offseason Tracker: Jorge Polanco is Mets' Pete Alonso replacement; Kenley Jansen to"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:54.177378",
+      "error": null
+    },
+    {
+      "symbol": "GS",
+      "composite_score": 50.67,
+      "sentiment_score": 0.045,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 7,
+      "news_headlines": [
+        "A Closer Look At The Nike Air Max 95 OG \u201cPencil Point\u201d",
+        "David Solomon Praised Trump Accounts \u2013 Will Goldman Sachs Billions Follow?",
+        "Terrified Brown University students describe moment gunman rampaged through university"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:11.952037",
+      "error": null
+    },
+    {
+      "symbol": "ADBE",
+      "composite_score": 50.67,
+      "sentiment_score": 0.045,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 1,
+      "news_headlines": [
+        "Adobe Gets Post-Earnings Lift: Long-Term Outlook Favors Upside"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:01.116100",
+      "error": null
+    },
+    {
+      "symbol": "AVGO",
+      "composite_score": 50.28,
+      "sentiment_score": 0.018,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 3,
+      "news_headlines": [
+        "AI fears are fueling a welcomed stock market rotation away from Big Tech",
+        "Dow Jones Futures: Stock Market Strong Outside AI; Tesla, Eli Lilly In Buy Areas",
+        "Broadcom CEO Pushes Clients to Custom Chip Destiny as He Says Google\u2019s TPU \u2018Is a Transactional Move\u2019"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:10.419613",
+      "error": null
+    },
+    {
+      "symbol": "INTC",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:39.564644",
+      "error": null
+    },
+    {
+      "symbol": "QCOM",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:19.655100",
+      "error": null
+    },
+    {
+      "symbol": "TXN",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:21.892132",
+      "error": null
+    },
+    {
+      "symbol": "AMAT",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:59.859725",
+      "error": null
+    },
+    {
+      "symbol": "LRCX",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:05.855994",
+      "error": null
+    },
+    {
+      "symbol": "NXPI",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:41.920413",
+      "error": null
+    },
+    {
+      "symbol": "MCHP",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:25:47.861799",
+      "error": null
+    },
+    {
+      "symbol": "SCHW",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:35.874076",
+      "error": null
+    },
+    {
+      "symbol": "AXP",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "axp 0.0.1",
+        "axp added to PyPI"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:41.904761",
+      "error": null
+    },
+    {
+      "symbol": "TFC",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:59.888350",
+      "error": null
+    },
+    {
+      "symbol": "STT",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:17.898743",
+      "error": null
+    },
+    {
+      "symbol": "SPGI",
+      "composite_score": 50.0,
+      "sentiment_score": 0.0,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 0,
+      "news_headlines": [],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:27:23.912059",
+      "error": null
+    },
+    {
+      "symbol": "MU",
+      "composite_score": 49.16,
+      "sentiment_score": -0.056,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 9,
+      "news_headlines": [
+        "Lee Dong Hwi And Bang Hyo Rin Find Love In An Unexpected Way On \u201cLove Track\u201d",
+        "Jung Kyung Ho Is Determined To Convince Lee Dae Yeon And Choi Dae Hoon In \u201cPro Bono\u201d",
+        "Former Missouri football QB Brady Cook to make 1st NFL start with Jets"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:24:53.962486",
+      "error": null
+    },
+    {
+      "symbol": "BLK",
+      "composite_score": 48.39,
+      "sentiment_score": -0.107,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 3,
+      "news_headlines": [
+        "Barclays Sees \u2018Down-Year\u2019 for Crypto in 2026 Without Big Catalysts",
+        "Southern Utah Game Preview & How to Watch",
+        "NC State Loses a Close One to Kansas 76-77"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:26:29.917074",
+      "error": null
+    },
+    {
+      "symbol": "ORCL",
+      "composite_score": 46.35,
+      "sentiment_score": -0.243,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 4,
+      "news_headlines": [
+        "AI fears are fueling a welcomed stock market rotation away from Big Tech",
+        "Dow Jones Futures: Stock Market Strong Outside AI; Tesla, Eli Lilly In Buy Areas",
+        "Stock Market News Review: SPY, QQQ Tumble on AI Spending Fears as Investors Rotate into Value Stocks"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:23:51.553621",
+      "error": null
+    },
+    {
+      "symbol": "AAPL",
+      "composite_score": 46.33,
+      "sentiment_score": -0.245,
+      "technical_score": 50,
+      "volume_score": 50,
+      "momentum_score": 50,
+      "news_count": 2,
+      "news_headlines": [
+        "Jim Explains Why \u201cApple Simply is Not a Beneficiary of Lower Rates\u201d",
+        "Show HN: High-Performance Order Matching Engine in C++20 (2.2M ops/SEC)"
+      ],
+      "recommended_strategy": null,
+      "scan_timestamp": "2025-12-15T10:22:46.823358",
+      "error": null
+    }
+  ]
+}

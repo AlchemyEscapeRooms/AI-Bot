@@ -61,13 +61,25 @@ from background_service import (
     ServiceState,
     TradingMode
 )
-from learning_trader import PredictionDatabase, StockLearningProfile
-from historical_trainer import HistoricalTrainer
+# Legacy prediction system (being phased out in favor of RL)
+try:
+    from learning_trader import PredictionDatabase, StockLearningProfile
+    LEGACY_PREDICTION_AVAILABLE = True
+except ImportError:
+    LEGACY_PREDICTION_AVAILABLE = False
+    PredictionDatabase = None
+    StockLearningProfile = None
+
+try:
+    from historical_trainer import HistoricalTrainer
+except ImportError:
+    HistoricalTrainer = None
 from simple_trader import (
     SimpleTrader,
     STRATEGIES,
     select_best_strategy,
     backtest_strategy,
+    run_detailed_backtest,
     calculate_rsi,
     calculate_macd,
     calculate_bollinger,
@@ -76,9 +88,13 @@ from simple_trader import (
     get_portfolio_symbols
 )
 from utils.logger import get_logger
+from utils.database import Database
 from config import config
 
 logger = get_logger(__name__)
+
+# Database instance for storing backtest results
+backtest_db = Database()
 
 # ============================================================================
 # PYDANTIC MODELS
@@ -468,6 +484,8 @@ async def get_account():
 @app.get("/api/predictions/active")
 async def get_active_predictions():
     """Get currently active (unverified) predictions."""
+    if not LEGACY_PREDICTION_AVAILABLE:
+        return {"predictions": [], "message": "Legacy prediction system disabled - using RL instead"}
     db = PredictionDatabase(str(data_dir / "predictions.db"))
     
     # Get predictions that haven't been verified yet
@@ -492,9 +510,11 @@ async def get_active_predictions():
 @app.get("/api/predictions/stats")
 async def get_prediction_stats(days: int = 7):
     """Get prediction statistics."""
+    if not LEGACY_PREDICTION_AVAILABLE:
+        return {"period_days": days, "by_horizon": {}, "message": "Legacy prediction system disabled"}
     db = PredictionDatabase(str(data_dir / "predictions.db"))
     stats = db.get_prediction_stats(days=days)
-    
+
     return {
         "period_days": days,
         "by_horizon": stats
@@ -503,6 +523,8 @@ async def get_prediction_stats(days: int = 7):
 @app.get("/api/learning/stocks")
 async def get_stock_learning_profiles():
     """Get learning profiles for all stocks."""
+    if not LEGACY_PREDICTION_AVAILABLE:
+        return {"profiles": [], "message": "Legacy prediction system disabled - using RL instead"}
     service = get_service()
     db = PredictionDatabase(str(data_dir / "predictions.db"))
     
@@ -600,6 +622,213 @@ async def include_stock(command: StockCommand):
     
     service.include_symbol(symbol)
     return {"success": True, "message": f"Re-included {symbol} for trading"}
+
+# ============================================================================
+# STOCK SCANNER ENDPOINTS
+# ============================================================================
+
+# Scanner state
+_scanner_instance = None
+_scan_results = []
+_scan_in_progress = False
+
+def get_scanner():
+    """Get or create scanner instance."""
+    global _scanner_instance
+    if _scanner_instance is None:
+        from scanner.stock_scanner import StockScanner
+        from scanner.sp500_provider import SP500Provider
+        _scanner_instance = StockScanner(simple_trader=simple_trader)
+    return _scanner_instance
+
+class ScanRequest(BaseModel):
+    batch_size: int = 50
+    fetch_news: bool = True
+    symbols: Optional[str] = None  # Comma-separated symbols
+
+class AutoAddRequest(BaseModel):
+    min_score: float = 75.0
+    max_additions: int = 3
+
+@app.get("/api/scanner/status")
+async def get_scanner_status():
+    """Get scanner status including news budget."""
+    scanner = get_scanner()
+    status = scanner.get_status()
+    status['scan_in_progress'] = _scan_in_progress
+
+    # Add trader watchlist info if available
+    if simple_trader:
+        status['watchlist'] = simple_trader.get_watchlist_capacity()
+
+    return status
+
+@app.get("/api/scanner/results")
+async def get_scan_results(limit: int = 20, min_score: float = 0.0):
+    """Get latest scan results."""
+    scanner = get_scanner()
+    results = scanner.get_top_discoveries(limit=100)
+
+    # Filter by min score
+    filtered = [r for r in results if r.composite_score >= min_score]
+
+    return {
+        "count": len(filtered[:limit]),
+        "total_scanned": len(results),
+        "results": [r.to_dict() for r in filtered[:limit]]
+    }
+
+@app.post("/api/scanner/run")
+async def run_scan(request: ScanRequest, background_tasks: BackgroundTasks):
+    """
+    Trigger a stock scan.
+
+    Runs in background to avoid timeout.
+    """
+    global _scan_in_progress, _scan_results
+
+    if _scan_in_progress:
+        raise HTTPException(status_code=409, detail="Scan already in progress")
+
+    scanner = get_scanner()
+
+    # Get symbols
+    if request.symbols:
+        symbols = [s.strip().upper() for s in request.symbols.split(',')]
+    else:
+        from scanner.sp500_provider import SP500Provider
+        provider = SP500Provider()
+        symbols = provider.get_symbols()[:request.batch_size]
+
+    def run_scan_task():
+        global _scan_in_progress, _scan_results
+        _scan_in_progress = True
+        try:
+            results = scanner.scan_batch(
+                symbols[:request.batch_size],
+                fetch_news=request.fetch_news
+            )
+            _scan_results = results
+        finally:
+            _scan_in_progress = False
+
+    background_tasks.add_task(run_scan_task)
+
+    return {
+        "success": True,
+        "message": f"Scan started for {min(len(symbols), request.batch_size)} symbols",
+        "symbols_count": min(len(symbols), request.batch_size)
+    }
+
+@app.post("/api/scanner/auto-add")
+async def auto_add_stocks(request: AutoAddRequest):
+    """Auto-add top scoring stocks to SimpleTrader."""
+    global simple_trader
+
+    if simple_trader is None:
+        raise HTTPException(status_code=400, detail="SimpleTrader not initialized. Start it first.")
+
+    scanner = get_scanner()
+    scanner.simple_trader = simple_trader
+
+    added = scanner.auto_add_to_trader(
+        min_score=request.min_score,
+        max_additions=request.max_additions
+    )
+
+    # Record additions to history
+    for symbol in added:
+        # Find score from results
+        score = None
+        for r in scanner.latest_results:
+            if r.symbol == symbol:
+                score = r.composite_score
+                break
+        record_scanner_add(symbol, score)
+
+    return {
+        "success": True,
+        "added": added,
+        "count": len(added),
+        "message": f"Added {len(added)} stocks to trader" if added else "No stocks met criteria"
+    }
+
+@app.get("/api/scanner/sp500")
+async def get_sp500_symbols():
+    """Get the S&P 500 symbol list."""
+    from scanner.sp500_provider import SP500Provider
+    provider = SP500Provider()
+    symbols = provider.get_symbols()
+    return {
+        "count": len(symbols),
+        "symbols": symbols
+    }
+
+# Scanner history storage
+_scanner_history = {
+    'added': [],    # [{symbol, time, score}, ...]
+    'removed': []   # [{symbol, time, reason}, ...]
+}
+
+def record_scanner_add(symbol: str, score: float = None):
+    """Record a stock addition from scanner."""
+    from datetime import datetime
+    _scanner_history['added'].insert(0, {
+        'symbol': symbol,
+        'time': datetime.now().isoformat(),
+        'score': score
+    })
+    # Keep only last 20
+    _scanner_history['added'] = _scanner_history['added'][:20]
+
+def record_scanner_remove(symbol: str, reason: str = None):
+    """Record a stock removal."""
+    from datetime import datetime
+    _scanner_history['removed'].insert(0, {
+        'symbol': symbol,
+        'time': datetime.now().isoformat(),
+        'reason': reason
+    })
+    # Keep only last 20
+    _scanner_history['removed'] = _scanner_history['removed'][:20]
+
+@app.get("/api/scanner/history")
+async def get_scanner_history():
+    """Get history of stocks added/removed by scanner."""
+    return {
+        "added": _scanner_history['added'][:10],
+        "removed": _scanner_history['removed'][:10]
+    }
+
+@app.post("/api/scanner/add-stock")
+async def scanner_add_stock(command: StockCommand):
+    """Manually add a stock from scanner results."""
+    global simple_trader
+
+    if simple_trader is None:
+        raise HTTPException(status_code=400, detail="SimpleTrader not initialized")
+
+    result = simple_trader.add_symbol(command.symbol.upper())
+
+    if result.get('success'):
+        record_scanner_add(command.symbol.upper())
+
+    return result
+
+@app.post("/api/scanner/remove-stock")
+async def scanner_remove_stock(command: StockCommand):
+    """Remove a stock from the watchlist."""
+    global simple_trader
+
+    if simple_trader is None:
+        raise HTTPException(status_code=400, detail="SimpleTrader not initialized")
+
+    result = simple_trader.remove_symbol(command.symbol.upper())
+
+    if result.get('success'):
+        record_scanner_remove(command.symbol.upper(), "Manual removal")
+
+    return result
 
 # ============================================================================
 # TRADING MODE ENDPOINTS
@@ -746,6 +975,40 @@ async def run_backtest(request: BacktestRequest):
         trading = results.get('trading', {})
 
         if profile:
+            # Save backtest results to database
+            try:
+                final_equity = trading.get('final_equity', request.initial_capital)
+                total_return = trading.get('total_pnl_pct', 0)
+
+                backtest_db.store_backtest_result(
+                    strategy_name=f"{request.symbol.upper()} - {request.strategy}",
+                    start_date=request.start_date,
+                    end_date=request.end_date,
+                    initial_capital=request.initial_capital,
+                    final_capital=final_equity,
+                    total_return=total_return,
+                    sharpe_ratio=0,  # Not calculated in this backtest type
+                    max_drawdown=trading.get('max_drawdown', 0),
+                    win_rate=trading.get('win_rate', 0),
+                    total_trades=trading.get('total_trades', 0),
+                    parameters=json.dumps({
+                        'symbol': request.symbol.upper(),
+                        'strategy': request.strategy,
+                        'mode': request.mode
+                    }),
+                    results=json.dumps({
+                        'accuracy': profile.overall_accuracy,
+                        'accuracy_1h': profile.accuracy_1h,
+                        'accuracy_eod': profile.accuracy_eod,
+                        'accuracy_next_day': profile.accuracy_next_day,
+                        'total_predictions': profile.total_predictions,
+                        'trading': trading
+                    })
+                )
+                logger.info(f"Backtest results saved: {request.symbol.upper()} - {request.strategy}")
+            except Exception as db_err:
+                logger.warning(f"Failed to save backtest to database: {db_err}")
+
             return {
                 "success": True,
                 "symbol": request.symbol.upper(),
@@ -856,24 +1119,73 @@ async def run_simple_backtest(request: SimpleBacktestRequest):
         results = []
 
         if request.strategy and request.strategy in STRATEGIES:
-            # Test specific strategy
+            # Test specific strategy with trade logging
             strategy_class = STRATEGIES[request.strategy]
             strategy = strategy_class()
-            result = backtest_strategy(df, strategy, request.initial_capital)
+            result = backtest_strategy(df, strategy, request.initial_capital, symbol=symbol, log_trades=True)
             results.append(result)
         else:
-            # Test all strategies and find best
+            # Test all strategies (without logging to avoid spam)
             for name, strategy_class in STRATEGIES.items():
                 strategy = strategy_class()
-                result = backtest_strategy(df, strategy, request.initial_capital)
+                result = backtest_strategy(df, strategy, request.initial_capital, symbol=symbol, log_trades=False)
                 results.append(result)
 
         # Sort by return
         results.sort(key=lambda x: x['return_pct'], reverse=True)
         best = results[0]
 
+        # Re-run the best strategy with trade logging enabled
+        if not request.strategy:
+            best_strategy_class = STRATEGIES[best['name']]
+            best_strategy = best_strategy_class()
+            backtest_strategy(df, best_strategy, request.initial_capital, symbol=symbol, log_trades=True)
+
         # Calculate final equity
         final_equity = request.initial_capital * (1 + best['return_pct'] / 100)
+
+        # Save backtest results to database
+        try:
+            end_date = datetime.now()
+            start_date_calc = end_date - timedelta(days=request.lookback_days)
+
+            backtest_db.store_backtest_result(
+                strategy_name=f"{symbol} - {best['name']} (SimpleTrader)",
+                start_date=start_date_calc.strftime('%Y-%m-%d'),
+                end_date=end_date.strftime('%Y-%m-%d'),
+                initial_capital=request.initial_capital,
+                final_capital=round(final_equity, 2),
+                total_return=round(best['return_pct'], 2),
+                sharpe_ratio=0,  # Not calculated in simple backtest
+                max_drawdown=0,  # Not calculated in simple backtest
+                win_rate=round(best['win_rate'], 1),
+                total_trades=best['trades'],
+                parameters=json.dumps({
+                    'symbol': symbol,
+                    'strategy': request.strategy or 'auto-select',
+                    'lookback_days': request.lookback_days,
+                    'bars_analyzed': len(df)
+                }),
+                results=json.dumps({
+                    'best_strategy': best['name'],
+                    'return_pct': round(best['return_pct'], 2),
+                    'win_rate': round(best['win_rate'], 1),
+                    'total_trades': best['trades'],
+                    'winning_trades': best['winners'],
+                    'all_strategies': [
+                        {
+                            'name': r['name'],
+                            'return_pct': round(r['return_pct'], 2),
+                            'win_rate': round(r['win_rate'], 1),
+                            'trades': r['trades']
+                        }
+                        for r in results
+                    ]
+                })
+            )
+            logger.info(f"Simple backtest results saved: {symbol} - {best['name']}")
+        except Exception as db_err:
+            logger.warning(f"Failed to save simple backtest to database: {db_err}")
 
         return {
             "success": True,
@@ -903,6 +1215,104 @@ async def run_simple_backtest(request: SimpleBacktestRequest):
 
     except Exception as e:
         logger.error(f"Simple backtest error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================================
+# DETAILED BACKTEST LOG ENDPOINT (Decision-by-decision analysis)
+# ============================================================================
+
+class DetailedBacktestRequest(BaseModel):
+    symbol: str
+    strategy: Optional[str] = None  # If None, auto-select best strategy
+    lookback_days: int = 30  # Default to 30 days for detailed analysis
+    initial_capital: float = 10000
+    use_safety_rules: bool = True  # If True, use hold mode to avoid selling at a loss
+
+
+@app.post("/api/backtest/detailed")
+async def run_detailed_backtest_endpoint(request: DetailedBacktestRequest):
+    """
+    Run a detailed backtest with decision-by-decision logging.
+
+    Returns every bar's decision (BUY, SELL, HOLD) with:
+    - Layman's terms explanation of WHY the decision was made
+    - All indicator values at that moment
+    - Portfolio state at each point
+    - Complete trade history with P&L
+
+    This is designed for the Reports page to show users exactly
+    what the bot would do and why.
+    """
+    try:
+        import math
+
+        symbol = request.symbol.upper()
+
+        # Run the detailed backtest
+        result = run_detailed_backtest(
+            symbol=symbol,
+            strategy_name=request.strategy,
+            lookback_days=request.lookback_days,
+            initial_capital=request.initial_capital,
+            use_safety_rules=request.use_safety_rules
+        )
+
+        if 'error' in result:
+            return {"success": False, "error": result['error']}
+
+        # Handle infinity in profit factor (JSON doesn't support infinity)
+        summary = result.get('summary', {})
+        trades_summary = summary.get('trades', {})
+        if trades_summary.get('profit_factor') == float('inf'):
+            trades_summary['profit_factor'] = 999.99
+
+        # Save to database
+        try:
+            end_date = datetime.now()
+            start_date_calc = end_date - timedelta(days=request.lookback_days)
+
+            backtest_db.store_backtest_result(
+                strategy_name=f"{symbol} - {summary.get('strategy', 'Unknown')} (Detailed)",
+                start_date=start_date_calc.strftime('%Y-%m-%d'),
+                end_date=end_date.strftime('%Y-%m-%d'),
+                initial_capital=request.initial_capital,
+                final_capital=summary.get('capital', {}).get('final', request.initial_capital),
+                total_return=summary.get('capital', {}).get('return_pct', 0),
+                sharpe_ratio=0,
+                max_drawdown=0,
+                win_rate=trades_summary.get('win_rate', 0),
+                total_trades=trades_summary.get('total', 0),
+                parameters=json.dumps({
+                    'symbol': symbol,
+                    'strategy': request.strategy or 'auto-select',
+                    'lookback_days': request.lookback_days,
+                    'bars_analyzed': summary.get('period', {}).get('bars_analyzed', 0)
+                }),
+                results=json.dumps({
+                    'strategy': summary.get('strategy'),
+                    'buy_rule': summary.get('strategy_buy_rule'),
+                    'sell_rule': summary.get('strategy_sell_rule'),
+                    'return_pct': summary.get('capital', {}).get('return_pct', 0),
+                    'decisions': summary.get('decisions', {})
+                })
+            )
+            logger.info(f"Detailed backtest results saved: {symbol}")
+        except Exception as db_err:
+            logger.warning(f"Failed to save detailed backtest to database: {db_err}")
+
+        return {
+            "success": True,
+            "summary": summary,
+            "decision_log": result.get('decision_log', []),
+            "trades": result.get('trades', []),
+            "equity_curve": result.get('equity_curve', [])
+        }
+
+    except Exception as e:
+        logger.error(f"Detailed backtest error: {e}")
         import traceback
         logger.error(traceback.format_exc())
         return {"success": False, "error": str(e)}
@@ -1056,7 +1466,7 @@ async def force_sell(symbol: str):
         trader = get_simple_trader()
 
         # Execute the sell
-        success = trader.execute_sell(symbol.upper())
+        success = trader.execute_sell(symbol.upper(), sell_reason="Manual force sell")
 
         return {
             "success": success,
@@ -1076,6 +1486,14 @@ async def get_simple_trader_signals():
         signals = []
         current_positions = trader.get_current_positions()
 
+        # Get RL shadow (the kid with the coloring book - NO influence on trading)
+        rl_shadow = None
+        try:
+            from rl_shadow import get_rl_shadow
+            rl_shadow = get_rl_shadow()
+        except Exception as e:
+            logger.debug(f"RL Shadow not available: {e}")
+
         for symbol in trader.symbols:
             config = trader.stock_configs.get(symbol)
             if not config:
@@ -1092,6 +1510,18 @@ async def get_simple_trader_signals():
             has_position = symbol in current_positions
             buy_signal = bool(strategy.check_buy(df, i))
             sell_signal = bool(strategy.check_sell(df, i))
+
+            # Get position info for RL state
+            position_pct = 0
+            unrealized_pnl_pct = 0
+            if has_position:
+                pos = current_positions[symbol]
+                total_equity = trader.get_account().get('equity', 100000)
+                position_value = pos.get('shares', 0) * pos.get('current_price', 0)
+                position_pct = position_value / total_equity if total_equity > 0 else 0
+                avg_cost = pos.get('avg_cost', pos.get('current_price', 1))
+                if avg_cost > 0:
+                    unrealized_pnl_pct = (pos.get('current_price', avg_cost) - avg_cost) / avg_cost
 
             signal_info = {
                 "symbol": symbol,
@@ -1110,10 +1540,10 @@ async def get_simple_trader_signals():
                 "sell_rule": strategy.sell_rule
             }
 
-            # Determine action
+            # Determine action (SimpleTrader's decision - this is what matters)
             if not has_position and buy_signal:
                 signal_info["action"] = "BUY"
-                signal_info["confidence"] = 80  # Simple strategies have fixed confidence
+                signal_info["confidence"] = 80
             elif has_position and sell_signal:
                 signal_info["action"] = "SELL"
                 signal_info["confidence"] = 80
@@ -1121,16 +1551,48 @@ async def get_simple_trader_signals():
                 signal_info["action"] = "HOLD"
                 signal_info["confidence"] = 50
 
+            # RL Shadow recommendation (just watching, NO influence on action above)
+            # Like a kid with a coloring book at work - we see what they drew but ignore it
+            rl_rec = None
+            if rl_shadow:
+                try:
+                    rl_rec = rl_shadow.get_recommendation(
+                        symbol, df,
+                        has_position=has_position,
+                        position_pct=position_pct,
+                        unrealized_pnl_pct=unrealized_pnl_pct
+                    )
+                except:
+                    pass
+
+            if rl_rec:
+                signal_info["rl_shadow"] = {
+                    "action": rl_rec['action'],
+                    "q_values": rl_rec['q_values'],
+                    "agrees": rl_rec['action'] == signal_info["action"]
+                }
+            else:
+                signal_info["rl_shadow"] = None  # No model for this symbol
+
             signals.append(signal_info)
 
         # Sort by action priority (BUY/SELL first)
         signals.sort(key=lambda x: (0 if x['action'] in ['BUY', 'SELL'] else 1, x['symbol']))
 
+        # Get RL stats
+        rl_stats = None
+        if rl_shadow:
+            try:
+                rl_stats = rl_shadow.get_stats()
+            except:
+                pass
+
         return {
             "success": True,
             "signals": signals,
             "market_open": bool(trader._is_market_hours()),
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "rl_shadow_stats": rl_stats
         }
     except Exception as e:
         logger.error(f"Error getting signals: {e}")
@@ -1159,35 +1621,49 @@ async def get_available_strategies():
 async def get_morning_briefing():
     """Get the morning briefing data."""
     service = get_service()
-    db = PredictionDatabase(str(data_dir / "predictions.db"))
-    
+
     # Account info
     account = {}
     if service.trade_executor:
         account = service.trade_executor.get_account()
-    
-    # Yesterday's stats
-    stats = db.get_prediction_stats(days=1)
-    total_preds = sum(s.get('total', 0) for s in stats.values())
-    correct_preds = sum(s.get('correct', 0) for s in stats.values())
-    accuracy = correct_preds / total_preds if total_preds > 0 else 0
-    
-    # Get best performers (stocks with highest accuracy)
+
+    # Yesterday's stats (from legacy system if available, else from SimpleTrader)
+    stats = {}
+    total_preds = 0
+    correct_preds = 0
+    accuracy = 0
     best_performers = []
-    for symbol in service.config.symbols:
-        profile = db.get_stock_profile(symbol)
-        if profile and profile.total_predictions > 50:
-            best_performers.append({
-                "symbol": symbol,
-                "accuracy": profile.overall_accuracy,
-                "predictions": profile.total_predictions
-            })
-    
-    best_performers.sort(key=lambda x: x['accuracy'], reverse=True)
-    
+
+    if LEGACY_PREDICTION_AVAILABLE:
+        db = PredictionDatabase(str(data_dir / "predictions.db"))
+        stats = db.get_prediction_stats(days=1)
+        total_preds = sum(s.get('total', 0) for s in stats.values())
+        correct_preds = sum(s.get('correct', 0) for s in stats.values())
+        accuracy = correct_preds / total_preds if total_preds > 0 else 0
+
+        # Get best performers (stocks with highest accuracy)
+        for symbol in service.config.symbols:
+            profile = db.get_stock_profile(symbol)
+            if profile and profile.total_predictions > 50:
+                best_performers.append({
+                    "symbol": symbol,
+                    "accuracy": profile.overall_accuracy,
+                    "predictions": profile.total_predictions
+                })
+        best_performers.sort(key=lambda x: x['accuracy'], reverse=True)
+    else:
+        # Use SimpleTrader stats instead
+        try:
+            trader = get_simple_trader()
+            trader_stats = trader.stats
+            total_trades = trader_stats.get('winning_trades', 0) + trader_stats.get('losing_trades', 0)
+            accuracy = trader_stats.get('winning_trades', 0) / total_trades if total_trades > 0 else 0
+        except:
+            pass
+
     # Excluded stocks
     excluded = service.config.excluded_symbols
-    
+
     return {
         "date": datetime.now().strftime("%A, %B %d, %Y"),
         "account": {
@@ -1278,6 +1754,7 @@ async def get_brain_status():
     try:
         trader = get_simple_trader()
         stats = trader.stats
+        current_positions = trader.get_current_positions()
 
         # Count strategy usage
         strategy_counts = {}
@@ -1300,16 +1777,37 @@ async def get_brain_status():
                 'status': 'strong' if count >= 5 else 'normal'
             })
 
-        # Per-stock strategies
+        # Per-stock strategies with position info
         per_stock = {}
+        stock_assignments = []  # For easier display
         for symbol, config in trader.stock_configs.items():
-            per_stock[symbol] = [{
+            has_position = symbol in current_positions
+            pos_info = current_positions.get(symbol, {})
+
+            stock_data = {
                 'signal': config.strategy.name,
                 'name': config.strategy.name,
                 'buy_rule': config.strategy.buy_rule,
                 'sell_rule': config.strategy.sell_rule,
-                'last_calibration': config.last_calibration.isoformat() if config.last_calibration else None
-            }]
+                'last_calibration': config.last_calibration.isoformat() if config.last_calibration else None,
+                'use_safety_rules': config.use_safety_rules
+            }
+            per_stock[symbol] = [stock_data]
+
+            # Also build flat list for display
+            stock_assignments.append({
+                'symbol': symbol,
+                'strategy': config.strategy.name,
+                'buy_rule': config.strategy.buy_rule,
+                'sell_rule': config.strategy.sell_rule,
+                'safety_rules': config.use_safety_rules,
+                'has_position': has_position,
+                'unrealized_pnl': pos_info.get('unrealized_pnl', 0) if has_position else None,
+                'last_calibration': config.last_calibration.strftime('%m/%d %H:%M') if config.last_calibration else 'Never'
+            })
+
+        # Sort by symbol
+        stock_assignments.sort(key=lambda x: x['symbol'])
 
         # Calculate win rate
         total_trades = stats.get('winning_trades', 0) + stats.get('losing_trades', 0)
@@ -1322,6 +1820,7 @@ async def get_brain_status():
             'wrong': stats.get('losing_trades', 0),
             'global_weights': global_weights,
             'per_stock_weights': per_stock,
+            'stock_assignments': stock_assignments,  # New: easy-to-display list
             'learning_status': 'calibrated',
             'total_stocks': len(trader.stock_configs),
             'total_pnl': stats.get('total_pnl', 0)
@@ -1334,6 +1833,79 @@ async def get_brain_status():
             'total_predictions': 0,
             'global_weights': [],
             'per_stock_weights': {},
+            'stock_assignments': [],
+            'error': str(e)
+        }
+
+
+@app.get("/api/rl-shadow")
+async def get_rl_shadow_status():
+    """Get RL Shadow status - the kid with the coloring book."""
+    try:
+        from rl_shadow import get_rl_shadow
+        rl = get_rl_shadow()
+
+        # Get current recommendations for all symbols with models
+        trader = get_simple_trader()
+        current_positions = trader.get_current_positions()
+
+        recommendations = []
+        for symbol in rl.get_available_symbols():
+            # Get market data if available
+            df = None
+            try:
+                df = trader.fetch_latest_data(symbol)
+            except:
+                pass
+
+            if df is not None and len(df) >= 30:
+                has_position = symbol in current_positions
+                pos = current_positions.get(symbol, {})
+
+                position_pct = 0
+                unrealized_pnl_pct = 0
+                if has_position:
+                    total_equity = trader.get_account().get('equity', 100000)
+                    position_value = pos.get('shares', 0) * pos.get('current_price', 0)
+                    position_pct = position_value / total_equity if total_equity > 0 else 0
+                    avg_cost = pos.get('avg_cost', 1)
+                    if avg_cost > 0:
+                        unrealized_pnl_pct = (pos.get('current_price', avg_cost) - avg_cost) / avg_cost
+
+                rec = rl.get_recommendation(
+                    symbol, df,
+                    has_position=has_position,
+                    position_pct=position_pct,
+                    unrealized_pnl_pct=unrealized_pnl_pct
+                )
+
+                if rec:
+                    rec['has_position'] = has_position
+                    rec['current_price'] = float(df.iloc[-1]['close'])
+                    recommendations.append(rec)
+
+        stats = rl.get_stats()
+
+        return {
+            'success': True,
+            'models_loaded': stats['models_loaded'],
+            'available_symbols': stats['symbols'],
+            'recommendations': recommendations,
+            'shadow_stats': {
+                'total_signals': stats['total_signals'],
+                'agreements': stats['agreements'],
+                'agreement_rate': stats['agreement_rate']
+            },
+            'message': "RL is watching and learning (no influence on trading)"
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting RL shadow status: {e}")
+        return {
+            'success': False,
+            'models_loaded': 0,
+            'available_symbols': [],
+            'recommendations': [],
             'error': str(e)
         }
 
