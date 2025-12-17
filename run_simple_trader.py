@@ -17,8 +17,9 @@ trader = SimpleTrader(
     paper=True,
     calibration_days=90,
     recalibrate_hours=24,
-    position_size_pct=0.10,
-    max_positions=5
+    position_size_pct=0.05,
+    max_positions=10,
+    min_hold_hours=4
 )
 
 # Calibrate
@@ -94,4 +95,4 @@ print("DEMO COMPLETE")
 print("="*60)
 print()
 print("To run continuously: python simple_trader.py")
-print("The bot will check every 60 seconds during market hours.")
+print("The bot will check every 15 minutes during market hours.")

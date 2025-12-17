@@ -182,8 +182,9 @@ def get_simple_trader() -> SimpleTrader:
             paper=paper,
             calibration_days=config.get('simple_trader.calibration_days', 90),
             recalibrate_hours=config.get('simple_trader.recalibrate_hours', 24),
-            position_size_pct=config.get('trading.max_position_size', 0.10),
-            max_positions=config.get('trading.max_positions', 5)
+            position_size_pct=config.get('simple_trader.position_size_pct', 0.05),
+            max_positions=config.get('simple_trader.max_positions', 10),
+            min_hold_hours=config.get('simple_trader.min_hold_hours', 4)
         )
 
         # Load previous state
@@ -1362,8 +1363,9 @@ async def start_simple_trader(background_tasks: BackgroundTasks):
                 trader.calibrate_if_needed(symbol)
 
         # Run in background thread
+        check_interval = config.get('simple_trader.check_interval_seconds', 900)
         def run_trader():
-            trader.run(check_interval_seconds=60)
+            trader.run(check_interval_seconds=check_interval)
 
         import threading
         thread = threading.Thread(target=run_trader, daemon=True)

@@ -318,16 +318,17 @@ watchdog:
 simple_trader:
   calibration_days: 90
   recalibrate_hours: 24
-  position_size_pct: 0.10
-  max_positions: 5
-  check_interval_seconds: 60
+  position_size_pct: 0.05
+  max_positions: 10
+  check_interval_seconds: 900
+  min_hold_hours: 4
 scanner:
   enabled: true
   daily_news_budget: 100
   default_batch_size: 50
-  min_score_to_recommend: 60
-  min_score_to_auto_add: 75
-  max_auto_add_per_scan: 3
+  min_score_to_recommend: 55
+  min_score_to_auto_add: 60
+  max_auto_add_per_scan: 5
   news_cache_hours: 6
   weights:
     sentiment: 0.30

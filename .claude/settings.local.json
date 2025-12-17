@@ -51,7 +51,9 @@
       "Bash(dir \"C:\\Users\\Alchemy\\OneDrive\\AIBot\\Alpaca\\rl_system\\models\")",
       "Bash(python rl_system/rl_trader.py train:*)",
       "Bash(timeout 60 sleep:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(git config:*)",
+      "Bash(python -m uvicorn:*)"
     ],
     "deny": [],
     "ask": []

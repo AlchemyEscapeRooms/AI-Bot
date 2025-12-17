@@ -1836,15 +1836,16 @@ def main():
         paper=paper,
         calibration_days=90,
         recalibrate_hours=24,
-        position_size_pct=0.10,
-        max_positions=5
+        position_size_pct=0.05,
+        max_positions=10,
+        min_hold_hours=4
     )
 
     # Calibrate all stocks first
     trader.calibrate_all()
 
-    # Run
-    trader.run(check_interval_seconds=60)
+    # Run - check every 15 minutes (900 seconds)
+    trader.run(check_interval_seconds=900)
 
 
 if __name__ == '__main__':
